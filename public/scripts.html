@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI REI — Scripts</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--card:#12121c;--border:#1e1e30;--text:#f0f0f8;--text2:#a0a0b8;--muted:#606078;--purple:#7c5cfc;--purple-s:rgba(124,92,252,0.1);--green:#22c55e;--green-s:rgba(34,197,94,0.1);--amber:#f59e0b;--amber-s:rgba(245,158,11,0.1);--r:12px;--r-sm:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--purple),#a78bfa);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:white}
+.brand-name{font-size:16px;font-weight:800}
+.stage-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.tab{padding:6px 12px;border-radius:var(--r-sm);font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;background:var(--card);color:var(--text2);border:1px solid var(--border);transition:0.15s}
+.tab.active{background:var(--purple);color:white;border-color:var(--purple)}
+.tab:hover:not(.active){border-color:var(--purple);color:var(--text)}
+.script-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:12px;transition:0.15s}
+.script-card:hover{border-color:var(--purple)}
+.script-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.script-id{font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:0.8px}
+.script-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.script-use{font-size:10px;color:var(--muted)}
+.script-text{font-size:13px;line-height:1.65;color:var(--text2);white-space:pre-wrap;padding:14px;background:var(--bg);border-radius:var(--r-sm);border:1px solid var(--border);position:relative}
+.copy-btn{position:absolute;top:10px;right:10px;padding:5px 12px;border-radius:var(--r-sm);font-size:10px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;border:none;background:var(--purple);color:white;transition:0.15s}
+.copy-btn:hover{background:#6d4ff5}
+.copy-btn.copied{background:var(--green)}
+.fb-section{margin-top:24px;padding-top:24px;border-top:1px solid var(--border)}
+.fb-title{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--amber)}
+.footer{text-align:center;margin-top:32px;font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="brand"><div class="brand-icon">R</div><div class="brand-name">AI REI Scripts</div></div>
+</div>
+
+<div class="stage-tabs" id="tabs"></div>
+<div id="scripts"></div>
+
+<div class="footer">
+  INT + CCC before every call &bull; Stage scripts triggered by pipeline &bull; iPhone shortcuts: INT CCC GCJ SD LOI PEND F50 F10
+</div>
+
+<script>
+async function load() {
+  const data = await fetch('/api/scripts').then(r => r.json());
+  const stages = Object.keys(data.stages);
+  const tabs = document.getElementById('tabs');
+  const container = document.getElementById('scripts');
+
+  let activeStage = 'NEW_LEAD';
+
+  function renderStage(stage) {
+    const s = data.stages[stage];
+    const shortcuts = data.iphone_shortcuts || {};
+
+    // Stage label badge
+    const stageColors = {
+      NEW_LEAD:'#3b82f6', QUALIFIED:'#22c55e', LOI_REQUESTED:'#f59e0b',
+      OFFER_SENT:'#7c5cfc', NEGOTIATING:'#7c5cfc', UNDER_CONTRACT:'#3b82f6',
+      PENDING:'#f59e0b', CLOSED:'#22c55e'
+    };
+
+    let html = `<div style="margin-bottom:20px;">
+      <div style="font-size:11px;color:${stageColors[stage]||'var(--text2)'};font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">${stage}</div>
+      <div style="font-size:12px;color:var(--muted)">${s.description}</div>
+      ${s.action ? `<div style="font-size:12px;color:var(--text2);margin-top:4px;font-weight:600;">Action: ${s.action}</div>` : ''}
+    </div>`;
+
+    s.scripts.forEach(script => {
+      html += `<div class="script-card">
+        <div class="script-header">
+          <div>
+            <div class="script-id">${script.id}</div>
+            <div class="script-name">${script.name}</div>
+            <div class="script-use">${script.use || ''}</div>
+          </div>
+          ${shortcuts[script.id] ? `<span style="font-size:10px;font-weight:700;background:var(--purple-s);color:var(--purple);padding:3px 8px;border-radius:10px;">${shortcuts[script.id]}</span>` : ''}
+        </div>
+        <div class="script-text" id="text-${stage}-${script.id}">${script.text}</div>
+        <button class="copy-btn" onclick="copy('${stage}','${script.id}')">Copy</button>
+      </div>`;
+    });
+
+    container.innerHTML = html;
+  }
+
+  // Render tabs
+  tabs.innerHTML = stages.map(stage =>
+    `<button class="tab${stage === activeStage ? ' active' : ''}" onclick="setActive('${stage}')">${stage.replace('_',' ')}</button>`
+  ).join('');
+
+  renderStage(activeStage);
+
+  window.setActive = function(stage) {
+    activeStage = stage;
+    tabs.querySelectorAll('.tab').forEach(t => {
+      t.classList.toggle('active', t.textContent.trim().replace(/ /g,'_') === stage ||
+        t.textContent.trim() === stage.replace('_',' '));
+    });
+    renderStage(stage);
+  };
+
+  window.copy = function(stage, id) {
+    const el = document.getElementById(`text-${stage}-${id}`);
+    if (!el) return;
+    navigator.clipboard.writeText(el.textContent).then(() => {
+      const btn = el.nextElementSibling;
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+    });
+  };
+
+  // Facebook section
+  if (data.facebook_marketplace) {
+    const fb = data.facebook_marketplace;
+    container.innerHTML += `<div class="fb-section"><div class="fb-title">Facebook Marketplace</div></div>`;
+    fb.scripts.forEach(script => {
+      container.innerHTML += `<div class="script-card">
+        <div class="script-header">
+          <div>
+            <div class="script-id">${script.id}</div>
+            <div class="script-name">${script.name}</div>
+            <div class="script-use">${script.use || ''}</div>
+          </div>
+          <span style="font-size:10px;font-weight:700;background:var(--amber-s);color:var(--amber);padding:3px 8px;border-radius:10px;">${script.id}</span>
+        </div>
+        <div class="script-text" id="fb-${script.id}">${script.text}</div>
+        <button class="copy-btn" onclick="copyFB('${script.id}')">Copy</button>
+      </div>`;
+    });
+  }
+
+  window.copyFB = function(id) {
+    const el = document.getElementById(`fb-${id}`);
+    if (!el) return;
+    navigator.clipboard.writeText(el.textContent).then(() => {
+      const btn = el.nextElementSibling;
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+    });
+  };
+}
+load();
+</script>
+</body>
+</html>

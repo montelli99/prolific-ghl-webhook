@@ -1,0 +1,20 @@
+{
+  "name": "airei-pipeline",
+  "version": "1.0.0",
+  "description": "AI REI Pipeline Engine — GHL + JustCall webhooks, call transcription, lead tracking, Telegram alerts",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@neondatabase/serverless": "^1.1.0",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2"
+  }
+}

@@ -1,0 +1,26 @@
+[2026-05-20T14:07:05.845Z] {"type":"lead_created","leadId":"LEAD_1779286025844_hvj3","address":"Test St"}
+[2026-05-20T14:07:05.863Z] {"type":"stage_change","leadId":"LEAD_1779286025844_hvj3","address":"Test St","from":"NEW_LEAD","to":"QUALIFIED","note":"call done"}
+[2026-05-20T14:07:05.868Z] {"type":"stage_change","leadId":"LEAD_1779286025844_hvj3","address":"Test St","from":"QUALIFIED","to":"OFFER_SENT","note":"gcj sent"}
+[2026-05-20T14:07:21.503Z] {"type":"lead_created","leadId":"LEAD_1779286041502_hi8v","address":"Test St"}
+[2026-05-20T14:07:21.517Z] {"type":"stage_change","leadId":"LEAD_1779286041502_hi8v","address":"Test St","from":"NEW_LEAD","to":"OFFER_SENT","note":"test"}
+[2026-05-20T14:07:37.897Z] {"type":"lead_created","leadId":"LEAD_1779286057896_o71d","address":"1295 Minnesota Ave"}
+[2026-05-20T14:07:37.911Z] {"type":"lead_created","leadId":"LEAD_1779286057911_3ygo","address":"3355 E Dashler"}
+[2026-05-20T14:07:37.912Z] {"type":"stage_change","leadId":"LEAD_1779286057911_3ygo","address":"3355 E Dashler","from":"NEW_LEAD","to":"QUALIFIED","note":"Call completed: roof 8yr, HVAC 6yr, vacant, utilities on"}
+[2026-05-20T14:07:37.916Z] {"type":"lead_created","leadId":"LEAD_1779286057916_d682","address":"456 Oak Ave"}
+[2026-05-20T14:07:37.918Z] {"type":"stage_change","leadId":"LEAD_1779286057916_d682","address":"456 Oak Ave","from":"NEW_LEAD","to":"QUALIFIED","note":"Call done, turnkey, DSCR candidate"}
+[2026-05-20T14:07:37.919Z] {"type":"stage_change","leadId":"LEAD_1779286057916_d682","address":"456 Oak Ave","from":"QUALIFIED","to":"LOI_REQUESTED","note":"Sent to Seth 5/19 — waiting"}
+[2026-05-20T14:07:37.920Z] {"type":"lead_created","leadId":"LEAD_1779286057920_29b0","address":"789 Pine Blvd"}
+[2026-05-20T14:07:37.921Z] {"type":"stage_change","leadId":"LEAD_1779286057920_29b0","address":"789 Pine Blvd","from":"NEW_LEAD","to":"OFFER_SENT","note":"GCJ sent, Jaxon presented 5/18 2pm"}
+[2026-05-20T14:07:37.923Z] {"type":"lead_updated","leadId":"LEAD_1779286057920_29b0","address":"789 Pine Blvd","updates":["followup48hrDue","offerSentAt"]}
+[2026-05-20T14:07:37.924Z] {"type":"lead_created","leadId":"LEAD_1779286057923_af4i","address":"1020 Elm St"}
+[2026-05-20T14:07:37.925Z] {"type":"stage_change","leadId":"LEAD_1779286057923_af4i","address":"1020 Elm St","from":"NEW_LEAD","to":"DEAD","note":"Declined at , DOM 142 days, circle back Jul 1"}
+[2026-05-20T14:09:04.048Z] {"type":"lead_created","leadId":"LEAD_1779286144047_pzdu","address":"1295 Minnesota Ave"}
+[2026-05-20T14:09:04.063Z] {"type":"lead_created","leadId":"LEAD_1779286144062_n7ya","address":"3355 E Dashler"}
+[2026-05-20T14:09:04.064Z] {"type":"stage_change","leadId":"LEAD_1779286144062_n7ya","address":"3355 E Dashler","from":"NEW_LEAD","to":"QUALIFIED","note":"Call completed"}
+[2026-05-20T14:09:04.069Z] {"type":"lead_created","leadId":"LEAD_1779286144068_pftv","address":"456 Oak Ave"}
+[2026-05-20T14:09:04.070Z] {"type":"stage_change","leadId":"LEAD_1779286144068_pftv","address":"456 Oak Ave","from":"NEW_LEAD","to":"QUALIFIED","note":""}
+[2026-05-20T14:09:04.070Z] {"type":"stage_change","leadId":"LEAD_1779286144068_pftv","address":"456 Oak Ave","from":"QUALIFIED","to":"LOI_REQUESTED","note":"Sent 5/19"}
+[2026-05-20T14:09:04.071Z] {"type":"lead_created","leadId":"LEAD_1779286144071_hckt","address":"789 Pine Blvd"}
+[2026-05-20T14:09:04.072Z] {"type":"stage_change","leadId":"LEAD_1779286144071_hckt","address":"789 Pine Blvd","from":"NEW_LEAD","to":"OFFER_SENT","note":"5/18 2pm"}
+[2026-05-20T14:09:04.074Z] {"type":"lead_created","leadId":"LEAD_1779286144074_8uwm","address":"1020 Elm St"}
+[2026-05-20T14:09:04.075Z] {"type":"stage_change","leadId":"LEAD_1779286144074_8uwm","address":"1020 Elm St","from":"NEW_LEAD","to":"DEAD","note":"Declined DOM142"}

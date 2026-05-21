@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI REI — Pipeline Setup</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--card:#12121c;--border:#1e1e30;--text:#f0f0f8;--text2:#a0a0b8;--muted:#606078;--purple:#7c5cfc;--purple-s:rgba(124,92,252,0.1);--green:#22c55e;--green-s:rgba(34,197,94,0.1);--amber:#f59e0b;--amber-s:rgba(245,158,11,0.1);--r:12px;--r-sm:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.container{max-width:780px;width:100%}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.brand-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--purple),#a78bfa);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:white}
+.brand-name{font-size:18px;font-weight:800}
+.btn-logout{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:var(--r-sm);font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:0.15s}
+.btn-logout:hover{background:var(--bg);color:var(--text)}
+.header{text-align:center;margin-bottom:28px}
+.header h1{font-size:22px;font-weight:800;letter-spacing:-0.3px;margin-bottom:5px}
+.header p{font-size:13px;color:var(--text2)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px;transition:0.15s}
+.step-card:hover{border-color:var(--purple)}
+.step-number{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px}
+.step-title{font-size:15px;font-weight:700;margin-bottom:5px}
+.step-desc{font-size:11px;color:var(--text2);margin-bottom:18px;line-height:1.5}
+.status{font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;display:inline-block;margin-bottom:14px}
+.status.connected{background:var(--green-s);color:var(--green)}
+.status.pending{background:var(--amber-s);color:var(--amber)}
+.form-group{margin-bottom:11px}
+.form-label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px}
+.form-input{width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none;transition:0.15s}
+.form-input:focus{border-color:var(--purple);box-shadow:0 0 0 3px var(--purple-s)}
+.form-input::placeholder{color:var(--muted)}
+.btn{width:100%;padding:8px 16px;border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:0.15s}
+.btn-primary{background:var(--purple);color:white}
+.btn-primary:hover{background:#6d4ff5}
+.footer{margin-top:20px;text-align:center;font-size:11px;color:var(--muted)}
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:6px}
+.toast{padding:11px 18px;border-radius:var(--r);font-size:12px;font-weight:600;animation:slideIn 0.2s ease}
+.toast-success{background:#065f46;color:#6ee7b7;border:1px solid rgba(34,197,94,0.3)}
+.toast-error{background:#7f1d1d;color:#fca5a5;border:1px solid rgba(239,68,68,0.3)}
+@keyframes slideIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-icon">R</div>
+      <div class="brand-name">AI REI</div>
+    </div>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
+
+  <div class="header">
+    <h1>Connect Your Accounts</h1>
+    <p>Link GHL, JustCall, and your lead sheet. Pipeline monitoring runs in Telegram.</p>
+  </div>
+
+  <div class="steps">
+    <div class="step-card" id="card-ghl">
+      <div class="step-number">Step 1</div>
+      <div class="step-title">Go High Level</div>
+      <div class="step-desc">Paste your Private Integration Token from GHL Settings → Integrations. Pipeline stages sync automatically.</div>
+      <div class="status pending" id="st-ghl">Pending</div>
+      <div class="form-group"><label class="form-label">API Key</label><input type="password" class="form-input" id="ghl-key" placeholder="Private Integration Token"></div>
+      <div class="form-group"><label class="form-label">Location ID</label><input type="text" class="form-input" id="ghl-loc" placeholder="Sub-account location ID"></div>
+      <button class="btn btn-primary" onclick="conn('ghl')">Connect GHL</button>
+    </div>
+
+    <div class="step-card" id="card-justcall">
+      <div class="step-number">Step 2</div>
+      <div class="step-title">JustCall</div>
+      <div class="step-desc">Connect your JustCall account for live call transcripts and pipeline auto-updates.</div>
+      <div class="status pending" id="st-justcall">Pending</div>
+      <div class="form-group"><label class="form-label">API Key</label><input type="password" class="form-input" id="jc-key" placeholder="JustCall API key"></div>
+      <div class="form-group"><label class="form-label">API Secret</label><input type="password" class="form-input" id="jc-secret" placeholder="JustCall API secret"></div>
+      <button class="btn btn-primary" onclick="conn('justcall')">Connect JustCall</button>
+    </div>
+
+    <div class="step-card" id="card-sheets">
+      <div class="step-number">Step 3</div>
+      <div class="step-title">Lead Sheet</div>
+      <div class="step-desc">Paste your Google Sheet ID from the spreadsheet URL. New rows auto-import as leads.</div>
+      <div class="status pending" id="st-sheets">Pending</div>
+      <div class="form-group"><label class="form-label">Sheet ID</label><input type="text" class="form-input" id="sheet-id" placeholder="1a2b3c4d..."></div>
+      <div class="form-group"><label class="form-label">Range</label><input type="text" class="form-input" id="sheet-range" value="Sheet1"></div>
+      <button class="btn btn-primary" onclick="conn('google_sheets')">Connect Sheet</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    Once connected, all pipeline monitoring happens in Telegram. <strong>GHL is your CRM. Atlas monitors it.</strong>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+(function() {
+  const token = localStorage.getItem('airei_token');
+  if (!token) { window.location.href = '/login'; return; }
+  const user = JSON.parse(localStorage.getItem('airei_user') || '{}');
+  if (!user.id) { window.location.href = '/login'; return; }
+})();
+
+const API = '/api';
+const USER = JSON.parse(localStorage.getItem('airei_user') || '{}');
+const TOKEN = localStorage.getItem('airei_token') || '';
+
+async function api(path, opts) {
+  const r = await fetch(API + path, {
+    method: opts && opts.method || 'GET',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN, ...(opts && opts.headers) },
+    body: opts && opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  return r.json();
+}
+
+function logout() {
+  localStorage.removeItem('airei_token');
+  localStorage.removeItem('airei_user');
+  window.location.href = '/login';
+}
+
+async function conn(provider) {
+  let data = {};
+  if (provider === 'ghl') {
+    data.apiKey = document.getElementById('ghl-key').value;
+    data.locationId = document.getElementById('ghl-loc').value;
+    if (!data.apiKey) return toast('GHL token required', 'error');
+  } else if (provider === 'justcall') {
+    data.apiKey = document.getElementById('jc-key').value;
+    data.accountId = document.getElementById('jc-secret').value;
+    if (!data.apiKey) return toast('JustCall key required', 'error');
+  } else {
+    data.sheetId = document.getElementById('sheet-id').value;
+    data.sheetRange = document.getElementById('sheet-range').value || 'Sheet1';
+    if (!data.sheetId) return toast('Sheet ID required', 'error');
+  }
+  try {
+    await api('/connections/' + USER.id, { method: 'POST', body: { provider, ...data } });
+    const el = document.getElementById('st-' + (provider === 'google_sheets' ? 'sheets' : provider));
+    el.textContent = 'Connected';
+    el.className = 'status connected';
+    toast(provider + ' connected!', 'success');
+  } catch (e) { toast(e.message || 'Failed', 'error'); }
+}
+
+(async function() {
+  try {
+    const conns = await api('/connections/' + USER.id);
+    const map = { ghl: 'ghl', justcall: 'justcall', google_sheets: 'sheets' };
+    conns.forEach(c => {
+      const el = document.getElementById('st-' + (map[c.provider] || ''));
+      if (el) { el.textContent = 'Connected'; el.className = 'status connected'; }
+    });
+  } catch (e) {}
+})();
+
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast toast-' + type;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+</script>
+</body>
+</html>

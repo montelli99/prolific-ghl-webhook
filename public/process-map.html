@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI REI — Process Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--card:#12121c;--border:#1e1e30;--text:#f0f0f8;--text2:#a0a0b8;--muted:#606078;--purple:#7c5cfc;--purple-s:rgba(124,92,252,0.1);--green:#22c55e;--green-s:rgba(34,197,94,0.1);--amber:#f59e0b;--amber-s:rgba(245,158,11,0.1);--red:#ef4444;--red-s:rgba(239,68,68,0.1);--blue:#3b82f6;--blue-s:rgba(59,130,246,0.1);--pink:#ec4899;--pink-s:rgba(236,72,153,0.1);--cyan:#06b6d4;--cyan-s:rgba(6,182,212,0.1);--r:12px;--r-sm:8px;--r-xl:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+.header{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:18px;font-weight:800;letter-spacing:-0.3px}
+.header-sub{font-size:11px;color:var(--muted)}
+.main{padding:40px 28px;max-width:1400px;margin:0 auto}
+
+/* Pipeline row */
+.pipeline{display:flex;gap:16px;align-items:flex-start;margin-bottom:48px;overflow-x:auto;padding-bottom:16px}
+.stage-col{min-width:240px;flex:1}
+.stage-header{background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl);padding:16px 18px;margin-bottom:10px;transition:0.15s}
+.stage-header:hover{border-color:var(--purple);transform:translateY(-1px)}
+.stage-emoji{font-size:28px;margin-bottom:6px}
+.stage-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.stage-desc{font-size:10px;color:var(--text2);line-height:1.5}
+
+.stage-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:6px;font-size:11px;transition:0.15s;position:relative}
+.stage-step:hover{border-color:var(--purple)}
+.step-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;padding:2px 6px;border-radius:4px;display:inline-block;margin-bottom:6px}
+.tag-do{background:var(--blue-s);color:var(--blue)}
+.tag-send{background:var(--purple-s);color:var(--purple)}
+.tag-call{background:var(--green-s);color:var(--green)}
+.tag-warn{background:var(--amber-s);color:var(--amber)}
+.tag-stop{background:var(--red-s);color:var(--red)}
+.tag-atlas{background:var(--pink-s);color:var(--pink)}
+.step-text{line-height:1.5;color:var(--text2)}
+.step-script{line-height:1.5;color:var(--text);font-weight:500;margin-top:6px;font-style:italic;padding-left:8px;border-left:2px solid var(--purple)}
+.arrow-down{text-align:center;margin:4px 0;color:var(--muted);font-size:14px}
+
+/* Call flow section */
+.section-title{font-size:14px;font-weight:800;margin:40px 0 20px;padding-top:28px;border-top:1px solid var(--border)}
+.flow-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:40px}
+.flow-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px;transition:0.15s}
+.flow-card:hover{border-color:var(--purple)}
+.flow-num{font-size:22px;font-weight:800;color:var(--purple);margin-bottom:8px}
+.flow-title{font-size:13px;font-weight:700;margin-bottom:10px}
+.flow-text{font-size:11px;color:var(--text2);line-height:1.6;white-space:pre-wrap}
+
+/* Script grid */
+.script-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-bottom:40px}
+.script-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;transition:0.15s}
+.script-card:hover{border-color:var(--purple)}
+.script-id{font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px}
+.script-label{font-size:11px;color:var(--muted);margin-bottom:8px}
+.script-body{font-size:11px;color:var(--text2);line-height:1.55}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:40px;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--r)}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text2)}
+.legend-dot{width:10px;height:10px;border-radius:3px}
+
+/* Footer */
+.footer{text-align:center;padding:40px 0;font-size:10px;color:var(--muted);border-top:1px solid var(--border);margin-top:20px}
+
+@media(max-width:900px){.pipeline{flex-wrap:wrap}.stage-col{min-width:180px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div><h1>AI REI Pipeline — Full Process Map</h1><div class="header-sub">Built from 34 course transcripts · Scripts · Objections · Boundaries</div></div>
+  <div class="header-sub">🏠 Comps · 📋 Pipeline · 📊 Deal Room · 🗣️ General</div>
+</div>
+
+<div class="main">
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div> DO — action required</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div> SEND — text shortcut</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> CALL — phone script</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div> ⚠️ — objection handling</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> 🛑 — boundary (DO NOT)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--pink)"></div> Atlas — automated</div>
+</div>
+
+<!-- PIPELINE BAR -->
+<div class="pipeline">
+
+  <!-- NEW_LEAD -->
+  <div class="stage-col">
+    <div class="stage-header">
+      <div class="stage-emoji">🆕</div>
+      <div class="stage-name">NEW LEAD</div>
+      <div class="stage-desc">Lead received from sheet · GHL import · Population check</div>
+    </div>
+    <div class="arrow-down">▼</div>
+    <div class="stage-step">
+      <div class="step-tag tag-atlas">Atlas checks</div>
+      <div class="step-text">Population > 10K? If not → discard. Zillow condition check. Property type: turnkey / reno / livable.</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-send">SEND: INT</div>
+      <div class="step-script">"[Name], are you still accepting offers for [ADDRESS]? My name is Montelli, I'm looking to purchase a rental for my portfolio."</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-call">CALL: Agent or Seller</div>
+      <div class="step-text">Agent → Agent Initial Script<br>Seller → Seller Initial Script<br>Rehab → REHAB Script</div>
+    </div>
+  </div>
+
+  <!-- QUALIFIED -->
+  <div class="stage-col">
+    <div class="stage-header">
+      <div class="stage-emoji">✅</div>
+      <div class="stage-name">QUALIFIED</div>
+      <div class="stage-desc">Call done · Info collected · Ready for LOI</div>
+    </div>
+    <div class="arrow-down">▼</div>
+    <div class="stage-step">
+      <div class="step-tag tag-do">Collect during call</div>
+      <div class="step-text">Roof/HVAC age · Occupied or vacant? · If rented: current rent, lease type, when signed · Utilities on? · Feedback from other buyers?</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-send">SEND: CCC</div>
+      <div class="step-script">"It is great aligning with you [Name], I look forward to connecting the dots with you shortly at [ADDRESS]. Feel free to browse our closings — Divinity Aligned LLC."</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-atlas">Atlas checks</div>
+      <div class="step-text">Rental comps (Zillow + Rentometer) · 1% rule check · If pass → draft LOI request email to Seth</div>
+    </div>
+  </div>
+
+  <!-- LOI_REQUESTED -->
+  <div class="stage-col">
+    <div class="stage-header">
+      <div class="stage-emoji">📤</div>
+      <div class="stage-name">LOI REQUESTED</div>
+      <div class="stage-desc">Seth underwriting · LOI drafting</div>
+    </div>
+    <div class="arrow-down">▼</div>
+    <div class="stage-step">
+      <div class="step-tag tag-send">SEND: Email to Seth</div>
+      <div class="step-text">claytoninvestmentsolutions@gmail.com<br>Subject: "FB LOI Request [ADDRESS]"<br>Include: price, rent, roof/HVAC, occupancy, condition</div>
+    </div>
+    <div class="arrow-down">▼</div>
+    <div class="stage-step">
+      <div class="step-tag tag-do">Wait</div>
+      <div class="step-text">Seth reviews → sends back approved LOI or asks for more info</div>
+    </div>
+  </div>
+
+  <!-- LOI_APPROVED -->
+  <div class="stage-col">
+    <div class="stage-header">
+      <div class="stage-emoji">👍</div>
+      <div class="stage-name">LOI APPROVED</div>
+      <div class="stage-desc">LOI received from Seth · Ready to send</div>
+    </div>
+    <div class="arrow-down">▼</div>
+    <div class="stage-step">
+      <div class="step-tag tag-send">SEND: GCJ</div>
+      <div class="step-script">"[Name] — happy [DAY]! Creating a group chat for the purchase on [ADDRESS] with my business partner Jaxon. The LOI will be coming from Homewithkaylamauser@gmail.com — please confirm receipt and check other folders."</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-do">THEN</div>
+      <div class="step-text">Attach LOI to email → send · Import LOI link into GHL · Set 48hr follow-up timer</div>
+    </div>
+  </div>
+
+  <!-- OFFER_SENT -->
+  <div class="stage-col">
+    <div class="stage-header">
+      <div class="stage-emoji">📨</div>
+      <div class="stage-name">OFFER SENT</div>
+      <div class="stage-desc">GCJ sent · LOI delivered · Awaiting response</div>
+    </div>
+    <div class="arrow-down">▼</div>
+    <div class="stage-step">
+      <div class="step-tag tag-atlas">Atlas monitors</div>
+      <div class="step-text">48hr timer active · Auto-alerts to 📋 Pipeline topic when due</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-call">Day 1: Confirm receipt</div>
+      <div class="step-script">"I'm calling to confirm you received the offer — it came from homewithkaylamauser@gmail.com. Check other folders." [NEVER say "spam"]</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-warn">Day 2-3: Feedback call</div>
+      <div class="step-script">"I am just now finding some time to realign with you regarding [ADDRESS]. We sent an offer — is there any clarification I can align on the details?"</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-warn">If questions</div>
+      <div class="step-text">"Noted — I'll relay to my business partner." → TEXT JAXON immediately</div>
+    </div>
+  </div>
+
+  <!-- NEGOTIATING -->
+  <div class="stage-col">
+    <div class="stage-header">
+      <div class="stage-emoji">🔄</div>
+      <div class="stage-name">NEGOTIATING</div>
+      <div class="stage-desc">Counter-offers · Feedback loop · Pivot or close</div>
+    </div>
+    <div class="arrow-down">▼</div>
+    <div class="stage-step">
+      <div class="step-tag tag-do">Relay ALL questions</div>
+      <div class="step-text">Every counter → text Jaxon · "Noted — let me relay to my business partner"</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-warn">Objection: "Too risky"</div>
+      <div class="step-text">"Not risky at all. Deed in lieu protects you. If we default, you keep ALL the money AND the property. 15 days mispayment → property deeded back."</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-warn">Objection: "Too low"</div>
+      <div class="step-text">"Give me a number. Let me go fight for 95+. Can't guarantee — is that worth a call back?"</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-warn">Pivot: SubTo</div>
+      <div class="step-text">If seller mentions mortgage payoff → ASK THE RATE → if < bank rates: "I can give you MORE money by taking over existing debt via third-party processor."</div>
+    </div>
+    <div class="step-tag tag-send" style="margin-top:8px;display:inline-block">SEND: LOI follow-up</div></div>
+  </div>
+
+  <!-- UNDER_CONTRACT -->
+  <div class="stage-col">
+    <div class="stage-header">
+      <div class="stage-emoji">📝</div>
+      <div class="stage-name">UNDER CONTRACT</div>
+      <div class="stage-desc">TC engaged · Inspection · Appraisal · Close</div>
+    </div>
+    <div class="arrow-down">▼</div>
+    <div class="stage-step">
+      <div class="step-tag tag-stop">NOT YOU</div>
+      <div class="step-text">Kayla handles TC · Jaxon negotiates · You monitor only</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-call">7-Day UC Check</div>
+      <div class="step-script">"We spoke [DAY] — you mentioned [ADDRESS] went under contract. I just found time to ensure the buyer wired earnest money and inspections completed."</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-warn">If fell through</div>
+      <div class="step-text">"Noted — our offer stays valid. Looking forward to getting this across the finish line."</div>
+    </div>
+  </div>
+
+  <!-- CLOSED -->
+  <div class="stage-col">
+    <div class="stage-header">
+      <div class="stage-emoji">🏁</div>
+      <div class="stage-name">CLOSED</div>
+      <div class="stage-desc">Funds wired · Archiving · Double dip</div>
+    </div>
+    <div class="arrow-down">▼</div>
+    <div class="stage-step">
+      <div class="step-tag tag-send">SEND: Closing + Seed</div>
+      <div class="step-script">"Congratulations! It was great working with you. Do you have any other properties you're looking to offload?"</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-do">ALWAYS ASK</div>
+      <div class="step-text">Double, triple, quadruple dip · "We play Pokemon — we assist people into retirement"</div>
+    </div>
+  </div>
+
+  <!-- DEAD -->
+  <div class="stage-col">
+    <div class="stage-header">
+      <div class="stage-emoji">⚰️</div>
+      <div class="stage-name">DEAD</div>
+      <div class="stage-desc">Declined · Archived · Revisit at expiry</div>
+    </div>
+    <div class="arrow-down">▼</div>
+    <div class="stage-step">
+      <div class="step-tag tag-send">SEND: SD</div>
+      <div class="step-script">"Thank you for the update — feel free to revisit this right before the listing expires. Buy-box: Red States, $150K-$550K, 3 bed+, 10K+ pop, No HOA, No pools."</div>
+    </div>
+    <div class="stage-step">
+      <div class="step-tag tag-do">Calendar</div>
+      <div class="step-text">Note DOM → subtract 181 days → calendar reminder → circle back at listing expiry</div>
+    </div>
+  </div>
+</div>
+
+<!-- CALL FLOW -->
+<div class="section-title">📞 CALL FLOW — What happens during a live call</div>
+<div class="flow-row">
+  <div class="flow-card">
+    <div class="flow-num">1</div>
+    <div class="flow-title">Pre-Call</div>
+    <div class="flow-text">Copy address into GHL as Opportunity Name · Save contact in phone: First Name "[Agent]", Company "[Address]" · Send INT text · Wait 30 sec → DIAL</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-num">2</div>
+    <div class="flow-title">Opener (SMILE. SLOW.)</div>
+    <div class="flow-text">"Happy [DAY], I'm calling regarding [ADDRESS] — I'm interested in potentially purchasing this as a rental for my portfolio. Did I catch you at a good time?"</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-num">3</div>
+    <div class="flow-title">Qualify: Feedback</div>
+    <div class="flow-text">"Photos look great — I'm SHOCKED it hasn't sold. Have you received any feedback from other buyers who've walked it?"</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-num">4</div>
+    <div class="flow-title">Qualify: Condition</div>
+    <div class="flow-text">"Regarding the roof and HVAC — when were those last installed?"<br><br>[If reno: "How would you rate condition 1-10? What would it need to be a 10?"]</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-num">5</div>
+    <div class="flow-title">Qualify: Occupancy</div>
+    <div class="flow-text">"Is it currently occupied or vacant?"<br><br>OCCUPIED → "Owner or tenant? What's the rent? Lease type?"<br>VACANT → "Why wouldn't the seller just rent it out?"</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-num">6</div>
+    <div class="flow-title">Wrap-Up</div>
+    <div class="flow-text">"Are utilities still on?"<br><br>"I'm really interested. I'd purchase outright using a DSCR loan — as long as the rent covers the mortgage, I'm good at asking price. I'll give my lender a call."</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-num">7</div>
+    <div class="flow-title">Get Email + Close</div>
+    <div class="flow-text">"What's a good email to send details?" · VERIFY letter by letter · "It was great connecting. Looking forward to aligning details. Have a great rest of your day. God bless."</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-num">8</div>
+    <div class="flow-title">Post-Call</div>
+    <div class="flow-text">Send CCC immediately · Update GHL with all notes · If qualified → draft LOI request to Seth · If no answer → send voice memo</div>
+  </div>
+</div>
+
+<!-- BOUNDARIES -->
+<div class="section-title">🛑 BOUNDARIES — What you NEVER do</div>
+<div class="flow-row">
+  <div class="flow-card">
+    <div class="flow-num">🛑</div>
+    <div class="flow-title">NEVER say these words</div>
+    <div class="flow-text">"Just checking in" · "Just following up" · "Subject to" over the phone · "Is the offer okay?" · "Did you get a chance to look at it?"</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-num">🛑</div>
+    <div class="flow-title">NEVER do these things</div>
+    <div class="flow-text">Send agreements or contracts · Discuss terms with sellers · Underwrite deals · Close deals · Say "I don't know" — say "I'll relay to my business partner"</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-num">✅</div>
+    <div class="flow-title">ALWAYS do these things</div>
+    <div class="flow-text">INT before every call · CCC after every call · "Noted — I'll relay to my business partner" for all questions · Ask "any other properties?" · Smile. Speak SLOW.</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-num">💡</div>
+    <div class="flow-title">Golden rules</div>
+    <div class="flow-text">Your energy is your currency · We're providing a solution, not selling · If they say no, they're comfortable — "Would you be opposed..." · Every no = not yet · "We play Pokemon — assist people into retirement"</div>
+  </div>
+</div>
+
+<!-- SCRIPTS BY STAGE -->
+<div class="section-title">📱 TEXT SHORTCUTS — iPhone Keyboard Replacements</div>
+<div class="script-grid">
+  <div class="script-card">
+    <div class="script-id">INT — Intro (BEFORE every call)</div>
+    <div class="script-body">"[Name], are you still accepting offers for [ADDRESS]? My name is Montelli, I'm looking to purchase a rental for my portfolio."</div>
+  </div>
+  <div class="script-card">
+    <div class="script-id">CCC — Contact Card (AFTER every call)</div>
+    <div class="script-body">"It is great aligning with you [Name], I look forward to connecting the dots with you shortly at [ADDRESS]. Feel free to browse through our closings — Divinity Aligned LLC."</div>
+  </div>
+  <div class="script-card">
+    <div class="script-id">GCJ — Group Chat w/ Jaxon (before LOI)</div>
+    <div class="script-body">"[Name] — happy [DAY]! Creating a group chat for the purchase on [ADDRESS] with my business partner Jaxon. The LOI will be coming from Homewithkaylamauser@gmail.com — please confirm receipt and check other folders."</div>
+  </div>
+  <div class="script-card">
+    <div class="script-id">LOI — LOI Follow-up (48hr after sending)</div>
+    <div class="script-body">"I am just now finding some time to iron out any further details regarding the offer at [ADDRESS]. Have you gained any initial feedback from your seller?"</div>
+  </div>
+  <div class="script-card">
+    <div class="script-id">SD — Seller Declined</div>
+    <div class="script-body">"Thank you for the update — feel free to revisit this right before the listing expires. Buy-box: Red States, $150K-$550K, 3 bed+, 10K+ pop, No HOA, No pools."</div>
+  </div>
+  <div class="script-card">
+    <div class="script-id">PEND — Property went pending</div>
+    <div class="script-body">"[Name]! I noticed [ADDRESS] went pending. Congratulations! Keep my offer in your back pocket — I'm intending to acquire this as a rental. I'll give my DSCR lender a call."</div>
+  </div>
+  <div class="script-card">
+    <div class="script-id">F50 — FB: 50% down (turnkey)</div>
+    <div class="script-body">"Happy [DAY]! I understand your intent to sell outright. Would you be completely opposed to taking half your price now and the rest in one lump sum in the near future?"</div>
+  </div>
+  <div class="script-card">
+    <div class="script-id">F10 — FB: 10% down (renovation)</div>
+    <div class="script-body">"Happy [DAY]! I understand your intent to sell outright. Would you be completely opposed to taking 10% of your price now and the rest in one lump sum in just 24 months?"</div>
+  </div>
+  <div class="script-card">
+    <div class="script-id">NOA — No Answer (after 2 rings)</div>
+    <div class="script-body">"Are you still accepting offers for [ADDRESS]?"</div>
+  </div>
+  <div class="script-card">
+    <div class="script-id">VOICE MEMO — No answer after 2 calls</div>
+    <div class="script-body">"Happy [DAY] [Name] — just tried calling regarding [ADDRESS]. Going to call my DSCR lender. Looping you into a group chat with my business partner Jaxon. Have a blessed evening."</div>
+  </div>
+</div>
+
+<!-- OBJECTIONS -->
+<div class="section-title">💬 OBJECTION HANDLING — What to say back</div>
+<div class="flow-row">
+  <div class="flow-card">
+    <div class="flow-title">"Your offer is too low"</div>
+    <div class="flow-text">"I completely understand. Our LOI is not a final number — it's a starting point. What we're offering is certainty of close: no financing contingencies, no appraisal risk, close in 14-21 days cash."</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-title">"We already have an offer"</div>
+    <div class="flow-text">"That's great. What are the terms? Cash or financed? Timeline? If your seller is comparing a financed buyer to a cash buyer, it's not apples-to-apples."</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-title">"That's way too risky"</div>
+    <div class="flow-text">"Not risky at all. 50% down. Deed in lieu pre-signed at closing. If we default, you keep ALL the money AND the property. 15 days mispayment → deeded back. You'd almost get paid twice."</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-title">"We want cash only, no seller financing"</div>
+    <div class="flow-text">"That's exactly why I'm calling. Your seller hasn't received offers from owner-occupants. Our lender confirmed: with current rates, a buyer who lives there can't qualify for this property."</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-title">"I don't work with investors"</div>
+    <div class="flow-text">"Completely understand. We're not flippers — we buy and hold long-term. We keep properties occupied and maintained. We're the most low-risk buyer you could find."</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-title">"I need to talk to my wife/husband/family"</div>
+    <div class="flow-text">"Totally fair — it's a big decision. When do you think they'll have a chance to discuss? [ADDRESS] is approaching [DOM] days on market. If timing lines up, we'd love to move."</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-title">"Have you seen the property?"</div>
+    <div class="flow-text">"Our assistant drove past a few days ago and referred it. Photos look great — I'm sure they don't do it justice. We'll set up a home inspection within 24 hours like any real estate transaction."</div>
+  </div>
+  <div class="flow-card">
+    <div class="flow-title">"Who's the end buyer?"</div>
+    <div class="flow-text">"Montelli with Prolific Capital. We buy SFH and small multi-family in cash. Long-term rentals — not flippers. My partner Jaxon and I close in 14-21 days. No contingencies. We pay all closing costs."</div>
+  </div>
+</div>
+
+</div>
+<div class="footer">
+  AI REI Pipeline Process Map · Built from 34 course transcripts · All scripts from Kayla & Jaxon training · Montelli's role: Call → Qualify → Hand off · Kayla/Jaxon: Close · Seth: Underwrite · Atlas: Monitor & automate
+</div>
+</body>
+</html>

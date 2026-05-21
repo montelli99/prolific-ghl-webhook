@@ -1,0 +1,172 @@
+{
+  "description": "Pipeline script reference for GHL pipeline stages. Each stage has scripts to send via text message. INT and CCC are stage-agnostic — use them every call.",
+  "how_to_use": "Copy the text, replace [placeholders], send via GHL, your phone, or iPhone text replacement shortcuts (INT/CCC/GCJ/SD/LOI/PEND/F50/F10).",
+  "iphone_shortcuts": {
+    "INT": "Pre-call intro text",
+    "CCC": "Post-call contact card",
+    "GCJ": "Group chat w/ Jaxon before LOI",
+    "LOI": "LOI follow-up",
+    "SD": "Seller declined",
+    "PEND": "Property went pending",
+    "F50": "FB 50% down (turnkey)",
+    "F10": "FB 10% down (renovation)"
+  },
+  "stages": {
+    "NEW_LEAD": {
+      "description": "Call incoming — about to dial. Send INT first.",
+      "action": "Send INT text BEFORE calling. Then call.",
+      "scripts": [
+        {
+          "id": "INT",
+          "name": "Pre-call Intro — send before every call",
+          "use": "Send via text before dialing. Agent/seller sees it pop up on caller ID.",
+          "text": "[Name], are you still accepting offers for [ADDRESS]? My name is Montelli, I'm looking to purchase a rental for my portfolio.",
+          "iphone_shortcut": "INT"
+        },
+        {
+          "id": "CCC",
+          "name": "Contact Card — send after every call",
+          "use": "Immediately after hanging up. Every call, no exceptions.",
+          "text": "It is great aligning with you [Name], I look forward to connecting the dots with you shortly at [ADDRESS]. Feel free to browse through our closings on our website — Divinity Aligned LLC: Expert Solutions for Life's Major Transitions",
+          "iphone_shortcut": "CCC"
+        }
+      ]
+    },
+    "QUALIFIED": {
+      "description": "Call done — property info gathered. Send CCC, update GHL.",
+      "action": "Send CCC. Log roof/HVAC/occupancy/rent in GHL. Move to LOI_REQUESTED.",
+      "scripts": [
+        {
+          "id": "CCC",
+          "name": "Contact Card",
+          "text": "It is great aligning with you [Name], I look forward to connecting the dots with you shortly at [ADDRESS]. Feel free to browse through our closings on our website — Divinity Aligned LLC: Expert Solutions for Life's Major Transitions",
+          "iphone_shortcut": "CCC"
+        }
+      ]
+    },
+    "LOI_REQUESTED": {
+      "description": "Offer drafted. Send GCJ first, then attach LOI email.",
+      "action": "Send GCJ via text. Wait for confirmation. Then send LOI via email. Log in GHL.",
+      "scripts": [
+        {
+          "id": "GCJ",
+          "name": "Group Chat w/ Jaxon — before sending LOI",
+          "use": "Send before emailing the LOI. Loops Jaxon in.",
+          "text": "[Name] — happy [DAY]! Creating a group chat for the purchase on [ADDRESS] with my business partner Jaxon. He is currently in a meeting with our lender. The LOI will be coming from our partner at Homewithkaylamauser@gmail.com — simply inform us it has been received for presentation, and also ensure to check other folders as well. Have a blessed rest of your week!",
+          "iphone_shortcut": "GCJ"
+        },
+        {
+          "id": "LOI",
+          "name": "LOI Follow-up — 48hr after sending",
+          "use": "If no confirmation of LOI receipt after 48 hours.",
+          "text": "Happy [DAY]! For the intent of my call — I have just now found some time to iron out any further details regarding the offer we had finalized on [ADDRESS]. Have you gained any initial feedback from your seller just yet?",
+          "iphone_shortcut": "LOI"
+        }
+      ]
+    },
+    "OFFER_SENT": {
+      "description": "LOI sent. Awaiting response. 48hr follow-up due.",
+      "action": "Send LOI follow-up. If no response: set DOM re-engagement reminder (DOM - 181 days).",
+      "scripts": [
+        {
+          "id": "48hr",
+          "name": "48hr Follow-up — offer sent, no confirmation",
+          "use": "When 48-hour follow-up window hits. Due on pipeline dashboard.",
+          "text": "Happy [DAY] [Name], I am just now finding some time to realign with you regarding [ADDRESS]. We sent an offer — is there any clarification I can align on the details? *Let them talk. If questions: Noted — I'll relay to my business partner.*",
+          "note": "If questions arise: 'Noted — I'll relay to my business partner.' Then TEXT JAXON immediately."
+        },
+        {
+          "id": "LOI",
+          "name": "LOI Follow-up",
+          "text": "Happy [DAY]! For the intent of my call — I have just now found some time to iron out any further details regarding the offer we had finalized on [ADDRESS]. Have you gained any initial feedback from your seller just yet?"
+        }
+      ]
+    },
+    "NEGOTIATING": {
+      "description": "Seller counter-offered, stalled, or silent. Negotiating.",
+      "action": "Relay counter-questions to Jaxon via text. Send LOI follow-up. If dead: send SD.",
+      "scripts": [
+        {
+          "id": "LOI",
+          "name": "LOI Follow-up — negotiating",
+          "text": "Happy [DAY]! For the intent of my call — I have just now found some time to iron out any further details regarding the offer we had finalized on [ADDRESS]. Have you gained any initial feedback from your seller just yet?"
+        },
+        {
+          "id": "SD",
+          "name": "Seller Declined — Dead Deal",
+          "use": "When seller passes or declines. Archive lead after sending.",
+          "text": "Happy [DAY]! Thank you for the update – feel free to revisit this right before the listing expires if your seller has not been able to find their number with owner occupants. Wishing you a smooth closing – feel free to keep us in mind for the future if you have listings that can't sell outright and are owned outright. This would be a great solution for homeowners who aren't seeing the outright number they're hoping for. Buy-box: Red States, Turnkey SF & Multi $150K-$550K, 3 bed+, 10K+ pop, No HOA, No pools.",
+          "iphone_shortcut": "SD",
+          "note": "After sending SD: Note the DOM. Subtract 181. Put in calendar. Call back when listing expires."
+        }
+      ]
+    },
+    "UNDER_CONTRACT": {
+      "description": "Property confirmed under contract. Tracking through close.",
+      "action": "Send 7-day UC check. After close: send closing script + plant future seed.",
+      "scripts": [
+        {
+          "id": "UC_7DAY",
+          "name": "7-Day Under Contract Check-in",
+          "use": "7 days after learning property went UC.",
+          "text": "Happy [DAY] [Name] — we spoke on [DAY_SPOKE] regarding the property at [ADDRESS] going under contract. I just now found some time to ensure the buyer has wired earnest money and the inspections have since been completed.",
+          "note": "If closing: 'Congratulations, glad it all aligned. It was great connecting — do you have any other properties you're looking to offload?' If fell through: 'Noted — I had made a note for our underwriters to keep this offer valid. Looking forward to getting this across the finish line.'"
+        },
+        {
+          "id": "CLOSING",
+          "name": "Post-Closing — Future Seed",
+          "use": "After wires sent, deal closing.",
+          "text": "Congratulations — glad it all aligned well for you. It was great connecting with you and if you aren't opposed I'd love to explore opportunities with you in the future. Do you have any other properties you're looking to offload?",
+          "note": "ALWAYS ask: 'Do you have any other properties you're looking to offload?' before archiving."
+        }
+      ]
+    },
+    "PENDING": {
+      "description": "Property went pending — stay in their pocket for if it comes back.",
+      "action": "Send PEND text. Stay in touch. If deal falls apart, you're first call.",
+      "scripts": [
+        {
+          "id": "PEND",
+          "name": "Pending — Stay in Pocket",
+          "use": "When a property you're working on goes pending.",
+          "text": "Happy [DAY] [Name]! I came across your listing at [ADDRESS] and noticed it's pending. Congratulations — that's exciting! Wishing you a smooth closing — Feel free to keep my offer in your back pocket; I'm intending to acquire this as a rental property. I'm going to give my DSCR lender a quick call and send an offer over if I get approved. Feel free to browse through my closings on our website — Divinity Aligned LLC.",
+          "iphone_shortcut": "PEND"
+        }
+      ]
+    },
+    "CLOSED": {
+      "description": "Deal closed. Archive and ask for next deal.",
+      "action": "Send closing text. Ask for more deals. Archive in GHL.",
+      "scripts": [
+        {
+          "id": "CLOSED",
+          "name": "Post-Closing — Future Deals",
+          "use": "After funds wired. Before archiving.",
+          "text": "Congratulations on the smooth closing! It was great working with you. Do you have any other properties you're looking to offload? Our model works best with owned-outright or short-sale situations. Always looking for SFH or small multi-family — Red States, $150K-$550K, 3+ bed, 10K+ pop.",
+          "note": "Last thing before archiving. Always ask for another deal."
+        }
+      ]
+    }
+  },
+  "facebook_marketplace": {
+    "description": "Use these when a seller reaches out via Facebook Marketplace.",
+    "scripts": [
+      {
+        "id": "F50",
+        "name": "FB 50% Down — Turnkey properties",
+        "use": "Seller wants full cash now, turnkey property (no work needed).",
+        "text": "Happy [DAY] [Name]! I understand your intent to sell outright. Would you be completely opposed to taking half your price now and the rest in one lump sum in the near future?",
+        "iphone_shortcut": "F50",
+        "note": "For turnkey properties only. 50% down now, remainder in one lump sum."
+      },
+      {
+        "id": "F10",
+        "name": "FB 10% Down — Renovation properties",
+        "use": "Property needs renovation work.",
+        "text": "Happy [DAY] [Name]! I understand your intent to sell outright. Would you be completely opposed to taking 10% of your price now and the rest in one lump sum in just 24 months?",
+        "iphone_shortcut": "F10",
+        "note": "For renovation properties only. 10% down now, balance in 24 months."
+      }
+    ]
+  }
+}
