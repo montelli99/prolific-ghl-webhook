@@ -233,16 +233,27 @@ app.get('/api/ghl/mappings/:userId', async (req, res) => {
 });
 
 // ── GHL Webhook ──
-// Montelli Pipeline (ID: 2IgJXmB3NwOqF4xILx9q) stage ID → Atlas stage name
+// Lead Generation / Pre-Acquisition pipeline (ygQaJ2hi7ouJeA5HR7uu) — stage ID → Atlas stage name
 const GHL_STAGE_MAP = {
-  '8f726d10-9b5d-4dcf-b3a5-c9a51959b3f3': 'NEW LEAD',
-  '1a62cda9-efbe-4723-bc34-dd1d50c5e4b1': 'QUALIFIED',
-  'cf6ec75a-24b0-4c55-93ff-94b0a7c50eb5': 'LOI REQUESTED',
-  'eb5f3ce0-bd0f-4e57-9d16-54b5a0c59d4f': 'LOI APPROVED',
-  'ecf7dc69-de7f-4ae8-aed8-2e0ed7725300': 'OFFER SENT',
-  '9bce3c51-94f3-47a6-9fd3-e8e9e1ad8f3d': 'NEGOTIATING',
-  '5a2d9c8e-9f7d-4a89-b0e2-7e5a6f8d3c1a': 'UNDER CONTRACT',
-  '8b1e2d4f-6a9c-4d38-b7f2-1e3c5a7d9e2b': 'CLOSED'
+  '0651d634-1b58-4039-9908-03c4077c88cb': 'Lead Entered',
+  '660c657c-8b59-4f56-9ea4-b3cbb62aa313': 'Contact Made',
+  'e30583a3-e53e-45ae-a3e3-a5672fdd4d28': 'Offer Ready to be Sent to Seller',
+  '9bbe635c-2bee-42e2-b1ad-3f9b6c314acd': 'Offer Sent to Lead',
+  'de4357bb-9ef7-479f-9cd8-69009d815b98': 'Offer Received',
+  '7e18de44-53b7-421f-8504-001c902afb3a': 'Offer Ready to Gain Feedback',
+  '138be6ca-2f31-49e1-b751-78a09edfab0d': 'No Answer After Offer Ready to Gain Feedback',
+  'bcc4d024-d7ec-46ab-8e1c-b0a212ca8fbc': 'Seller Declined Offer',
+  '4cf61ef7-f125-42cc-8fba-deda6591a156': 'Active Negotiation',
+  'f805edc3-5782-4398-a692-d919c967a64c': 'Terms Agreed',
+  'b0e24feb-7fa3-4447-8bc5-4cd40ae264d1': 'Contract Out',
+  '2dd14d3a-7c82-41ce-9308-0e01a25b093a': 'Under Contract',
+  'd35374ef-5b5b-4c29-9525-7be99503f42a': 'Under Contract w/ Another Buyer',
+  'a4c6722d-7df7-4354-950d-9610ef75e2ab': 'Inspection Complete',
+  '520d191e-4625-4cf1-837b-2bd6ce2473b6': 'Appraisal Complete',
+  '24c8699c-7a51-44ef-ab0c-daec3b3f69e7': 'JV Sent',
+  'b858ae7b-c706-4da1-9e60-5cb72b5f0ad0': 'JV Signed',
+  '125f89a5-39e2-4c41-b099-c4e038d70cb6': 'Wire Instructions Set Up',
+  '02c0e45f-47be-4969-a02a-a24257ae9871': 'Closing Date Assigned'
 };
 
 app.post('/webhook/ghl', async (req, res) => {
