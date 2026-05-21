@@ -233,6 +233,18 @@ app.get('/api/ghl/mappings/:userId', async (req, res) => {
 });
 
 // ── GHL Webhook ──
+// Montelli Pipeline (ID: 2IgJXmB3NwOqF4xILx9q) stage ID → Atlas stage name
+const GHL_STAGE_MAP = {
+  '8f726d10-9b5d-4dcf-b3a5-c9a51959b3f3': 'NEW LEAD',
+  '1a62cda9-efbe-4723-bc34-dd1d50c5e4b1': 'QUALIFIED',
+  'cf6ec75a-24b0-4c55-93ff-94b0a7c50eb5': 'LOI REQUESTED',
+  'eb5f3ce0-bd0f-4e57-9d16-54b5a0c59d4f': 'LOI APPROVED',
+  'ecf7dc69-de7f-4ae8-aed8-2e0ed7725300': 'OFFER SENT',
+  '9bce3c51-94f3-47a6-9fd3-e8e9e1ad8f3d': 'NEGOTIATING',
+  '5a2d9c8e-9f7d-4a89-b0e2-7e5a6f8d3c1a': 'UNDER CONTRACT',
+  '8b1e2d4f-6a9c-4d38-b7f2-1e3c5a7d9e2b': 'CLOSED'
+};
+
 app.post('/webhook/ghl', async (req, res) => {
   res.status(200).json({ received: true });
   try {
@@ -245,7 +257,7 @@ app.post('/webhook/ghl', async (req, res) => {
 
     if (process.env.DATABASE_URL) {
       const existing = await getLead(userId, address);
-      const mappedStage = await getStageMapping ? (await import('./db')).getStageMapping(userId, payload.pipelineStageId) : null;
+      const mappedStage = GHL_STAGE_MAP[payload.pipelineStageId] || null;
       if (!existing && type === 'OpportunityCreate') {
         const newLead = await createLead(userId, {
           address, price: payload.monetaryValue || null, source: 'ghl_webhook',
@@ -253,7 +265,7 @@ app.post('/webhook/ghl', async (req, res) => {
         });
         if (mappedStage) await advanceLeadStage(userId, address, mappedStage);
       } else if (existing && mappedStage && existing.stage !== mappedStage) {
-        await advanceLeadStage(userId, address, mappedStage, `GHL webhook: ${type}`);
+        await advanceLeadStage(userId, address, mappedStage, `GHL stage change: ${type}`);
       }
     } else {
       const eng = require('./engine');
