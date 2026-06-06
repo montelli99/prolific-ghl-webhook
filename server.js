@@ -233,28 +233,100 @@ app.get('/api/ghl/mappings/:userId', async (req, res) => {
 });
 
 // ── GHL Webhook ──
-// Lead Generation / Pre-Acquisition pipeline (ygQaJ2hi7ouJeA5HR7uu) — stage ID → Atlas stage name
+// Montelli Atlas-Managed pipeline (nSf3NXYVkt8X4PgW9aZ3) — stage ID → Stage name
+const GHL_TOKEN = process.env.GHL_API_TOKEN || '';
+const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID || '61XPzSqRy7UKMwW9DeB8';
+const GHL_PIPELINE_ID = process.env.GHL_PIPELINE_ID || 'nSf3NXYVkt8X4PgW9aZ3';
+const MONTELLI_USER = process.env.GHL_MONTELLI_USER_ID || 'PGfXxlXCRXs3hXN3Gq7R';
+
 const GHL_STAGE_MAP = {
-  '0651d634-1b58-4039-9908-03c4077c88cb': 'Lead Entered',
-  '660c657c-8b59-4f56-9ea4-b3cbb62aa313': 'Contact Made',
-  'e30583a3-e53e-45ae-a3e3-a5672fdd4d28': 'Offer Ready to be Sent to Seller',
-  '9bbe635c-2bee-42e2-b1ad-3f9b6c314acd': 'Offer Sent to Lead',
-  'de4357bb-9ef7-479f-9cd8-69009d815b98': 'Offer Received',
-  '7e18de44-53b7-421f-8504-001c902afb3a': 'Offer Ready to Gain Feedback',
-  '138be6ca-2f31-49e1-b751-78a09edfab0d': 'No Answer After Offer Ready to Gain Feedback',
-  'bcc4d024-d7ec-46ab-8e1c-b0a212ca8fbc': 'Seller Declined Offer',
-  '4cf61ef7-f125-42cc-8fba-deda6591a156': 'Active Negotiation',
-  'f805edc3-5782-4398-a692-d919c967a64c': 'Terms Agreed',
-  'b0e24feb-7fa3-4447-8bc5-4cd40ae264d1': 'Contract Out',
-  '2dd14d3a-7c82-41ce-9308-0e01a25b093a': 'Under Contract',
-  'd35374ef-5b5b-4c29-9525-7be99503f42a': 'Under Contract w/ Another Buyer',
-  'a4c6722d-7df7-4354-950d-9610ef75e2ab': 'Inspection Complete',
-  '520d191e-4625-4cf1-837b-2bd6ce2473b6': 'Appraisal Complete',
-  '24c8699c-7a51-44ef-ab0c-daec3b3f69e7': 'JV Sent',
-  'b858ae7b-c706-4da1-9e60-5cb72b5f0ad0': 'JV Signed',
-  '125f89a5-39e2-4c41-b099-c4e038d70cb6': 'Wire Instructions Set Up',
-  '02c0e45f-47be-4969-a02a-a24257ae9871': 'Closing Date Assigned'
+  '7067148a-2ee8-4e5b-93c8-31e0253fea68': 'Lead Entered',
+  '934c4c52-4b22-457a-8d10-55ab6600fdee': 'Contact Made',
+  '3da698e7-aba8-4d4a-b14b-7742f7b44ac7': 'Offer Ready',
+  'eef16a9b-8ca9-43b7-9cad-fb9c352b560d': 'Offer Sent',
+  'd5375376-26dc-4dc3-9b06-f55178f8a23b': 'Offer Received',
+  '83f2c0df-a9c5-44fe-b42f-46ed60274e66': 'Gain Feedback',
+  'b82940e0-e55c-4359-98e6-35cb22e065ab': 'No Answer',
+  '8dc3463c-8a45-41a1-a305-2013527b1bd8': 'Seller Declined',
+  'a7a5c7ac-3933-4c68-bfce-b81eaacf622e': 'Active Negotiation',
+  'e6480e04-1b0f-4f79-af96-7cf5fb634ac5': 'Terms Agreed',
+  '1e97ae23-78a6-4698-919f-ba0d6a0e08c6': 'Awaiting Title',
+  'f0b739d5-f270-410c-b9e9-bce2e26a53ff': 'Contract Out',
+  '645611af-ae9a-4dfc-aba9-8bfff08dc79a': 'Under Contract',
+  'b68f7087-559d-470b-9ddf-d1452f4b027e': 'UC Another Buyer',
+  '129094e2-ea70-49c1-a670-b599ee25ba3f': 'Sent to Buyers',
+  'b7ab06be-9a28-40a2-9dc9-6697fc09a836': 'Inspection Complete',
+  '49142ba4-2360-49ca-9a86-6223dc847440': 'Appraisal Complete',
+  '36993fe3-cfc3-4651-99d6-3146627869a3': 'JV Sent',
+  '6eb610d7-31f2-4380-ab03-fd0c2f771e8b': 'JV Signed',
+  '6f97e402-288e-417a-b561-65a8287e5653': 'Wire Setup',
+  'e446607c-2d2c-4664-b0cd-96f9de0584e1': 'Closing Date'
 };
+
+// GHL HTTP helper
+async function ghlRequest(method, path, body) {
+  return new Promise((ok, fail) => {
+    const https = require('https');
+    const data = body ? JSON.stringify(body) : null;
+    const opts = {
+      hostname: 'services.leadconnectorhq.com',
+      path,
+      method,
+      headers: {
+        Authorization: `Bearer ${GHL_TOKEN}`,
+        Version: '2023-02-21',
+        Accept: 'application/json',
+        ...(data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}),
+      }
+    };
+    const req = https.request(opts, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try { ok(JSON.parse(d)); } catch { ok({ _raw: d }); }
+      });
+    });
+    req.on('error', fail);
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+async function autoPopulateOpp(opp) {
+  const stageId = opp.pipelineStageId;
+  const stageName = GHL_STAGE_MAP[stageId] || 'Unknown';
+  const contactId = opp.contactId;
+
+  if (!contactId) {
+    console.log(`[Atlas] ${opp.name}: no contactId, skipping`);
+    return { skipped: true };
+  }
+
+  const noteBody = `=== ${stageName} ===\n${new Date().toISOString()}\nAuto-populated by Atlas webhook server.\nOpportunity: ${opp.name}\nPipeline: ${GHL_PIPELINE_ID}\nStage ID: ${stageId}`;
+
+  try {
+    await ghlRequest('POST', `/contacts/${contactId}/notes`, { body: noteBody });
+    console.log(`[Atlas] ${opp.name} → ${stageName}: note written`);
+    return { success: true, stage: stageName };
+  } catch (e) {
+    console.error(`[Atlas] ${opp.name}: error writing note: ${e.message}`);
+    return { error: e.message };
+  }
+}
+
+// In-memory dedupe
+const seenGhlEvents = new Set();
+const DEDUPE_MAX = 5000;
+function dedupeGhl(key) {
+  if (seenGhlEvents.has(key)) return true;
+  seenGhlEvents.add(key);
+  if (seenGhlEvents.size > DEDUPE_MAX) {
+    const arr = Array.from(seenGhlEvents);
+    seenGhlEvents.clear();
+    arr.slice(-DEDUPE_MAX / 2).forEach(k => seenGhlEvents.add(k));
+  }
+  return false;
+}
 
 app.post('/webhook/ghl', async (req, res) => {
   res.status(200).json({ received: true });
@@ -262,10 +334,34 @@ app.post('/webhook/ghl', async (req, res) => {
     const payload = req.body;
     const type = payload.type;
     if (!['OpportunityStageUpdate', 'OpportunityStatusUpdate', 'OpportunityCreate'].includes(type)) return;
-    const userId = 'montelli';
+    if (!payload.pipelineId || payload.pipelineId !== GHL_PIPELINE_ID) {
+      console.log(`[Atlas] Ignoring opp ${payload.id} - wrong pipeline: ${payload.pipelineId}`);
+      return;
+    }
+    if (payload.assignedTo && payload.assignedTo !== MONTELLI_USER) {
+      console.log(`[Atlas] Ignoring opp ${payload.id} - wrong user: ${payload.assignedTo}`);
+      return;
+    }
+    const eventId = payload.id + ':' + (payload.pipelineStageId || 'none') + ':' + Date.now().toString().slice(0, -4);
+    if (dedupeGhl(eventId)) {
+      console.log(`[Atlas] Duplicate event skipped: ${eventId}`);
+      return;
+    }
     const address = payload.name;
     if (!address) return;
+    console.log(`[Atlas] ${type}: ${address} → ${GHL_STAGE_MAP[payload.pipelineStageId] || 'unknown'}`);
 
+    // Auto-populate via GHL API
+    const result = await autoPopulateOpp({
+      id: payload.id,
+      name: address,
+      pipelineStageId: payload.pipelineStageId,
+      contactId: payload.contactId,
+    });
+    console.log(`[Atlas] ${address}: ${JSON.stringify(result)}`);
+
+    // Legacy lead tracking (for dashboard)
+    const userId = 'montelli';
     if (process.env.DATABASE_URL) {
       const existing = await getLead(userId, address);
       const mappedStage = GHL_STAGE_MAP[payload.pipelineStageId] || null;
@@ -285,9 +381,83 @@ app.post('/webhook/ghl', async (req, res) => {
         eng.createLead(userId, { address, price: payload.monetaryValue || null, source: 'ghl_webhook', notes: `GHL ID: ${payload.id}` });
       }
     }
-    await logEvent(userId, 'ghl_webhook', null, { type, address, pipelineStageId: payload.pipelineStageId });
+    await logEvent(userId, 'ghl_webhook', null, { type, address, pipelineStageId: payload.pipelineStageId, autoPopulate: result });
   } catch (err) {
     console.error('GHL webhook error:', err.message);
+  }
+});
+
+// ── JustCall Webhook ──
+const seenJcEvents = new Set();
+function dedupeJc(key) {
+  if (seenJcEvents.has(key)) return true;
+  seenJcEvents.add(key);
+  if (seenJcEvents.size > DEDUPE_MAX) {
+    const arr = Array.from(seenJcEvents);
+    seenJcEvents.clear();
+    arr.slice(-DEDUPE_MAX / 2).forEach(k => seenJcEvents.add(k));
+  }
+  return false;
+}
+
+app.post('/webhook/justcall', async (req, res) => {
+  res.status(200).json({ received: true });
+  try {
+    const payload = req.body;
+    const type = payload.type || payload.event;
+    const eventId = payload.data?.id || payload.data?.call_sid || payload.request_id || Math.random();
+    if (dedupeJc(`${type}:${eventId}`)) {
+      console.log(`[Atlas JustCall] Duplicate event skipped: ${type}:${eventId}`);
+      return;
+    }
+    console.log(`[Atlas JustCall] ${type}: ${JSON.stringify(payload.data || {}).slice(0, 100)}`);
+
+    if (type === 'call.completed' || type === 'call.ended') {
+      // Log to GHL contact timeline
+      const callData = payload.data || {};
+      const contactId = callData.contact_id || callData.ghl_contact_id;
+      if (contactId) {
+        const noteBody = `=== CALL COMPLETED ===\n${new Date().toISOString()}\nCall ID: ${callData.id}\nDuration: ${callData.duration || 'unknown'}s\nDirection: ${callData.direction || 'unknown'}\nDisposition: ${callData.disposition || 'unknown'}`;
+        try {
+          await ghlRequest('POST', `/contacts/${contactId}/notes`, { body: noteBody });
+          console.log(`[Atlas JustCall] Call logged to contact ${contactId}`);
+        } catch (e) {
+          console.error(`[Atlas JustCall] Failed to log call: ${e.message}`);
+        }
+      }
+    }
+
+    if (type === 'sms.received' || type === 'text.received') {
+      const smsData = payload.data || {};
+      const contactId = smsData.contact_id || smsData.ghl_contact_id;
+      if (contactId) {
+        const noteBody = `=== SMS RECEIVED ===\n${new Date().toISOString()}\nFrom: ${smsData.from_number || 'unknown'}\nBody: ${(smsData.body || '').slice(0, 200)}`;
+        try {
+          await ghlRequest('POST', `/contacts/${contactId}/notes`, { body: noteBody });
+          console.log(`[Atlas JustCall] SMS logged to contact ${contactId}`);
+        } catch (e) {
+          console.error(`[Atlas JustCall] Failed to log SMS: ${e.message}`);
+        }
+      }
+    }
+
+    if (type === 'call.ai_report') {
+      const aiData = payload.data || {};
+      const callScore = aiData.call_score;
+      const callSummary = aiData.call_summary;
+      const contactId = aiData.contact_id || aiData.ghl_contact_id;
+      if (contactId && callSummary) {
+        const noteBody = `=== AI COACHING REPORT ===\n${new Date().toISOString()}\nCall Score: ${callScore}\nSummary: ${callSummary.slice(0, 500)}`;
+        try {
+          await ghlRequest('POST', `/contacts/${contactId}/notes`, { body: noteBody });
+          console.log(`[Atlas JustCall] AI coaching logged to contact ${contactId}`);
+        } catch (e) {
+          console.error(`[Atlas JustCall] Failed to log AI report: ${e.message}`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('JustCall webhook error:', err.message);
   }
 });
 
