@@ -413,11 +413,11 @@ app.post('/webhook/justcall', async (req, res) => {
     console.log(`[Atlas JustCall] ${type}: ${JSON.stringify(payload.data || {}).slice(0, 100)}`);
 
     if (type === 'call.completed' || type === 'call.ended') {
-      // Log to GHL contact timeline
+      // Log to GHL contact timeline with FULL details
       const callData = payload.data || {};
       const contactId = callData.contact_id || callData.ghl_contact_id;
       if (contactId) {
-        const noteBody = `=== CALL COMPLETED ===\n${new Date().toISOString()}\nCall ID: ${callData.id}\nDuration: ${callData.duration || 'unknown'}s\nDirection: ${callData.direction || 'unknown'}\nDisposition: ${callData.disposition || 'unknown'}`;
+        const noteBody = `=== CALL COMPLETED ===\n${new Date().toISOString()}\nCall ID: ${callData.id}\nFrom: ${callData.from_number || 'unknown'}\nTo: ${callData.to_number || 'unknown'}\nDirection: ${callData.direction || 'unknown'}\nDuration: ${callData.duration || 'unknown'}s\nDisposition: ${callData.disposition || 'unknown'}\nRecording: ${callData.recording_url || 'N/A'}\nVoicemail: ${callData.voicemail_url || 'N/A'}\nNotes: ${callData.notes || 'N/A'}`;
         try {
           await ghlRequest('POST', `/contacts/${contactId}/notes`, { body: noteBody });
           console.log(`[Atlas JustCall] Call logged to contact ${contactId}`);
@@ -443,17 +443,46 @@ app.post('/webhook/justcall', async (req, res) => {
 
     if (type === 'call.ai_report') {
       const aiData = payload.data || {};
+      const callId = aiData.id;
       const callScore = aiData.call_score;
       const callSummary = aiData.call_summary;
+      const customerSentiment = aiData.customer_sentiment;
+      const callTags = (aiData.tags || []).join(', ');
+      const callMoments = aiData.call_moments || [];
+      const transcription = aiData.call_transcription || [];
       const contactId = aiData.contact_id || aiData.ghl_contact_id;
-      if (contactId && callSummary) {
-        const noteBody = `=== AI COACHING REPORT ===\n${new Date().toISOString()}\nCall Score: ${callScore}\nSummary: ${callSummary.slice(0, 500)}`;
-        try {
-          await ghlRequest('POST', `/contacts/${contactId}/notes`, { body: noteBody });
-          console.log(`[Atlas JustCall] AI coaching logged to contact ${contactId}`);
-        } catch (e) {
-          console.error(`[Atlas JustCall] Failed to log AI report: ${e.message}`);
-        }
+
+      if (!contactId) {
+        console.log(`[Atlas JustCall] No contactId in AI report`);
+        return;
+      }
+
+      let transcriptionText = '';
+      if (transcription.length > 0) {
+        transcriptionText = transcription.map(seg => {
+          const speaker = seg.speaker || seg.role || 'Speaker';
+          const text = seg.text || seg.message || '';
+          const time = seg.start_time || '';
+          return `[${time}] ${speaker}: ${text}`;
+        }).join('\n');
+      }
+
+      let momentsText = '';
+      if (callMoments.length > 0) {
+        momentsText = callMoments.map(m => {
+          const time = m.start_time || '';
+          const title = m.title || 'Moment';
+          const desc = m.description || '';
+          return `• [${time}] ${title}: ${desc}`;
+        }).join('\n');
+      }
+
+      const noteBody = `=== AI COACHING REPORT ===\n${new Date().toISOString()}\nCall ID: ${callId}\nCall Score: ${callScore || 'N/A'}/100\nCustomer Sentiment: ${customerSentiment || 'N/A'}\nTags: ${callTags || 'none'}\n\n--- SUMMARY ---\n${callSummary || 'No summary'}\n\n${momentsText ? '--- KEY MOMENTS ---\n' + momentsText + '\n\n' : ''}${transcriptionText ? '--- TRANSCRIPT ---\n' + transcriptionText.slice(0, 3000) + (transcriptionText.length > 3000 ? '\n[...truncated]' : '') : ''}`;
+      try {
+        await ghlRequest('POST', `/contacts/${contactId}/notes`, { body: noteBody });
+        console.log(`[Atlas JustCall] Full AI coaching + transcript logged to contact ${contactId}`);
+      } catch (e) {
+        console.error(`[Atlas JustCall] Failed to log AI report: ${e.message}`);
       }
     }
   } catch (err) {
