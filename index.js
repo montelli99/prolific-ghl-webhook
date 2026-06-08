@@ -15,6 +15,7 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || null;
+const DEFAULT_GHL_API_KEY = process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '';
 
 // ── GHL PipelineStageId → Our Stage mapping (configurable per pipeline) ──
 // Each GHL pipeline has stage UUIDs. Map them to our internal stages.
@@ -31,6 +32,13 @@ function loadStageMap(userId) {
   return {};
 }
 
+function getGhlCredentials(user) {
+  return {
+    apiKey: user?.ghlApiKey || DEFAULT_GHL_API_KEY,
+    locationId: user?.ghlLocationId || process.env.GHL_LOCATION_ID || null,
+  };
+}
+
 function saveStageMap(userId, map) {
   const path = require('path');
   const fs = require('fs');
@@ -42,9 +50,10 @@ function saveStageMap(userId, map) {
 // Fetch pipeline stages from GHL and auto-map by name
 async function syncPipelineStages(userId) {
   const user = USERS[userId];
-  if (!user || !user.ghlApiKey) throw new Error('No GHL API key configured');
+  const creds = getGhlCredentials(user);
+  if (!user || !creds.apiKey || !creds.locationId) throw new Error('No GHL API credentials configured');
 
-  const client = new GhlClient(user.ghlApiKey, user.ghlLocationId);
+  const client = new GhlClient(creds.apiKey, creds.locationId);
   const pipelines = await client.getPipelines();
   const stageMap = {};
 
@@ -74,8 +83,8 @@ function autoMapStageName(name) {
   if (n.includes('qualified')) return 'QUALIFIED';
   if (n.includes('loi request')) return 'LOI_REQUESTED';
   if (n.includes('loi approve') || n.includes('approved')) return 'LOI_APPROVED';
-  if (n.includes('offer sent') || n.includes('active negotiation')) return 'OFFER_SENT';
-  if (n.includes('negotiating') || n.includes('feedback')) return 'NEGOTIATING';
+  if (n.includes('offer sent')) return 'OFFER_SENT';
+  if (n.includes('active negotiation') || n.includes('negotiating') || n.includes('feedback')) return 'NEGOTIATING';
   if (n.includes('under contract') || n.includes('contract')) return 'UNDER_CONTRACT';
   if (n.includes('closed') || n.includes('won')) return 'CLOSED';
   if (n.includes('lost') || n.includes('dead') || n.includes('declined') || n.includes('archived')) return 'DEAD';
@@ -184,9 +193,10 @@ app.post('/webhook/ghl', async (req, res) => {
 // ── Background: enrich lead with GHL contact data ──
 async function fetchGhlContactAndEnrich(user, opportunityPayload) {
   try {
-    if (!user.ghlApiKey || !opportunityPayload.contactId) return;
+    const creds = getGhlCredentials(user);
+    if (!creds.apiKey || !creds.locationId || !opportunityPayload.contactId) return;
 
-    const client = new GhlClient(user.ghlApiKey, user.ghlLocationId);
+    const client = new GhlClient(creds.apiKey, creds.locationId);
     const contact = await client.getContact(opportunityPayload.contactId);
 
     if (contact && contact.contact) {
@@ -215,15 +225,16 @@ app.get('/api/ghl/pipelines/:userId', async (req, res) => {
     const userId = req.params.userId;
     const user = USERS[userId];
     if (!user) return res.status(404).json({ error: 'User not found' });
-    if (!user.ghlApiKey) return res.status(400).json({ error: 'No GHL API key configured for user' });
+    const creds = getGhlCredentials(user);
+    if (!creds.apiKey || !creds.locationId) return res.status(400).json({ error: 'No GHL API credentials configured for user' });
 
-    const client = new GhlClient(user.ghlApiKey, user.ghlLocationId);
+    const client = new GhlClient(creds.apiKey, creds.locationId);
     const pipelines = await client.getPipelines();
     const stageMap = loadStageMap(userId);
 
     // Return pipelines with human-readable stage mapping
     const result = {
-      locationId: user.ghlLocationId,
+      locationId: creds.locationId,
       pipelines: pipelines.pipelines?.map(p => ({
         id: p.id,
         name: p.name,
@@ -259,9 +270,10 @@ app.get('/api/ghl/opportunities/:userId', async (req, res) => {
     const userId = req.params.userId;
     const user = USERS[userId];
     if (!user) return res.status(404).json({ error: 'User not found' });
-    if (!user.ghlApiKey) return res.status(400).json({ error: 'No GHL API key configured' });
+    const creds = getGhlCredentials(user);
+    if (!creds.apiKey || !creds.locationId) return res.status(400).json({ error: 'No GHL API credentials configured' });
 
-    const client = new GhlClient(user.ghlApiKey, user.ghlLocationId);
+    const client = new GhlClient(creds.apiKey, creds.locationId);
     const ops = await client.searchOpportunities();
 
     const stageMap = loadStageMap(userId);
@@ -288,9 +300,10 @@ app.post('/api/ghl/import/:userId', async (req, res) => {
     const userId = req.params.userId;
     const user = USERS[userId];
     if (!user) return res.status(404).json({ error: 'User not found' });
-    if (!user.ghlApiKey) return res.status(400).json({ error: 'No GHL API key configured' });
+    const creds = getGhlCredentials(user);
+    if (!creds.apiKey || !creds.locationId) return res.status(400).json({ error: 'No GHL API credentials configured' });
 
-    const client = new GhlClient(user.ghlApiKey, user.ghlLocationId);
+    const client = new GhlClient(creds.apiKey, creds.locationId);
     const ops = await client.searchOpportunities();
     const stageMap = loadStageMap(userId);
 
@@ -329,6 +342,25 @@ app.post('/api/ghl/import/:userId', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+async function bootstrapStageMaps() {
+  try {
+    for (const userId of Object.keys(USERS)) {
+      const creds = getGhlCredentials(USERS[userId]);
+      if (!creds.apiKey || !creds.locationId) continue;
+      const existing = loadStageMap(userId);
+      if (!existing || Object.keys(existing).length === 0) {
+        await syncPipelineStages(userId);
+      }
+    }
+  } catch (err) {
+    console.error(`Stage map bootstrap failed: ${err.message}`);
+  }
+}
+
+setImmediate(() => {
+  bootstrapStageMaps();
 });
 
 // ── Pipeline API (same as before, now production-backed) ──

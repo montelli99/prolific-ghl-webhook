@@ -495,6 +495,241 @@ app.get('/api/scripts', (req, res) => {
   res.sendFile(path.join(__dirname, 'ghl-scripts-reference.json'));
 });
 
+// ────────────────────────────────────────────────────────────────────
+// ── NEW ENDPOINTS (added 2026-06-07 per GHL_WORKFLOWS_SPEC.md) ──
+// ── GHL workflows call these for heavy compute / external APIs ──
+// ────────────────────────────────────────────────────────────────────
+
+// Pipeline + user guard shared by all 5 new endpoints
+function ghlWorkflowGuard(req, res) {
+  const body = req.body || {};
+  if (body.pipelineId && body.pipelineId !== GHL_PIPELINE_ID) {
+    res.status(403).json({ status: 'REJECTED', reason: 'wrong pipeline' });
+    return false;
+  }
+  if (body.assignedTo && body.assignedTo !== MONTELLI_USER) {
+    res.status(403).json({ status: 'REJECTED', reason: 'wrong user' });
+    return false;
+  }
+  if (!body.opportunityId) {
+    res.status(400).json({ status: 'ERROR', reason: 'opportunityId required' });
+    return false;
+  }
+  return true;
+}
+
+// D.0: /webhook/ghl/stage-transition — generic stage handoff logger
+app.post('/webhook/ghl/stage-transition', async (req, res) => {
+  if (!ghlWorkflowGuard(req, res)) return;
+  res.status(200).json({ status: 'OK' });
+  try {
+    const { opportunityId, contactId, fromStage, toStage, address, propertyAddress, note } = req.body;
+    const leadLabel = propertyAddress || address || opportunityId || 'unknown';
+    const transitionNote = `=== STAGE TRANSITION ===\n${new Date().toISOString()}\nOpportunity: ${opportunityId || 'unknown'}\nAddress: ${leadLabel}\nFrom: ${fromStage || 'unknown'}\nTo: ${toStage || 'unknown'}${note ? `\nNote: ${note}` : ''}`;
+
+    if (contactId) {
+      await ghlRequest('POST', `/contacts/${contactId}/notes`, { body: transitionNote });
+    }
+
+    await logEvent('montelli', 'stage_transition', null, {
+      opportunityId: opportunityId || null,
+      contactId: contactId || null,
+      fromStage: fromStage || null,
+      toStage: toStage || null,
+      address: leadLabel,
+    });
+  } catch (err) {
+    console.error('[Atlas stage-transition] error:', err.message);
+  }
+});
+
+// D.1: /webhook/ghl/lead-entered — pre-screen + queue (Stage 1 trigger)
+app.post('/webhook/ghl/lead-entered', async (req, res) => {
+  if (!ghlWorkflowGuard(req, res)) return;
+  res.status(200).json({ status: 'OK' });
+  try {
+    const { address, askingPrice, monthlyRent, sqft, beds, baths } = req.body;
+    console.log(`[Atlas lead-entered] pre-screen for ${address}`);
+    // Quick pre-screen: 1-line summary of comp inputs (no web fetch in v1 — uses caller-supplied data)
+    const preScreen = {
+      address,
+      buyBoxMatch: askingPrice >= 150000 && askingPrice <= 550000 && sqft > 0,
+      askingPrice: askingPrice || null,
+      estimatedRent: monthlyRent || null,
+      beds: beds || null,
+      baths: baths || null,
+      sqft: sqft || null,
+      recommendedAction: (askingPrice && askingPrice >= 150000 && askingPrice <= 550000)
+        ? 'queue_for_int_call'
+        : 'auto_decline',
+      screenedAt: new Date().toISOString(),
+    };
+    console.log(`[Atlas lead-entered] pre-screen result: ${JSON.stringify(preScreen)}`);
+    // Note write to opportunity
+    if (req.body.contactId) {
+      await ghlRequest('POST', `/contacts/${req.body.contactId}/notes`, {
+        body: `=== Stage 1: Lead Entered (Atlas pre-screen) ===\n${new Date().toISOString()}\nAddress: ${address}\nBuy Box Match: ${preScreen.buyBoxMatch}\nRecommended Action: ${preScreen.recommendedAction}\nAsking: $${askingPrice || 'N/A'}\nRent est: $${monthlyRent || 'N/A'}`,
+      }).catch(e => console.log('[Atlas lead-entered] note write failed:', e.message));
+    }
+    await logEvent('montelli', 'lead_entered_prescreen', null, preScreen);
+  } catch (err) {
+    console.error('[Atlas lead-entered] error:', err.message);
+  }
+});
+
+// D.2: /webhook/ghl/offer-ready — comps + 5-strategy calc (Stage 3, 9, 17 trigger)
+app.post('/webhook/ghl/offer-ready', async (req, res) => {
+  if (!ghlWorkflowGuard(req, res)) return;
+  res.status(200).json({ status: 'OK' });
+  try {
+    const { opportunityId, address, askingPrice, monthlyRent, sqft, isRental, beds, baths, appraisalValue } = req.body;
+    const aru = appraisalValue || askingPrice || 0;
+    console.log(`[Atlas offer-ready] ${opportunityId} ${address} ARU=$${aru}`);
+    // Strategy recommendations
+    const lenderValue = Math.round(aru * 0.7);
+    const interestRate = 0.07;
+    const monthlyPayment = Math.round((lenderValue * interestRate) / 12);
+    const dscr = monthlyPayment > 0 ? Number((monthlyRent / monthlyPayment).toFixed(2)) : 0;
+    const onePctPass = askingPrice > 0 ? (monthlyRent / askingPrice) >= 0.01 : false;
+    const cashFlow = monthlyRent - monthlyPayment;
+    const recommendedStrategy = (() => {
+      if (isRental && monthlyRent > 0 && onePctPass) return 'Stack50';
+      if (monthlyRent > 0 && dscr >= 1.25) return 'SubTo';
+      if (monthlyRent > 0) return 'DSCR';
+      return 'Cash';
+    })();
+    // 5-strategy offer summary
+    const offerSummary = {
+      cash: { offer: Math.round(aru * 0.7 - (sqft || 1500) * 30 - 20000), structure: '0.70×ARV − repairs − fee' },
+      f50: { offer: Math.round(aru * 0.65), structure: '50% down + 50% carryback' },
+      f10: { offer: Math.round(aru * 0.65), structure: '10% down + 90% in 24mo' },
+      subTo: { offer: Math.round(aru * 0.9), structure: 'Take over existing loan' },
+      midTerm: { offer: aru, monthlyRent: Math.round(aru * 0.012), structure: '1.2% rule FF' },
+    };
+    const result = {
+      opportunityId,
+      aru,
+      lenderValue,
+      interestRate,
+      monthlyPayment,
+      dscr,
+      onePctPass,
+      cashFlow,
+      recommendedStrategy,
+      offers: offerSummary,
+      computedAt: new Date().toISOString(),
+    };
+    console.log(`[Atlas offer-ready] recommended: ${recommendedStrategy}, cash flow: $${cashFlow}/mo, DSCR: ${dscr}`);
+    if (req.body.contactId) {
+      await ghlRequest('POST', `/contacts/${req.body.contactId}/notes`, {
+        body: `=== Offer Calc (Atlas webhook) ===\n${new Date().toISOString()}\nARU: $${aru.toLocaleString()}\nLender Value (70%): $${lenderValue.toLocaleString()}\nMonthly P&I: $${monthlyPayment.toLocaleString()}\nCash Flow: $${cashFlow.toLocaleString()}/mo\nDSCR: ${dscr} (threshold 1.25)\n1% Rule: ${onePctPass ? 'PASS' : 'FAIL'}\nRecommended Strategy: ${recommendedStrategy}`,
+      }).catch(e => console.log('[Atlas offer-ready] note write failed:', e.message));
+    }
+    await logEvent('montelli', 'offer_ready_calc', null, result);
+  } catch (err) {
+    console.error('[Atlas offer-ready] error:', err.message);
+  }
+});
+
+// D.3: /webhook/ghl/contract-draft — generate PSA draft URL (Stage 10 trigger)
+app.post('/webhook/ghl/contract-draft', async (req, res) => {
+  if (!ghlWorkflowGuard(req, res)) return;
+  res.status(200).json({ status: 'OK' });
+  try {
+    const { opportunityId, contractType, address, purchasePrice, emdAmount, coeDate, inspectionDays, titleCompany } = req.body;
+    console.log(`[Atlas contract-draft] ${opportunityId} ${contractType} for ${address}`);
+    // v1: returns a draft URL placeholder (full Google Doc assembly requires Drive API + service account)
+    // In production: POST to Google Drive API to clone template, unlock, return URL
+    const draftUrl = `https://docs.google.com/document/d/DRAFT_${opportunityId}_${Date.now()}/edit`;
+    const result = {
+      opportunityId,
+      contractType: contractType || 'Cash',
+      draftUrl,
+      template: (() => {
+        if (contractType === 'SubTo') return 'PSA Creative _ Sub To + Subject to Addendum';
+        if (contractType === 'Stack') return 'Stack PSA';
+        if (contractType === 'Commercial') return 'Real Estate Commercial PSA';
+        if (contractType === 'JV') return '4-party JV (or 3-party)';
+        return 'Cash Offer Template';
+      })(),
+      fields: {
+        address,
+        purchasePrice: purchasePrice || 0,
+        emdAmount: emdAmount || 100,
+        coeDate: coeDate || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+        inspectionDays: inspectionDays || 14,
+        titleCompany: titleCompany || 'CLOSED Title',
+      },
+      generatedAt: new Date().toISOString(),
+      notes: 'Draft URL is a placeholder. Production needs Google Drive API integration to clone Kay\'s Drive templates and unlock for sharing.',
+    };
+    console.log(`[Atlas contract-draft] generated draft URL: ${draftUrl}`);
+    await logEvent('montelli', 'contract_draft_generated', null, result);
+  } catch (err) {
+    console.error('[Atlas contract-draft] error:', err.message);
+  }
+});
+
+// D.4: /webhook/ghl/contract-sign — RabbitSign envelope (Stage 12, 18 trigger)
+app.post('/webhook/ghl/contract-sign', async (req, res) => {
+  if (!ghlWorkflowGuard(req, res)) return;
+  res.status(200).json({ status: 'OK' });
+  try {
+    const { opportunityId, contractType, draftUrl, signers, hasSubToAddendum, hasJVDoc } = req.body;
+    console.log(`[Atlas contract-sign] ${opportunityId} signers=${(signers || []).length}`);
+    // v1: returns envelope metadata (full RabbitSign API integration needs API key + endpoint)
+    const envelope = {
+      opportunityId,
+      envelopeId: `envelope_${opportunityId}_${Date.now()}`,
+      contractType: contractType || 'Cash',
+      documents: [
+        { name: 'PSA', source: draftUrl || 'pending' },
+        ...(hasSubToAddendum ? [{ name: 'Subject to Addendum', source: 'auto-attached' }] : []),
+        ...(hasJVDoc ? [{ name: 'JV Agreement', source: 'auto-attached' }] : []),
+      ],
+      signers: signers || [],
+      status: 'created',
+      signingUrl: `https://app.rabbitsign.com/sign/${opportunityId}_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      notes: 'Envelope metadata is a placeholder. Production needs RabbitSign API integration with API key + signer routing.',
+    };
+    console.log(`[Atlas contract-sign] envelope created: ${envelope.envelopeId}`);
+    await logEvent('montelli', 'contract_sign_envelope_created', null, envelope);
+  } catch (err) {
+    console.error('[Atlas contract-sign] error:', err.message);
+  }
+});
+
+// D.5: /webhook/ghl/generate-loi — clone LOI template URL (Stage 3 sub-action)
+app.post('/webhook/ghl/generate-loi', async (req, res) => {
+  if (!ghlWorkflowGuard(req, res)) return;
+  res.status(200).json({ status: 'OK' });
+  try {
+    const { opportunityId, strategy, address, purchasePrice, downPayment, emdAmount, coeDate, monthlyPayment } = req.body;
+    console.log(`[Atlas generate-loi] ${opportunityId} strategy=${strategy}`);
+    const loiUrl = `https://docs.google.com/document/d/LOI_${opportunityId}_${Date.now()}/edit`;
+    const result = {
+      opportunityId,
+      strategy: strategy || 'Cash',
+      loiUrl,
+      fields: {
+        address,
+        purchasePrice: purchasePrice || 0,
+        downPayment: downPayment || 0,
+        emdAmount: emdAmount || 100,
+        coeDate: coeDate || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+        monthlyPayment: monthlyPayment || 0,
+      },
+      generatedAt: new Date().toISOString(),
+      notes: 'LOI URL is a placeholder. Production needs Google Drive API integration to clone Kay\'s Drive LOI template, unlock for sharing, and return the public URL.',
+    };
+    console.log(`[Atlas generate-loi] generated LOI URL: ${loiUrl}`);
+    await logEvent('montelli', 'loi_generated', null, result);
+  } catch (err) {
+    console.error('[Atlas generate-loi] error:', err.message);
+  }
+});
+
 // ── 404 catcher ──
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
