@@ -1,0 +1,16 @@
+{
+  "name": "teleprompter-backend",
+  "version": "0.1.0",
+  "description": "Script teleprompter for Divinity CRM students",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.3"
+  }
+}
