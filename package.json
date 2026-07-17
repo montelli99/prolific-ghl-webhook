@@ -1,0 +1,9 @@
+{
+  "name": "prolific-ghl-webhook",
+  "version": "1.0.0",
+  "private": true,
+  "main": "voice_server.js",
+  "scripts": {
+    "start": "node voice_server.js"
+  }
+}
