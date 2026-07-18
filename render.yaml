@@ -6,7 +6,7 @@ services:
     repo: https://github.com/montelli99/prolific-ghl-webhook
     branch: master
     buildCommand: npm install
-    startCommand: node server.js
+    startCommand: npm start
     envVars:
       - key: DATABASE_URL
         value: postgresql://neondb_owner:npg_k2RUfn9gacAe@ep-wandering-thunder-ahesitw4-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
@@ -14,3 +14,11 @@ services:
         value: 3000
       - key: NODE_ENV
         value: production
+      - key: TELNYX_KEY
+        sync: false
+      - key: ELEVENLABS_KEY
+        sync: false
+      - key: GHL_API_KEY
+        sync: false
+      - key: JUSTCALL_AUTH
+        sync: false
