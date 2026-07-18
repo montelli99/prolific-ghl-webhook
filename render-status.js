@@ -3,7 +3,7 @@ const o = {
   hostname: 'api.render.com',
   path: '/v1/services/srv-d87l6c1kh4rs73ap9srg',
   method: 'GET',
-  headers: { 'Authorization': 'Bearer rnd_YB8uHPKZDJRDpC2yMAUXFzAPmLBV' }
+  headers: { 'Authorization': `Bearer ${process.env.RENDER_API_TOKEN || ''}` }
 };
 const r = https.request(o, res => {
   let d = '';

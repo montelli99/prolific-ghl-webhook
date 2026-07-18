@@ -5,7 +5,7 @@ const options = {
   path: '/v1/users/me',
   method: 'GET',
   headers: {
-    'Authorization': 'Bearer rnd_YB8uHPKZDJRDpC2yMAUXFzAPmLBV'
+    'Authorization': `Bearer ${process.env.RENDER_API_TOKEN || ''}`
   }
 };
 

@@ -1,9 +1,9 @@
 const https = require('https');
 
-const API_KEY = 'pit-598ce224-4abf-4b4b-be79-7ee3c3bfd17f';
-const LOCATION_ID = '61XPzSqRy7UKMwW9DeB8';
-const USER_ID = 'PGfXxlXCRXs3hXN3Gq7R';
-const PIPELINE_ID = 'ygQaJ2hi7ouJeA5HR7uu';
+const API_KEY = process.env.GHL_API_KEY;
+const LOCATION_ID = process.env.GHL_LOCATION_ID;
+const USER_ID = process.env.GHL_USER_ID;
+const PIPELINE_ID = process.env.GHL_PIPELINE_ID || 'ygQaJ2hi7ouJeA5HR7uu';
 
 const leads = [
   {

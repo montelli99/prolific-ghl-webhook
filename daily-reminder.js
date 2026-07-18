@@ -2,6 +2,8 @@
 const { STAGES } = require('./workflow-config');
 
 const LEAD_ENTERED_ID = '0651d634-1b58-4039-9908-03c4077c88cb';
+const GHL_API_KEY = process.env.GHL_API_KEY;
+const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID;
 
 async function buildDailyCallList() {
   // This will be called by the cron job each morning
@@ -9,10 +11,10 @@ async function buildDailyCallList() {
   return new Promise((resolve, reject) => {
     const o = {
       hostname: 'services.leadconnectorhq.com',
-      path: '/opportunities/search?location_id=61XPzSqRy7UKMwW9DeB8',
+      path: `/opportunities/search?location_id=${encodeURIComponent(GHL_LOCATION_ID || '')}`,
       method: 'GET',
       headers: {
-        'Authorization': 'Bearer pit-598ce224-4abf-4b4b-be79-7ee3c3bfd17f',
+        'Authorization': `Bearer ${GHL_API_KEY || ''}`,
         'Version': '2021-07-28'
       }
     };

@@ -5,14 +5,14 @@ const payload = JSON.stringify({
   repo: 'https://github.com/montelli99/prolific-ghl-webhook',
   branch: 'master',
   type: 'web_service',
-  ownerId: 'tea-d08al6c9c44c73bo86bg',
+  ownerId: process.env.RENDER_OWNER_ID,
   autoDeploy: 'yes',
   serviceDetails: {
     env: 'node',
     envSpecificDetails: {
       runtime: 'node',
       buildCommand: 'npm install',
-      startCommand: 'node server.js',
+      startCommand: 'npm start',
       plan: 'free',
       region: 'oregon'
     },
@@ -20,9 +20,13 @@ const payload = JSON.stringify({
     region: 'oregon'
   },
   envVars: [
-    { key: 'DATABASE_URL', value: 'postgresql://neondb_owner:npg_k2RUfn9gacAe@ep-wandering-thunder-ahesitw4-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require' },
+    { key: 'DATABASE_URL', value: process.env.DATABASE_URL || '' },
     { key: 'PORT', value: '3000' },
-    { key: 'NODE_ENV', value: 'production' }
+    { key: 'NODE_ENV', value: 'production' },
+    { key: 'TELNYX_KEY', value: process.env.TELNYX_KEY || '' },
+    { key: 'ELEVENLABS_KEY', value: process.env.ELEVENLABS_KEY || '' },
+    { key: 'GHL_API_KEY', value: process.env.GHL_API_KEY || '' },
+    { key: 'JUSTCALL_AUTH', value: process.env.JUSTCALL_AUTH || '' }
   ]
 });
 
@@ -31,7 +35,7 @@ const options = {
   path: '/v1/services',
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer rnd_YB8uHPKZDJRDpC2yMAUXFzAPmLBV',
+    'Authorization': `Bearer ${process.env.RENDER_API_TOKEN || ''}`,
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(payload)
   }

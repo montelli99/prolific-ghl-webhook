@@ -1,14 +1,17 @@
 const https = require('https');
 const p = JSON.stringify([
-  { key: 'ghl_api_key', value: 'pit-598ce224-4abf-4b4b-be79-7ee3c3bfd17f', fromGroup: false },
-  { key: 'ghl_location_id', value: '61XPzSqRy7UKMwW9DeB8', fromGroup: false }
+  { key: 'GHL_API_KEY', value: process.env.GHL_API_KEY || '', fromGroup: false },
+  { key: 'GHL_LOCATION_ID', value: process.env.GHL_LOCATION_ID || '', fromGroup: false },
+  { key: 'JUSTCALL_AUTH', value: process.env.JUSTCALL_AUTH || '', fromGroup: false },
+  { key: 'TELNYX_KEY', value: process.env.TELNYX_KEY || '', fromGroup: false },
+  { key: 'ELEVENLABS_KEY', value: process.env.ELEVENLABS_KEY || '', fromGroup: false }
 ]);
 const o = {
   hostname: 'api.render.com',
   path: '/v1/services/srv-d87l6c1kh4rs73ap9srg',
   method: 'PATCH',
   headers: {
-    'Authorization': 'Bearer rnd_YB8uHPKZDJRDpC2yMAUXFzAPmLBV',
+    'Authorization': `Bearer ${process.env.RENDER_API_TOKEN || ''}`,
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(p)
   }

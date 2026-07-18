@@ -235,7 +235,7 @@ app.get('/api/ghl/mappings/:userId', async (req, res) => {
 // ── GHL Webhook ──
 // Montelli Atlas-Managed pipeline (nSf3NXYVkt8X4PgW9aZ3) — stage ID → Stage name
 const GHL_TOKEN = process.env.GHL_API_TOKEN || '';
-const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID || '61XPzSqRy7UKMwW9DeB8';
+const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID || '';
 const GHL_PIPELINE_ID = process.env.GHL_PIPELINE_ID || 'nSf3NXYVkt8X4PgW9aZ3';
 const MONTELLI_USER = process.env.GHL_MONTELLI_USER_ID || 'PGfXxlXCRXs3hXN3Gq7R';
 

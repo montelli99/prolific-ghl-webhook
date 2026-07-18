@@ -5,7 +5,7 @@ const o = {
   path: '/v1/services/srv-d87l6c1kh4rs73ap9srg',
   method: 'PATCH',
   headers: {
-    'Authorization': 'Bearer rnd_YB8uHPKZDJRDpC2yMAUXFzAPmLBV',
+    'Authorization': `Bearer ${process.env.RENDER_API_TOKEN || ''}`,
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(p)
   }

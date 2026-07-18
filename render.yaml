@@ -9,7 +9,7 @@ services:
     startCommand: npm start
     envVars:
       - key: DATABASE_URL
-        value: postgresql://neondb_owner:npg_k2RUfn9gacAe@ep-wandering-thunder-ahesitw4-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+        sync: false
       - key: PORT
         value: 3000
       - key: NODE_ENV

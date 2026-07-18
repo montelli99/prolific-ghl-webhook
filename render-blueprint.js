@@ -3,7 +3,7 @@ const https = require('https');
 const payload = JSON.stringify({
   repo: 'https://github.com/montelli99/prolific-ghl-webhook',
   branch: 'master',
-  ownerId: 'tea-d08al6c9c44c73bo86bg',
+  ownerId: process.env.RENDER_OWNER_ID,
   name: 'prolific-ghl-webhook'
 });
 
@@ -12,7 +12,7 @@ const options = {
   path: '/v1/blueprints/apply',
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer rnd_YB8uHPKZDJRDpC2yMAUXFzAPmLBV',
+    'Authorization': `Bearer ${process.env.RENDER_API_TOKEN || ''}`,
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(payload)
   }
