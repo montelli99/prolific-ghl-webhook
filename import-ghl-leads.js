@@ -3,7 +3,16 @@ const https = require('https');
 const API_KEY = process.env.GHL_API_KEY;
 const LOCATION_ID = process.env.GHL_LOCATION_ID;
 const USER_ID = process.env.GHL_USER_ID;
-const PIPELINE_ID = process.env.GHL_PIPELINE_ID || 'ygQaJ2hi7ouJeA5HR7uu';
+const PIPELINE_ID = process.env.GHL_PIPELINE_ID || 'nSf3NXYVkt8X4PgW9aZ3';
+const FORBIDDEN_PIPELINE_ID = 'ygQaJ2hi7ouJeA5HR7uu';
+
+if (!PIPELINE_ID) {
+  throw new Error('Refusing to import without GHL_PIPELINE_ID');
+}
+
+if (PIPELINE_ID === FORBIDDEN_PIPELINE_ID) {
+  throw new Error('Refusing to import into Kayla/student pipeline ' + FORBIDDEN_PIPELINE_ID);
+}
 
 const leads = [
   {

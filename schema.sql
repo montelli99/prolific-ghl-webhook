@@ -137,7 +137,56 @@ CREATE INDEX IF NOT EXISTS idx_leads_followup ON leads(followup_48hr_due) WHERE 
 CREATE INDEX IF NOT EXISTS idx_history_lead ON lead_history(lead_id);
 CREATE INDEX IF NOT EXISTS idx_events_user ON pipeline_events(user_id, created_at DESC);
 
+-- ── Underwriting Offers ──
+CREATE TABLE IF NOT EXISTS underwriting_offers (
+  lead_id TEXT PRIMARY KEY REFERENCES leads(id) ON DELETE CASCADE,
+  asking_price NUMERIC,
+  estimated_monthly_rent NUMERIC,
+  appraisal_value NUMERIC,
+  lender_value NUMERIC,
+  monthly_pi NUMERIC,
+  dscr NUMERIC,
+  dscr_gate_pass BOOLEAN,
+  one_percent_rule_pass BOOLEAN,
+  cash_offer NUMERIC,
+  estimated_repairs NUMERIC,
+  assignment_fee NUMERIC,
+  f50_offer NUMERIC,
+  f50_gate_pass BOOLEAN,
+  f10_offer NUMERIC,
+  subto_offer NUMERIC,
+  subto_gate_pass BOOLEAN,
+  midterm_offer NUMERIC,
+  midterm_rent NUMERIC,
+  recommended_strategy TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ── Communication Logs (JustCall call & SMS) ──
+CREATE TABLE IF NOT EXISTS communication_logs (
+  id TEXT PRIMARY KEY,
+  lead_id TEXT NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,                     -- call | sms
+  direction TEXT NOT NULL,                -- inbound | outbound
+  from_number TEXT,
+  to_number TEXT,
+  duration_seconds INTEGER,
+  content TEXT,
+  recording_url TEXT,
+  voicemail_url TEXT,
+  ai_score INTEGER,
+  ai_summary TEXT,
+  ai_sentiment TEXT,
+  ai_transcription TEXT,
+  ai_moments JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_comm_logs_lead ON communication_logs(lead_id);
+
 -- ── Initial user (Montelli) ──
 INSERT INTO users (id, name, telegram_id, role, status, plan)
 VALUES ('montelli', 'Montelli Scott', 718718959, 'admin', 'active', 'pro')
 ON CONFLICT (id) DO NOTHING;
+

@@ -238,6 +238,15 @@ const GHL_TOKEN = process.env.GHL_API_TOKEN || '';
 const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID || '';
 const GHL_PIPELINE_ID = process.env.GHL_PIPELINE_ID || 'nSf3NXYVkt8X4PgW9aZ3';
 const MONTELLI_USER = process.env.GHL_MONTELLI_USER_ID || 'PGfXxlXCRXs3hXN3Gq7R';
+const FORBIDDEN_PIPELINE_ID = 'ygQaJ2hi7ouJeA5HR7uu';
+
+if (!GHL_PIPELINE_ID) {
+  throw new Error('Refusing to start without GHL_PIPELINE_ID');
+}
+
+if (GHL_PIPELINE_ID === FORBIDDEN_PIPELINE_ID) {
+  throw new Error('Refusing to start against Kayla/student pipeline ' + FORBIDDEN_PIPELINE_ID);
+}
 
 const GHL_STAGE_MAP = {
   '7067148a-2ee8-4e5b-93c8-31e0253fea68': 'Lead Entered',
