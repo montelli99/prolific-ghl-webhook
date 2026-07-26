@@ -56,10 +56,10 @@ class GhlClient {
 
   // ── Pipelines ──
 
-  /** GET /pipelines?locationId=... — get all pipelines and their stages for location */
+  /** GET /opportunities/pipelines?locationId=... — get all pipelines and their stages for location */
   async getPipelines() {
     const qs = new URLSearchParams({ locationId: this.locationId }).toString();
-    return this._request('GET', `/pipelines?${qs}`);
+    return this._request('GET', `/opportunities/pipelines?${qs}`);
   }
 
   // ── Contacts ──
