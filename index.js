@@ -76,17 +76,35 @@ async function syncPipelineStages(userId) {
   return stageMap;
 }
 
-// Best-effort name matching: "New Lead" → NEW_LEAD, "Offer Sent" → OFFER_SENT, etc.
+// Stage name → internal stage mapping (Montelli Atlas pipeline, 21 stages)
 function autoMapStageName(name) {
   const n = name.toLowerCase().trim();
+  // Montelli Atlas-Managed pipeline stages (exact matches first)
+  if (n.includes('lead entered')) return 'LEAD_ENTERED';
+  if (n.includes('contact made')) return 'CONTACT_MADE';
+  if (n.includes('offer ready to be sent') || n.includes('offer ready')) return 'OFFER_READY';
+  if (n.includes('offer sent')) return 'OFFER_SENT';
+  if (n.includes('offer received')) return 'OFFER_RECEIVED';
+  if (n.includes('gain feedback') || n.includes('offer ready to gain')) return 'GAIN_FEEDBACK';
+  if (n.includes('no answer')) return 'NO_ANSWER';
+  if (n.includes('seller declined')) return 'SELLER_DECLINED';
+  if (n.includes('active negotiation')) return 'ACTIVE_NEGOTIATION';
+  if (n.includes('terms agreed')) return 'TERMS_AGREED';
+  if (n.includes('awaiting') && n.includes('title')) return 'AWAITING_TITLE';
+  if (n.includes('contract out')) return 'CONTRACT_OUT';
+  if (n.includes('under contract') && n.includes('another buyer')) return 'UC_ANOTHER_BUYER';
+  if (n.includes('under contract')) return 'UNDER_CONTRACT';
+  if (n.includes('sent to buyers')) return 'SENT_TO_BUYERS';
+  if (n.includes('inspection complete')) return 'INSPECTION_COMPLETE';
+  if (n.includes('appraisal complete')) return 'APPRAISAL_COMPLETE';
+  if (n.includes('jv sent')) return 'JV_SENT';
+  if (n.includes('jv signed')) return 'JV_SIGNED';
+  if (n.includes('wire')) return 'WIRE_SETUP';
+  if (n.includes('closing date')) return 'CLOSING_DATE';
+  // Generic fallbacks for other pipelines
   if (n.includes('new lead') || n.includes('new')) return 'NEW_LEAD';
   if (n.includes('qualified')) return 'QUALIFIED';
-  if (n.includes('loi request')) return 'LOI_REQUESTED';
-  if (n.includes('loi approve') || n.includes('approved')) return 'LOI_APPROVED';
-  if (n.includes('offer sent')) return 'OFFER_SENT';
-  if (n.includes('active negotiation') || n.includes('negotiating') || n.includes('feedback')) return 'NEGOTIATING';
-  if (n.includes('under contract') || n.includes('contract')) return 'UNDER_CONTRACT';
-  if (n.includes('closed') || n.includes('won')) return 'CLOSED';
+  if (n.includes('closed') || n.includes('won') || n.includes('sold')) return 'CLOSED';
   if (n.includes('lost') || n.includes('dead') || n.includes('declined') || n.includes('archived')) return 'DEAD';
   return null;
 }
