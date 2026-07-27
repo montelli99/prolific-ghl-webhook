@@ -216,19 +216,22 @@ const FORBIDDEN_PIPELINE_ID = 'ygQaJ2hi7ouJeA5HR7uu';
 
 function ghlWorkflowGuard(req, res) {
   const body = req.body || {};
-  if (body.pipelineId === FORBIDDEN_PIPELINE_ID) {
+  const query = req.query || {};
+  const payload = { ...query, ...body };
+  req.ghlWorkflowPayload = payload;
+  if (payload.pipelineId === FORBIDDEN_PIPELINE_ID) {
     res.status(403).json({ status: 'REJECTED', reason: 'forbidden pipeline' });
     return false;
   }
-  if (body.pipelineId && body.pipelineId !== GHL_PIPELINE_ID) {
+  if (payload.pipelineId && payload.pipelineId !== GHL_PIPELINE_ID) {
     res.status(403).json({ status: 'REJECTED', reason: 'wrong pipeline' });
     return false;
   }
-  if (body.assignedTo && body.assignedTo !== MONTELLI_USER) {
+  if (payload.assignedTo && payload.assignedTo !== MONTELLI_USER) {
     res.status(403).json({ status: 'REJECTED', reason: 'wrong user' });
     return false;
   }
-  if (!body.opportunityId) {
+  if (!payload.opportunityId) {
     res.status(400).json({ status: 'ERROR', reason: 'opportunityId required' });
     return false;
   }
@@ -266,7 +269,8 @@ app.post('/webhook/ghl/lead-entered', async (req, res) => {
   if (!ghlWorkflowGuard(req, res)) return;
   res.status(200).json({ status: 'OK' });
   try {
-    const { address, askingPrice, monthlyRent, sqft, beds, baths, contactId } = req.body;
+    const payload = req.ghlWorkflowPayload;
+    const { address, askingPrice, monthlyRent, sqft, beds, baths, contactId } = payload;
     const preScreen = {
       address,
       buyBoxMatch: askingPrice >= 150000 && askingPrice <= 550000 && sqft > 0,
@@ -289,8 +293,8 @@ app.post('/webhook/ghl/lead-entered', async (req, res) => {
     }
     await logEvent('montelli', {
       type: 'lead_entered_prescreen',
-      pipelineId: req.body.pipelineId || GHL_PIPELINE_ID,
-      opportunityId: req.body.opportunityId,
+      pipelineId: payload.pipelineId || GHL_PIPELINE_ID,
+      opportunityId: payload.opportunityId,
       contactId: contactId || null,
       preScreen,
     });
@@ -303,7 +307,8 @@ app.post('/webhook/ghl/offer-ready', async (req, res) => {
   if (!ghlWorkflowGuard(req, res)) return;
   res.status(200).json({ status: 'OK' });
   try {
-    const { opportunityId, address, askingPrice, monthlyRent, sqft, isRental, appraisalValue, contactId } = req.body;
+    const payload = req.ghlWorkflowPayload;
+    const { opportunityId, address, askingPrice, monthlyRent, sqft, isRental, appraisalValue, contactId } = payload;
     const aru = appraisalValue || askingPrice || 0;
     const lenderValue = Math.round(aru * 0.7);
     const interestRate = 0.07;
@@ -346,7 +351,7 @@ app.post('/webhook/ghl/offer-ready', async (req, res) => {
     }
     await logEvent('montelli', {
       type: 'offer_ready_calc',
-      pipelineId: req.body.pipelineId || GHL_PIPELINE_ID,
+      pipelineId: payload.pipelineId || GHL_PIPELINE_ID,
       opportunityId,
       contactId: contactId || null,
       result,
