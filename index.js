@@ -9,6 +9,7 @@ const { startScheduler } = require('./scheduler');
 const { USERS, addUser, loadLeads, saveLeads, logEvent, findUserByGhlLocation } = require('./users');
 const { GhlClient } = require('./ghl-client');
 const { PIPELINE_STAGES, TEXT_SHORTCUTS, FOLLOWUP_TEMPLATES, KEY_CONTACTS } = require('./config');
+const { MONTELLI_STAGE_MAP, normalizeMontelliStageValue } = require('./montelli-stage-map');
 
 const app = express();
 app.use(express.json());
@@ -27,9 +28,9 @@ function loadStageMap(userId) {
   const fs = require('fs');
   const file = path.join(__dirname, 'data', userId, 'pipeline-stage-map.json');
   if (fs.existsSync(file)) {
-    try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
+    try { return { ...MONTELLI_STAGE_MAP, ...JSON.parse(fs.readFileSync(file, 'utf8')) }; } catch { return { ...MONTELLI_STAGE_MAP }; }
   }
-  return {};
+  return { ...MONTELLI_STAGE_MAP };
 }
 
 function getGhlCredentials(user) {
@@ -132,13 +133,19 @@ app.post('/webhook/ghl', async (req, res) => {
         }
 
         const stageMap = loadStageMap(userId.id);
-        const pipelineStageId = payload.pipelineStageId;
+        const stageNormalization = normalizeMontelliStageValue(payload.pipelineStageId);
+        const pipelineStageId = stageNormalization.stageId;
         const address = payload.name; // GHL Opportunity Name = property address
 
         if (!address) return;
 
         const existingLead = findLead(userId.id, address);
         const ghlStage = stageMap[pipelineStageId];
+        if (stageNormalization.normalized) {
+          console.log(`Normalized GHL stage name "${payload.pipelineStageId}" to ${pipelineStageId}`);
+        } else if (payload.pipelineStageId && !ghlStage) {
+          console.warn(`Unmapped GHL pipelineStageId value: ${payload.pipelineStageId}`);
+        }
 
         if (webhookType === 'OpportunityCreate' && !existingLead) {
           // Auto-create lead from GHL
@@ -154,7 +161,7 @@ app.post('/webhook/ghl', async (req, res) => {
 
           // If we can map the stage, advance
           if (ghlStage) {
-            advanceStage(userId.id, address, ghlStage, `GHL stage: ${payload.pipelineStageId}`);
+            advanceStage(userId.id, address, ghlStage, `GHL stage: ${pipelineStageId}`);
           }
         } else if (existingLead && ghlStage && existingLead.stage !== ghlStage) {
           advanceStage(userId.id, address, ghlStage, `GHL webhook: ${webhookType}`);
@@ -168,6 +175,8 @@ app.post('/webhook/ghl', async (req, res) => {
           webhookType,
           address,
           pipelineStageId,
+          originalPipelineStageId: payload.pipelineStageId,
+          stageNormalization: stageNormalization.reason,
           mappedStage: ghlStage,
           tookMs: Date.now() - t0
         });
