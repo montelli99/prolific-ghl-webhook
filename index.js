@@ -208,6 +208,154 @@ app.post('/webhook/ghl', async (req, res) => {
   }
 });
 
+// ── GHL workflow-only hooks (Montelli Atlas pipeline) ──
+const GHL_TOKEN = process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '';
+const GHL_PIPELINE_ID = process.env.GHL_PIPELINE_ID || 'nSf3NXYVkt8X4PgW9aZ3';
+const MONTELLI_USER = process.env.GHL_MONTELLI_USER_ID || 'PGfXxlXCRXs3hXN3Gq7R';
+const FORBIDDEN_PIPELINE_ID = 'ygQaJ2hi7ouJeA5HR7uu';
+
+function ghlWorkflowGuard(req, res) {
+  const body = req.body || {};
+  if (body.pipelineId === FORBIDDEN_PIPELINE_ID) {
+    res.status(403).json({ status: 'REJECTED', reason: 'forbidden pipeline' });
+    return false;
+  }
+  if (body.pipelineId && body.pipelineId !== GHL_PIPELINE_ID) {
+    res.status(403).json({ status: 'REJECTED', reason: 'wrong pipeline' });
+    return false;
+  }
+  if (body.assignedTo && body.assignedTo !== MONTELLI_USER) {
+    res.status(403).json({ status: 'REJECTED', reason: 'wrong user' });
+    return false;
+  }
+  if (!body.opportunityId) {
+    res.status(400).json({ status: 'ERROR', reason: 'opportunityId required' });
+    return false;
+  }
+  return true;
+}
+
+async function ghlRequest(method, path, body) {
+  return new Promise((resolve, reject) => {
+    const https = require('https');
+    const data = body ? JSON.stringify(body) : null;
+    const req = https.request({
+      hostname: 'services.leadconnectorhq.com',
+      path,
+      method,
+      headers: {
+        Authorization: `Bearer ${GHL_TOKEN}`,
+        Version: '2023-02-21',
+        Accept: 'application/json',
+        ...(data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}),
+      },
+    }, res => {
+      let d = '';
+      res.on('data', chunk => { d += chunk; });
+      res.on('end', () => {
+        try { resolve(JSON.parse(d)); } catch { resolve({ _raw: d }); }
+      });
+    });
+    req.on('error', reject);
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+app.post('/webhook/ghl/lead-entered', async (req, res) => {
+  if (!ghlWorkflowGuard(req, res)) return;
+  res.status(200).json({ status: 'OK' });
+  try {
+    const { address, askingPrice, monthlyRent, sqft, beds, baths, contactId } = req.body;
+    const preScreen = {
+      address,
+      buyBoxMatch: askingPrice >= 150000 && askingPrice <= 550000 && sqft > 0,
+      askingPrice: askingPrice || null,
+      estimatedRent: monthlyRent || null,
+      beds: beds || null,
+      baths: baths || null,
+      sqft: sqft || null,
+      recommendedAction: (askingPrice && askingPrice >= 150000 && askingPrice <= 550000)
+        ? 'queue_for_int_call'
+        : 'auto_decline',
+      screenedAt: new Date().toISOString(),
+    };
+    console.log(`[Atlas lead-entered] pre-screen for ${address}`);
+    console.log(`[Atlas lead-entered] pre-screen result: ${JSON.stringify(preScreen)}`);
+    if (contactId && GHL_TOKEN) {
+      await ghlRequest('POST', `/contacts/${contactId}/notes`, {
+        body: `=== Stage 1: Lead Entered (Atlas pre-screen) ===\n${new Date().toISOString()}\nAddress: ${address}\nBuy Box Match: ${preScreen.buyBoxMatch}\nRecommended Action: ${preScreen.recommendedAction}\nAsking: $${askingPrice || 'N/A'}\nRent est: $${monthlyRent || 'N/A'}`,
+      }).catch(e => console.log('[Atlas lead-entered] note write failed:', e.message));
+    }
+    await logEvent('montelli', {
+      type: 'lead_entered_prescreen',
+      pipelineId: req.body.pipelineId || GHL_PIPELINE_ID,
+      opportunityId: req.body.opportunityId,
+      contactId: contactId || null,
+      preScreen,
+    });
+  } catch (err) {
+    console.error('[Atlas lead-entered] error:', err.message);
+  }
+});
+
+app.post('/webhook/ghl/offer-ready', async (req, res) => {
+  if (!ghlWorkflowGuard(req, res)) return;
+  res.status(200).json({ status: 'OK' });
+  try {
+    const { opportunityId, address, askingPrice, monthlyRent, sqft, isRental, appraisalValue, contactId } = req.body;
+    const aru = appraisalValue || askingPrice || 0;
+    const lenderValue = Math.round(aru * 0.7);
+    const interestRate = 0.07;
+    const monthlyPayment = Math.round((lenderValue * interestRate) / 12);
+    const dscr = monthlyPayment > 0 ? Number((monthlyRent / monthlyPayment).toFixed(2)) : 0;
+    const onePctPass = askingPrice > 0 ? (monthlyRent / askingPrice) >= 0.01 : false;
+    const cashFlow = monthlyRent - monthlyPayment;
+    const recommendedStrategy = (() => {
+      if (isRental && monthlyRent > 0 && onePctPass) return 'Stack50';
+      if (monthlyRent > 0 && dscr >= 1.25) return 'SubTo';
+      if (monthlyRent > 0) return 'DSCR';
+      return 'Cash';
+    })();
+    const offerSummary = {
+      cash: { offer: Math.round(aru * 0.7 - (sqft || 1500) * 30 - 20000), structure: '0.70×ARV − repairs − fee' },
+      f50: { offer: Math.round(aru * 0.65), structure: '50% down + 50% carryback' },
+      f10: { offer: Math.round(aru * 0.65), structure: '10% down + 90% in 24mo' },
+      subTo: { offer: Math.round(aru * 0.9), structure: 'Take over existing loan' },
+      midTerm: { offer: aru, monthlyRent: Math.round(aru * 0.012), structure: '1.2% rule FF' },
+    };
+    const result = {
+      opportunityId,
+      aru,
+      lenderValue,
+      interestRate,
+      monthlyPayment,
+      dscr,
+      onePctPass,
+      cashFlow,
+      recommendedStrategy,
+      offers: offerSummary,
+      computedAt: new Date().toISOString(),
+    };
+    console.log(`[Atlas offer-ready] ${opportunityId} ${address} ARU=$${aru}`);
+    console.log(`[Atlas offer-ready] recommended: ${recommendedStrategy}, cash flow: $${cashFlow}/mo, DSCR: ${dscr}`);
+    if (contactId && GHL_TOKEN) {
+      await ghlRequest('POST', `/contacts/${contactId}/notes`, {
+        body: `=== Offer Calc (Atlas webhook) ===\n${new Date().toISOString()}\nARU: $${aru.toLocaleString()}\nLender Value (70%): $${lenderValue.toLocaleString()}\nMonthly P&I: $${monthlyPayment.toLocaleString()}\nCash Flow: $${cashFlow.toLocaleString()}/mo\nDSCR: ${dscr} (threshold 1.25)\n1% Rule: ${onePctPass ? 'PASS' : 'FAIL'}\nRecommended Strategy: ${recommendedStrategy}`,
+      }).catch(e => console.log('[Atlas offer-ready] note write failed:', e.message));
+    }
+    await logEvent('montelli', {
+      type: 'offer_ready_calc',
+      pipelineId: req.body.pipelineId || GHL_PIPELINE_ID,
+      opportunityId,
+      contactId: contactId || null,
+      result,
+    });
+  } catch (err) {
+    console.error('[Atlas offer-ready] error:', err.message);
+  }
+});
+
 // ── Background: enrich lead with GHL contact data ──
 async function fetchGhlContactAndEnrich(user, opportunityPayload) {
   try {
