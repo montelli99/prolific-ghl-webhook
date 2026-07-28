@@ -105,7 +105,7 @@ function briefingForDecision(decisionId) {
     riskWarnings: detail.proposedStage ? ['Any stage movement remains disabled and requires separate approval.'] : [],
     plainLanguageConfidence: humanConfidence(detail.confidence),
     humanVerifiability: verifiability,
-    noActionReason: detail.currentReviewStatus === 'NEEDS_MORE_DATA' ? 'This case has already been reviewed as needing more information.' : null,
+    noActionReason: detail.currentReviewStatus === 'NEEDS_MORE_DATA' ? 'This case has already been reviewed as needing more information. Keep it under observation until missing evidence is available.' : null,
     history,
     detail,
     internalMetadata: { decisionId, recommendationCode: detail.recommendation, confidenceCode: detail.confidence, outcomeCode: detail.observedOutcome, routerVersion: detail.routerVersion, decisionSpecVersion: detail.decisionSpecVersion },
