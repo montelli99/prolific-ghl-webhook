@@ -1,0 +1,28 @@
+{
+  "locationId": "61XPzSqRy7UKMwW9DeB8",
+  "version": "atlas-opportunity-field-map-20260729",
+  "verifiedAt": "2026-07-29T11:55:00.000Z",
+  "fields": {
+    "propertyAddress": { "id": "e42a8Riv9ljjd96nsYth", "name": "PROPERTY ADDRESS", "key": "opportunity.property_address", "model": "opportunity", "dataType": "TEXT" },
+    "normalizedAddress": { "id": "6oDNJgfuKflDgS0fPsuz", "name": "Atlas Normalized Property Address", "key": "opportunity.atlas_normalized_property_address", "model": "opportunity", "dataType": "TEXT" },
+    "street": { "id": "N9k8B1Eb9yCVY9t18X99", "name": "Atlas Property Street", "key": "opportunity.atlas_property_street", "model": "opportunity", "dataType": "TEXT" },
+    "city": { "id": "04ZDfCUio59HYRtaXp84", "name": "CITY", "key": "opportunity.city", "model": "opportunity", "dataType": "TEXT" },
+    "state": { "id": "9f50Xt7Uw8rdDRY0oWDi", "name": "STATE", "key": "opportunity.state", "model": "opportunity", "dataType": "TEXT" },
+    "zip": { "id": "9TrSain4Y6OB60Nvi7B3", "name": "ZIPCODE", "key": "opportunity.zipcode", "model": "opportunity", "dataType": "TEXT" },
+    "propertyFingerprint": { "id": "FP9PrUN1rudLi4IEw1mo", "name": "Atlas Property Fingerprint", "key": "opportunity.atlas_property_fingerprint", "model": "opportunity", "dataType": "TEXT" },
+    "sourceRowId": { "id": "bNUaLqPpKB2IY7nMx1Gh", "name": "Atlas Source Row ID", "key": "opportunity.atlas_source_row_id", "model": "opportunity", "dataType": "TEXT" },
+    "importBatchId": { "id": "7Qk4VP3Uvi7W3NViBHxM", "name": "Atlas Import Batch ID", "key": "opportunity.atlas_import_batch_id", "model": "opportunity", "dataType": "TEXT" },
+    "atlasSource": { "id": "k198PybZpHpw7xvJyShQ", "name": "Atlas Source", "key": "opportunity.atlas_source", "model": "opportunity", "dataType": "TEXT" },
+    "listingPrice": { "id": "BF27QFffcBYyFicATmQG", "name": "LIST PRICE", "key": "opportunity.list_price", "model": "opportunity", "dataType": "MONETORY" },
+    "squareFeet": { "id": "DebNF41orJXBk778HHIn", "name": "Atlas Square Feet", "key": "opportunity.atlas_square_feet", "model": "opportunity", "dataType": "NUMERICAL" },
+    "pricePerSqft": { "id": "99d9lvtzQelTxcSxBgL1", "name": "Atlas Price Per Sqft", "key": "opportunity.atlas_price_per_sqft", "model": "opportunity", "dataType": "NUMERICAL" },
+    "propertyType": { "id": "R0yVRrmzWRuYbZvLqmuQ", "name": "Atlas Property Type", "key": "opportunity.atlas_property_type", "model": "opportunity", "dataType": "TEXT" },
+    "ownership": { "id": "JzvYZ6sEP9Y8dLrip7KQ", "name": "Atlas Ownership", "key": "opportunity.atlas_ownership", "model": "opportunity", "dataType": "TEXT" },
+    "mlsStatus": { "id": "i6woEmjcZmzVx0tM6mRj", "name": "Atlas Listing Status", "key": "opportunity.atlas_listing_status", "model": "opportunity", "dataType": "TEXT" },
+    "leadTypes": { "id": "AQpmT5bILW6RrCJj8WIw", "name": "Atlas Lead Types", "key": "opportunity.atlas_lead_types", "model": "opportunity", "dataType": "TEXT" },
+    "listingUrl": { "id": "UsBUF2NyOiPwPBzs9zbA", "name": "Atlas Listing URL", "key": "opportunity.atlas_listing_url", "model": "opportunity", "dataType": "TEXT" },
+    "mlsId": { "id": "IeSrwyB7Qw6QBMAmhc6Y", "name": "Atlas MLS ID", "key": "opportunity.atlas_mls_id", "model": "opportunity", "dataType": "TEXT" },
+    "brokerage": { "id": "HNjy4oAdFEUNAsxpvt5o", "name": "Atlas Brokerage", "key": "opportunity.atlas_brokerage", "model": "opportunity", "dataType": "TEXT" }
+  },
+  "fieldMapChecksum": "f3b3f867a0b3dbf7420c816fd007a23a69f137cd3b65abedcf3e0e15b20af5ae"
+}

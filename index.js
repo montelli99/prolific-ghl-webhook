@@ -10,6 +10,17 @@ const { USERS, addUser, loadLeads, saveLeads, logEvent, findUserByGhlLocation } 
 const { GhlClient } = require('./ghl-client');
 const { PIPELINE_STAGES, TEXT_SHORTCUTS, FOLLOWUP_TEMPLATES, KEY_CONTACTS } = require('./config');
 const { MONTELLI_STAGE_MAP, normalizeMontelliStageValue } = require('./montelli-stage-map');
+const {
+  normalizeWebhookPayload,
+  extractImportMarkers,
+  validateAgainstTarget,
+  buildAuditReceipt,
+  createDiagnosticLogger,
+  TARGET: ATLAS_TARGET,
+  HANDLER_VERSION: ATLAS_HANDLER_VERSION,
+  FIELD_MAP: ATLAS_FIELD_MAP,
+  fieldMapChecksum,
+} = require('./atlas-ghl-webhook-safety');
 
 const app = express();
 app.use(express.json());
@@ -17,6 +28,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || null;
 const DEFAULT_GHL_API_KEY = process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '';
+const DEPLOY_REVISION = process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || 'local';
 
 // ── GHL PipelineStageId → Our Stage mapping (configurable per pipeline) ──
 // Each GHL pipeline has stage UUIDs. Map them to our internal stages.
@@ -132,6 +144,26 @@ app.post('/webhook/ghl', async (req, res) => {
           return;
         }
 
+        const normalizedPayload = normalizeWebhookPayload(req);
+        const payloadMarkers = extractImportMarkers(normalizedPayload, null);
+        const opportunity = payloadMarkers.markedImport ? null : await fetchAtlasOpportunity(normalizedPayload.opportunityId);
+        const importMarkers = extractImportMarkers(normalizedPayload, opportunity);
+        if (importMarkers.malformed) {
+          console.warn(`[Atlas import] rejected generic webhook for ${normalizedPayload.opportunityId}: malformed Atlas marker`);
+          return;
+        }
+        if (importMarkers.markedImport) {
+          const validation = validateAgainstTarget('lead-entered', normalizedPayload, opportunity);
+          if (!validation.ok) {
+            console.warn(`[Atlas import] rejected generic webhook for ${normalizedPayload.opportunityId}: ${validation.errors.join(', ')}`);
+            return;
+          }
+          const audit = buildAuditReceipt({ endpoint: 'generic', payload: normalizedPayload, validation, markers: importMarkers });
+          console.log(`[Atlas import] generic safe receipt: ${JSON.stringify(audit)}`);
+          atlasWebhookDiagnostics.write({ ...audit, tookMs: Date.now() - t0 });
+          return;
+        }
+
         const stageMap = loadStageMap(userId.id);
         const stageNormalization = normalizeMontelliStageValue(payload.pipelineStageId);
         const pipelineStageId = stageNormalization.stageId;
@@ -222,6 +254,7 @@ const GHL_TOKEN = process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '';
 const GHL_PIPELINE_ID = process.env.GHL_PIPELINE_ID || 'nSf3NXYVkt8X4PgW9aZ3';
 const MONTELLI_USER = process.env.GHL_MONTELLI_USER_ID || 'PGfXxlXCRXs3hXN3Gq7R';
 const FORBIDDEN_PIPELINE_ID = 'ygQaJ2hi7ouJeA5HR7uu';
+const atlasWebhookDiagnostics = createDiagnosticLogger();
 
 function ghlWorkflowGuard(req, res) {
   const body = req.body || {};
@@ -245,6 +278,51 @@ function ghlWorkflowGuard(req, res) {
     return false;
   }
   return true;
+}
+
+async function fetchAtlasOpportunity(opportunityId) {
+  if (!GHL_TOKEN || !opportunityId) return null;
+  try {
+    const response = await ghlRequest('GET', `/opportunities/${opportunityId}`);
+    return response.opportunity || response;
+  } catch (e) {
+    console.log(`[Atlas webhook] opportunity fetch failed for ${opportunityId}: ${e.message}`);
+    return null;
+  }
+}
+
+async function prepareAtlasWebhook(endpoint, req, res) {
+  const payload = normalizeWebhookPayload(req);
+  req.ghlWorkflowPayload = payload;
+
+  if (payload.pipelineId === FORBIDDEN_PIPELINE_ID) {
+    res.status(403).json({ status: 'REJECTED', reason: 'forbidden pipeline' });
+    return null;
+  }
+
+  const opportunity = await fetchAtlasOpportunity(payload.opportunityId);
+  const validation = validateAgainstTarget(endpoint, payload, opportunity);
+  if (!validation.ok) {
+    res.status(payload.opportunityId ? 403 : 400).json({ status: 'REJECTED', reason: validation.errors.join(', ') });
+    return null;
+  }
+
+  const markers = extractImportMarkers(payload, opportunity);
+  if (markers.malformed) {
+    res.status(403).json({ status: 'REJECTED', reason: 'malformed Atlas marker' });
+    return null;
+  }
+
+  if (endpoint === 'lead-entered' && markers.markedImport) {
+    const audit = buildAuditReceipt({ endpoint, payload, validation, markers });
+    console.log(`[Atlas ${endpoint}] safe import receipt: ${JSON.stringify(audit)}`);
+    atlasWebhookDiagnostics.write(audit);
+    res.status(200).json({ status: 'OK', markedImport: true });
+    return { payload, opportunity, validation, markers, safeImportAcked: true };
+  }
+
+  res.status(200).json({ status: 'OK', markedImport: markers.markedImport });
+  return { payload, opportunity, validation, markers, safeImportAcked: false };
 }
 
 async function ghlRequest(method, path, body) {
@@ -275,10 +353,11 @@ async function ghlRequest(method, path, body) {
 }
 
 app.post('/webhook/ghl/lead-entered', async (req, res) => {
-  if (!ghlWorkflowGuard(req, res)) return;
-  res.status(200).json({ status: 'OK' });
+  const atlas = await prepareAtlasWebhook('lead-entered', req, res);
+  if (!atlas) return;
+  if (atlas.safeImportAcked) return;
   try {
-    const payload = req.ghlWorkflowPayload;
+    const { payload, markers } = atlas;
     const { address, askingPrice, monthlyRent, sqft, beds, baths, contactId } = payload;
     const preScreen = {
       address,
@@ -305,6 +384,9 @@ app.post('/webhook/ghl/lead-entered', async (req, res) => {
       pipelineId: payload.pipelineId || GHL_PIPELINE_ID,
       opportunityId: payload.opportunityId,
       contactId: contactId || null,
+      markedImport: markers.markedImport,
+      importBatchId: markers.batchId || null,
+      sourceRowId: markers.sourceRowId || null,
       preScreen,
     });
   } catch (err) {
@@ -313,10 +395,10 @@ app.post('/webhook/ghl/lead-entered', async (req, res) => {
 });
 
 app.post('/webhook/ghl/offer-ready', async (req, res) => {
-  if (!ghlWorkflowGuard(req, res)) return;
-  res.status(200).json({ status: 'OK' });
+  const atlas = await prepareAtlasWebhook('offer-ready', req, res);
+  if (!atlas) return;
   try {
-    const payload = req.ghlWorkflowPayload;
+    const { payload, markers } = atlas;
     const { opportunityId, address, askingPrice, monthlyRent, sqft, isRental, appraisalValue, contactId } = payload;
     const aru = appraisalValue || askingPrice || 0;
     const lenderValue = Math.round(aru * 0.7);
@@ -363,6 +445,9 @@ app.post('/webhook/ghl/offer-ready', async (req, res) => {
       pipelineId: payload.pipelineId || GHL_PIPELINE_ID,
       opportunityId,
       contactId: contactId || null,
+      markedImport: markers.markedImport,
+      importBatchId: markers.batchId || null,
+      sourceRowId: markers.sourceRowId || null,
       result,
     });
   } catch (err) {
@@ -599,6 +684,35 @@ app.get('/', (req, res) => res.json({
     ghlImport: 'POST /api/ghl/import/:userId'
   }
 }));
+
+app.get('/health/atlas', (req, res) => {
+  const token = String(process.env.GHL_READ_TOKEN || process.env.GHL_PRIVATE_INTEGRATION_TOKEN || process.env.LEADCONNECTOR_TOKEN || process.env.GHL_API_TOKEN || process.env.GHL_TOKEN || process.env.GHL_ACCESS_TOKEN || process.env.GHL_API_KEY || '').trim().replace(/^Bearer\s+/i, '');
+  const computedFieldMapHash = fieldMapChecksum(ATLAS_FIELD_MAP);
+  res.json({
+    ok: true,
+    revision: DEPLOY_REVISION,
+    handlerVersion: ATLAS_HANDLER_VERSION,
+    atlasTarget: ATLAS_TARGET,
+    fieldMapHash: ATLAS_FIELD_MAP.fieldMapChecksum,
+    fieldMapHashValid: computedFieldMapHash === ATLAS_FIELD_MAP.fieldMapChecksum,
+    credentialProbe: {
+      present: Boolean(token),
+      malformed: Boolean(token && (/REPLACE|YOUR_|_KEY$/i.test(token) || /^Bearer\s+/i.test(token))),
+      display: token ? `${token.slice(0, 4)}...${token.slice(-4)}` : '',
+    },
+    safeBypass: {
+      leadEntered: true,
+      generic: true,
+      offerReadySuppression: false,
+    },
+    databaseUrlProvisionedByThisRevision: false,
+    atlasPathUsesDatabaseUrl: false,
+    atlasPathUsesNeon: false,
+    atlasPathUsesDivinity: false,
+    writesDuringHealthCheck: 0,
+    outreachDuringHealthCheck: 0,
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`AI REI Pipeline Engine v1.0 on port ${PORT}`);
