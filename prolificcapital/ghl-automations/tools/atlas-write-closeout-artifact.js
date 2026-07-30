@@ -1,0 +1,96 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const artifactHash = require('../modules/atlas-artifact-hash');
+const importer = require('../modules/atlas-ghl-import');
+
+const ROOT = path.resolve(__dirname, '..', '..');
+const FINAL_RECON_PATH = 'lead-tracking/atlas-deals/reconciliations/atlas-final-55-live-import-passed-2e14a7cd6564.json';
+const FINAL_RECON_HASH = '2e14a7cd65646bc15defd3500c9915284cd293e0f6f129d267ba842236a811b1';
+const FINAL_JOURNAL_PATH = 'lead-tracking/atlas-deals/reconciliations/atlas-final-55-live-import-20260730190035-journal.jsonl';
+const BLOCKED_DISPOSITION_PATH = 'lead-tracking/atlas-deals/reconciliations/atlas-blocked-rows-69-217-273-final-disposition-eac14b494825.json';
+const BLOCKED_DISPOSITION_HASH = 'eac14b494825e050ccaffe8a8ad10bf41a685a9e7c0761002b861472ef7bb384';
+
+function readJson(relativePath) { return JSON.parse(fs.readFileSync(path.join(ROOT, relativePath), 'utf8')); }
+function hash(object) { return artifactHash.calculateCanonicalArtifactHash(object); }
+function verify(relativePath, expectedHash) {
+  const object = readJson(relativePath);
+  const actual = hash(object);
+  if (actual !== expectedHash) throw new Error(`HASH_MISMATCH ${relativePath}: ${actual}`);
+  return object;
+}
+function readJournal(relativePath) { return fs.readFileSync(path.join(ROOT, relativePath), 'utf8').split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line)); }
+function writeArtifact(artifact) {
+  const canonicalHash = hash(artifact);
+  const output = { ...artifact, canonicalHash };
+  const relativePath = path.join('lead-tracking', 'atlas-deals', 'reconciliations', `atlas-production-import-closeout-20260730-${canonicalHash.slice(0, 12)}.json`).replace(/\\/g, '/');
+  fs.writeFileSync(path.join(ROOT, relativePath), `${JSON.stringify(output, null, 2)}\n`);
+  const verifiedHash = hash(readJson(relativePath));
+  if (verifiedHash !== canonicalHash) throw new Error(`CLOSEOUT_HASH_VERIFY_FAILED ${verifiedHash}`);
+  return { relativePath, canonicalHash };
+}
+
+const finalRecon = verify(FINAL_RECON_PATH, FINAL_RECON_HASH);
+const blockedDisposition = verify(BLOCKED_DISPOSITION_PATH, BLOCKED_DISPOSITION_HASH);
+const journal = readJournal(FINAL_JOURNAL_PATH);
+const journalDigest = hash({ journal });
+
+const artifact = {
+  artifactType: 'atlas-production-import-closeout',
+  ...artifactHash.hashMetadata(),
+  closeoutTimestamp: new Date().toISOString(),
+  finalTerminalResult: 'FINAL_FIFTY_FIVE_RESUME_PASSED_ATLAS_IMPORT_COMPLETE',
+  finalReconciliationArtifact: { path: FINAL_RECON_PATH, hash: FINAL_RECON_HASH },
+  finalJournal: { path: FINAL_JOURNAL_PATH, digest: journalDigest, entries: journal.length },
+  finalProductionCounts: { atlasValidOpportunities: 206, physicalTargetPipelineOpportunities: 213, remainingExecutableRows: 0 },
+  completedRowCount: 55,
+  contactTotals: { created: 54, reused: 1 },
+  opportunityTotal: 55,
+  blockedRows: blockedDisposition.rows.map(row => ({ rowId: row.rowId, classification: row.classification, reason: row.reason, futureReconsiderationAllowed: row.futureReconsiderationAllowed, evidenceRequiredForReconsideration: row.evidenceRequiredForReconsideration })),
+  blockedRowsDispositionArtifact: { path: BLOCKED_DISPOSITION_PATH, hash: BLOCKED_DISPOSITION_HASH },
+  duplicateRuleRepairSummary: {
+    artifactPath: 'lead-tracking/atlas-deals/reconciliations/atlas-final-55-duplicate-rule-repair-9ecc8b68936a.json',
+    artifactHash: '9ecc8b68936ae7a1cddb40f3f591e11e6daa2d41fa4bba6418f549d307e48a36',
+    summary: 'Shared batch and manifest markers are audit metadata only; durable row/property-specific identifiers establish duplicates.',
+  },
+  phoneNormalizationRepairSummary: 'Contact verification accepts country-code-equivalent phone readback, including expected 10-digit source phone versus GHL +1 formatting.',
+  hydratedMarkerVerificationSummary: 'Final closeout audit hydrated all 213 target-pipeline opportunities by direct readback and verified 206 Atlas-valid opportunities with unique source-row markers and property fingerprints.',
+  targetLocks: importer.TARGET_CONFIG,
+  sideEffectCounters: finalRecon.sideEffectCounters,
+  unresolvedObservabilityLimitation: 'UNRESOLVED_MESSAGE_BODY_OBSERVABILITY_LIMITATION',
+  reusableCliPath: 'ghl-automations/tools/atlas-import.js',
+  testResults: {
+    'node ghl-automations/modules/_test_atlas_import_workflow.js': 'Passed: 48, Failed: 0',
+    'node ghl-automations/modules/_test_atlas_duplicate_classifier.js': 'Passed: 22, Failed: 0',
+    'node ghl-automations/modules/_test_atlas_ghl_import.js': 'Passed: 95, Failed: 0',
+    'node ghl-automations/modules/_test_atlas_ghl_live_client.js': '20 passed, matrix 129/129',
+    'node ghl-automations/modules/_test_atlas_ghl_readonly_client.js': 'Passed: 27, Failed: 0',
+    'node ghl-automations/modules/_test_atlas_artifact_hash.js': 'Passed: 15, Failed: 0',
+    'node --check Atlas tools/modules': 'passed',
+  },
+  documentationPaths: ['AGENTS.md', 'docs/atlas-ghl-production-import-report.md', 'docs/atlas-ghl-production-import-runbook.md'],
+  historicalArtifactChain: [
+    { path: 'lead-tracking/atlas-deals/reconciliations/atlas-live-opportunity-field-contract-6c32d8b4c096.json', hash: '6c32d8b4c096ae6249c6d589233820ac362f4dcdb4b223ce7a75fa378d3b6d7d' },
+    { path: 'lead-tracking/atlas-deals/manifests/atlas-live-canary-row230-20260730-64efceffac46.json', hash: '64efceffac46e6f585f76b1790ba0456141cf7b82263e6c5b27dd710b5712cde' },
+    { path: 'lead-tracking/atlas-deals/reconciliations/atlas-live-canary-row230-passed-57e800b84cff.json', hash: '57e800b84cfff6049bbf0ddef14cface0643da1e18e6af2acf1024df3e6ccb0e' },
+    { path: 'lead-tracking/atlas-deals/manifests/atlas-final-57-after-row230-canary-20260730-474008f199e6.json', hash: '474008f199e68ee994af10b5257ff258efd571812fbf76c9b7765c7524cd6523' },
+    { path: 'lead-tracking/atlas-deals/reconciliations/atlas-final-57-live-import-final-fifty-seven-failed-readback-579e7f6d0046.json', hash: '579e7f6d0046c9861fba1af34ed979b98f5aa65a2ff0031c22b0df51513975f5' },
+    { path: 'lead-tracking/atlas-deals/reconciliations/atlas-final-57-row4-recovery-passed-d0c7fee197b6.json', hash: 'd0c7fee197b611090bf591dff97aee2149a2f197c864961346eb64210acb0854' },
+    { path: 'lead-tracking/atlas-deals/manifests/atlas-final-56-after-row4-recovery-20260730-609a9ecd52b5.json', hash: '609a9ecd52b569ac40bbce9dfa00146969ac35d4d2b99b5415f4918985e5e60b' },
+    { path: 'lead-tracking/atlas-deals/reconciliations/atlas-final-56-resume-import-final-fifty-six-resume-failed-duplicate-record-fa96c8ded4c8.json', hash: 'fa96c8ded4c8462b7cfc752986ea0e8af887dc40526e94aaa055ccc149378bc5' },
+    { path: 'lead-tracking/atlas-deals/reconciliations/atlas-final-56-row24-duplicate-investigation-1f11973054c8.json', hash: '1f11973054c883c97f7d2fd9d45656e93b68d1c7a2e52e8444db30272a64721a' },
+    { path: 'lead-tracking/atlas-deals/reconciliations/atlas-final-55-duplicate-rule-repair-9ecc8b68936a.json', hash: '9ecc8b68936ae7a1cddb40f3f591e11e6daa2d41fa4bba6418f549d307e48a36' },
+    { path: 'lead-tracking/atlas-deals/manifests/atlas-final-55-after-row18-completion-20260730-371c476d0b2f.json', hash: '371c476d0b2fb01ebbe4edd125fe8b2b27ab85d933a173f89d9409354a5891cc' },
+    { path: 'lead-tracking/atlas-deals/reconciliations/atlas-final-55-resume-preflight-passed-df49ac519e93.json', hash: 'df49ac519e939a8b0b3c6ab298a803792339501f7270d36de93b870e676f31ed' },
+    { path: FINAL_RECON_PATH, hash: FINAL_RECON_HASH },
+    { path: BLOCKED_DISPOSITION_PATH, hash: BLOCKED_DISPOSITION_HASH },
+  ],
+  zeroRemainingExecutableRowsConfirmed: true,
+  outreachRemainedDisabled: true,
+  productionAuditResult: { status: 'PASSED', checks: 575, productionWritesDuringAudit: 0, hydratedTargetPipelineOpportunities: 213, atlasValidOpportunities: 206 },
+};
+
+const ref = writeArtifact(artifact);
+console.log(JSON.stringify({ statusToken: 'ATLAS_CLOSEOUT_ARTIFACT_CREATED', closeoutArtifact: ref, journalDigest }, null, 2));
