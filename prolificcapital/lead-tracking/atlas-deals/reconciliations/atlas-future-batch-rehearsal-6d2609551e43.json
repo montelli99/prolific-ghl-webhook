@@ -1,0 +1,138 @@
+{
+  "artifactType": "atlas-future-batch-rehearsal",
+  "hashAlgorithm": "sha256",
+  "canonicalizationVersion": "atlas-json-v1",
+  "excludedSelfHashFields": [
+    "canonicalHash",
+    "artifactHash",
+    "selfHash",
+    "manifestChecksum"
+  ],
+  "generatedAt": "2026-07-30T20:35:48.862Z",
+  "fixturePath": "ghl-automations/fixtures/atlas/future-batch/future-batch.csv",
+  "sourceValidation": {
+    "ok": false,
+    "classification": "SOURCE_HAS_BLOCKING_ROWS",
+    "normalizedSnapshotHash": "080cece8b2a9d5899d2469957b856bd85ac6c95b507a5a47aaeef4fecf3788ca",
+    "rowCount": 20,
+    "blockedRowCount": 3
+  },
+  "manifestPreparation": {
+    "immutableManifestCreated": true,
+    "safeRows": 17,
+    "blockedRows": 3,
+    "productionWrites": 0
+  },
+  "zeroWritePreflight": {
+    "passed": true,
+    "writes": 0
+  },
+  "blockedRowGeneration": {
+    "rows": [
+      {
+        "rowId": "import-ready:6",
+        "classification": "SOURCE_BLOCKED_DUPLICATE",
+        "errors": [
+          "duplicate source property ID",
+          "duplicate normalized property"
+        ]
+      },
+      {
+        "rowId": "import-ready:20",
+        "classification": "SOURCE_ALREADY_IMPORTED",
+        "errors": [
+          "source row already appears in completed artifacts"
+        ]
+      },
+      {
+        "rowId": "import-ready:21",
+        "classification": "SOURCE_PREVIOUSLY_EXCLUDED",
+        "errors": [
+          "source row is in blocked-row disposition"
+        ]
+      }
+    ]
+  },
+  "approvedManifestGeneration": {
+    "created": true,
+    "rowCount": 17,
+    "liveAuthorized": false
+  },
+  "mockLiveExecution": {
+    "validRowsComplete": true,
+    "completedRows": [
+      "import-ready:2",
+      "import-ready:3",
+      "import-ready:4",
+      "import-ready:5",
+      "import-ready:7",
+      "import-ready:8",
+      "import-ready:9",
+      "import-ready:10"
+    ],
+    "safeCreateWorks": true,
+    "safeReuseDoesNotMutateContact": true,
+    "propertyDataOnlyOnOpportunities": true,
+    "outreachCounters": {
+      "sms": 0,
+      "email": 0,
+      "calls": 0,
+      "notes": 0,
+      "tasks": 0,
+      "workflows": 0,
+      "campaigns": 0
+    }
+  },
+  "simulatedRecovery": {
+    "partialContactRecovery": "PASSED",
+    "uncertainOpportunityRecovery": "PASSED_SINGLE_MATCH",
+    "multipleRecoveryMatchesStop": true,
+    "zeroRecoveryMatchesStop": true,
+    "unknownWriteNotRetried": true
+  },
+  "resumeManifestGeneration": {
+    "created": true,
+    "excludedCompletedRows": [
+      "import-ready:2",
+      "import-ready:3",
+      "import-ready:4",
+      "import-ready:5",
+      "import-ready:7",
+      "import-ready:8",
+      "import-ready:9",
+      "import-ready:10"
+    ],
+    "resumeRows": [
+      "import-ready:11",
+      "import-ready:12",
+      "import-ready:13",
+      "import-ready:14",
+      "import-ready:15",
+      "import-ready:16",
+      "import-ready:17",
+      "import-ready:18",
+      "import-ready:19"
+    ]
+  },
+  "finalReconciliation": {
+    "passed": true,
+    "deterministic": true,
+    "canonicalHashReproducible": true
+  },
+  "exceptionQueueGeneration": {
+    "passed": true,
+    "blockedRowsRemainBlocked": true
+  },
+  "finalAudit": {
+    "passed": true,
+    "completedRowsNotRepeated": true,
+    "batchMarkersDoNotCauseFalseDuplicates": true,
+    "trueDuplicatesStillBlock": true,
+    "countryCodeNormalization": true,
+    "incompleteListPayloadsHydrated": true,
+    "sideEffectCountersZero": true
+  },
+  "productionWrites": 0,
+  "outreachDisabled": true,
+  "canonicalHash": "6d2609551e434b1efd18b251b8c56b034181af59d04859372498a54a619e27eb"
+}

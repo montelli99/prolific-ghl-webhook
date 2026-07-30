@@ -139,6 +139,36 @@ Any unmistakable owner instruction such as `execute`, `run live`, `proceed`, `co
 
 Do not require a magic phrase unless an external legal or compliance contract requires one.
 
+## DAILY OPERATOR WORKFLOW
+
+1. Place the source CSV in the approved Atlas intake folder.
+2. Run `node ghl-automations/tools/atlas-import.js doctor`.
+3. Run `node ghl-automations/tools/atlas-import.js prepare --source <path>`.
+4. Review the source-validation summary and any generated `atlas-source-validation-<hash>.json` artifact.
+5. Review exceptions with `node ghl-automations/tools/atlas-exceptions.js list` and `node ghl-automations/tools/atlas-exceptions.js show --row <row-id>`.
+6. Run `node ghl-automations/tools/atlas-import.js preflight --manifest <path>`.
+7. Review the approved immutable manifest, row counts, blocked rows, target locks, and hash.
+8. Record plain-language owner authorization such as `run live` or `proceed with the approved manifest`.
+9. Run `node ghl-automations/tools/atlas-import.js execute --manifest <path> --live --authorize "run live" --journal <journal-path>`.
+10. Monitor the journal path printed by the command.
+11. Reconcile with `node ghl-automations/tools/atlas-import.js reconcile --artifact <path>`.
+12. Run `node ghl-automations/tools/atlas-import.js status`.
+13. Retain source validation, manifest, preflight, authorization, journal, reconciliation, exception, and closeout artifacts.
+14. Investigate exceptions separately; exception review never imports rows automatically.
+
+## WHAT SHOULD NOT HAPPEN AGAIN
+
+Routine imports must not require rebuilding the live adapter, reinventing artifact hashing, creating one-off final-N scripts, magic approval phrases, rerunning completed rows, using batch markers as duplicate identity, manually inspecting every successful row, broad test rewrites for unchanged behavior, deleting partial records as recovery, or automatic retry of uncertain writes.
+
+## EXPECTED ROUTINE IMPORT TIME
+
+- Source validation: automatic.
+- Preflight: automatic.
+- Manual review: blocked rows only.
+- Execution: automatic and sequential.
+- Reconciliation: automatic.
+- Final review: summary and artifacts.
+
 ## Retired Paths
 
 `prolific-ghl-webhook/import-ghl-leads.js` is retired with a hard stop because it wrote property-specific fields to reusable contacts.

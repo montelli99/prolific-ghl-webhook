@@ -1,0 +1,112 @@
+{
+  "artifactType": "atlas-exception-queue-current",
+  "generatedAt": "2026-07-30T20:31:01.649Z",
+  "sourceArtifact": {
+    "path": "lead-tracking/atlas-deals/reconciliations/atlas-blocked-rows-69-217-273-final-disposition-eac14b494825.json",
+    "hash": "eac14b494825e050ccaffe8a8ad10bf41a685a9e7c0761002b861472ef7bb384"
+  },
+  "rows": [
+    {
+      "rowId": "import-ready:69",
+      "currentState": "OPEN_SOURCE_DATA_CONFLICT",
+      "classification": "SOURCE_DATA_CONFLICT",
+      "sourceName": "Jill Smisek",
+      "phone": "(214) 202-7615",
+      "email": "txbroker@therealbrokerage.com",
+      "sourcePropertyId": "https://propwire.com/realestate/706-Goodyear-St/154344705/mls-listing",
+      "rawAddress": "706 Goodyear St, Irving TX 75062",
+      "normalizedAddress": "706goodyearst|irving|tx|75062",
+      "candidateContactIds": [
+        "vikcBqKuhkZsI4BvVA9Z"
+      ],
+      "candidateContactEvidence": [
+        {
+          "id": "vikcBqKuhkZsI4BvVA9Z"
+        }
+      ],
+      "candidateOpportunityIds": [],
+      "candidateOpportunities": [],
+      "conflictingData": "historical row-69 reconciliation/remediation evidence records contact identity conflict/source identity defect; prior incorrectly linked opportunity was remediated separately and the source identity remains defective",
+      "missingEvidence": "corrected source identity from the data provider or operator-owned source, followed by fresh contact and opportunity duplicate preflight",
+      "safeResolutionRequirements": "corrected source identity from the data provider or operator-owned source, followed by fresh contact and opportunity duplicate preflight",
+      "mayEverBeReconsidered": true,
+      "currentRecommendedDisposition": "keep excluded until corrected source identity is supplied"
+    },
+    {
+      "rowId": "import-ready:217",
+      "currentState": "OPEN_IDENTITY_AMBIGUITY",
+      "classification": "PERMANENT_IDENTITY_AMBIGUITY",
+      "sourceName": "Steven Koleno",
+      "phone": "(804) 656-5007",
+      "email": "contact@beycome.com",
+      "sourcePropertyId": "https://propwire.com/realestate/3506-N-12th-St/3714122/mls-listing",
+      "rawAddress": "3506 N 12th St, Tampa FL 33605",
+      "normalizedAddress": "3506n12thst|tampa|fl|33605",
+      "candidateContactIds": [
+        "x5ul9LVmA0VfovTXiLIT",
+        "qY89ZfUrPowQ9GfpsdRW"
+      ],
+      "candidateContactEvidence": [
+        {
+          "id": "x5ul9LVmA0VfovTXiLIT",
+          "name": "steven kelono",
+          "firstName": "steven",
+          "lastName": "kelono",
+          "phone": "+18046565007",
+          "email": "contact@beycome.com",
+          "source": "",
+          "customFields": []
+        },
+        {
+          "id": "qY89ZfUrPowQ9GfpsdRW",
+          "name": "steven koleno",
+          "firstName": "steven",
+          "lastName": "koleno",
+          "phone": "+18046565007",
+          "email": "steve@beycome.com",
+          "source": "",
+          "customFields": []
+        }
+      ],
+      "candidateOpportunityIds": [],
+      "candidateOpportunities": [],
+      "conflictingData": "multiple credible contact candidates; no deterministic source-backed selector",
+      "missingEvidence": "source-backed corrected listing-agent identity with exact person-level phone/email, plus duplicate-free preflight",
+      "safeResolutionRequirements": "source-backed corrected listing-agent identity with exact person-level phone/email, plus duplicate-free preflight",
+      "mayEverBeReconsidered": true,
+      "currentRecommendedDisposition": "keep excluded until source-backed identity evidence selects exactly one contact"
+    },
+    {
+      "rowId": "import-ready:273",
+      "currentState": "OPEN_IDENTITY_AMBIGUITY",
+      "classification": "PERMANENT_IDENTITY_AMBIGUITY",
+      "sourceName": "Candy Hernandez",
+      "phone": "(972) 849-3414",
+      "email": "",
+      "sourcePropertyId": "https://propwire.com/realestate/3311-Bremond-St/44487857/mls-listing",
+      "rawAddress": "3311 Bremond St, Houston TX 77004",
+      "normalizedAddress": "3311bremondst|houston|tx|77004",
+      "candidateContactIds": [
+        "KyeQjferUuFVy684p9gb",
+        "ufuQ5dK0qbZlAmaad9RT"
+      ],
+      "candidateContactEvidence": [
+        {
+          "id": "KyeQjferUuFVy684p9gb"
+        },
+        {
+          "id": "ufuQ5dK0qbZlAmaad9RT"
+        }
+      ],
+      "candidateOpportunityIds": [],
+      "candidateOpportunities": [],
+      "conflictingData": "multiple credible contact candidates; no deterministic source-backed selector",
+      "missingEvidence": "source-backed corrected listing-agent identity with exact person-level phone/email, plus duplicate-free preflight",
+      "safeResolutionRequirements": "source-backed corrected listing-agent identity with exact person-level phone/email, plus duplicate-free preflight",
+      "mayEverBeReconsidered": true,
+      "currentRecommendedDisposition": "keep excluded until source-backed identity evidence selects exactly one contact"
+    }
+  ],
+  "productionWrites": 0,
+  "outreachDisabled": true
+}
