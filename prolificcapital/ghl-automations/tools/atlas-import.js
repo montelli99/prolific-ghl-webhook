@@ -11,6 +11,8 @@ const exceptions = require('../modules/atlas-exception-queue');
 const { GhlReadOnlyLookupClient } = require('../modules/atlas-ghl-readonly-client');
 const { AtlasGhlLiveClient } = require('../modules/atlas-ghl-live-client');
 
+const ROOT = path.resolve(__dirname, '..', '..');
+
 function parseArgs(argv) {
   const args = { _: [] };
   for (let i = 0; i < argv.length; i += 1) {
@@ -31,7 +33,7 @@ function loadEnvFile(filePath, env) {
 }
 function envWithLocks() {
   const env = { ...process.env };
-  for (const file of ['secrets/.env', '.env.local', '.env.production', '.env']) loadEnvFile(path.resolve(file), env);
+  for (const file of ['secrets/.env', '.env.local', '.env.production', '.env']) loadEnvFile(path.join(ROOT, file), env);
   env.GHL_LOCATION_ID = importer.TARGET_CONFIG.locationId;
   env.GHL_PIPELINE_ID = importer.TARGET_CONFIG.pipelineId;
   return env;
@@ -116,7 +118,7 @@ async function main() {
     add('target locks', importer.TARGET_CONFIG.locationId === '61XPzSqRy7UKMwW9DeB8' && importer.TARGET_CONFIG.pipelineId === 'nSf3NXYVkt8X4PgW9aZ3', importer.TARGET_CONFIG);
     add('custom-field contract', importer.validateFieldMap(importer.DEFAULT_FIELD_MAP).ok, importer.DEFAULT_FIELD_MAP.fieldMapChecksum);
     add('artifact hashing', artifactHash.CANONICALIZATION_VERSION === 'atlas-json-v1', artifactHash.CANONICALIZATION_VERSION);
-    for (const dir of ['lead-tracking/atlas-deals/manifests', 'lead-tracking/atlas-deals/reconciliations']) add(`${dir} exists`, fs.existsSync(path.resolve(dir)), dir);
+    for (const dir of ['lead-tracking/atlas-deals/manifests', 'lead-tracking/atlas-deals/reconciliations']) add(`${dir} exists`, fs.existsSync(path.join(ROOT, dir)), dir);
     add('source validator', typeof sourceValidator.validateSource === 'function', 'available');
     add('duplicate classifier', typeof require('../modules/atlas-duplicate-classifier').classifyDuplicateSet === 'function', 'available');
     add('identity classifier', typeof importer.decideContactIdentity === 'function', 'available');
