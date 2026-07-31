@@ -1,6 +1,6 @@
 # Atlas Telegram Live Operations
 
-This page covers the Atlas/Montelli Kayla Telegram outreach system only. Divinity CRM locations, workflows, contacts, opportunities, pipelines, credentials, deployments, and documentation are out of scope.
+This page covers only the Atlas/Montelli Kayla Telegram outreach system.
 
 ## Boundaries
 
@@ -14,7 +14,16 @@ Telegram-origin stage markers use source `TELEGRAM_ATLAS_OUTREACH` and must incl
 
 Valid Lead Entered to Contact Made markers return `ATLAS_TELEGRAM_STAGE_TRANSITION_ACKNOWLEDGED_NO_OUTREACH`.
 
-The webhook must not send SMS, call JustCall, send email, place calls, move opportunities, recursively mutate GHL, create outreach tasks, enroll campaigns, trigger offer/comps logic, modify unrelated contacts, or process Divinity records.
+The webhook must not send SMS, call JustCall, send email, place calls, move opportunities, recursively mutate GHL, create outreach tasks, enroll campaigns, trigger offer/comps logic, or modify unrelated contacts.
+
+## Rule Taxonomy
+
+- `COURSE_EXPLICIT`: directly supported by cited Kayla-course source text.
+- `COURSE_DERIVED`: mechanical implementation of an explicit course rule without changing business meaning.
+- `COURSE_CONFLICT`: authoritative course sources conflict; production behavior must block.
+- `COURSE_MISSING`: no authoritative source establishes the rule; production behavior must block.
+- `TECHNICAL_SAFETY_POLICY`: launch/runtime guard that is not represented as Kayla-course procedure.
+- `LEGAL_OR_COMPLIANCE_RULE`: DNC, opt-out, STOP, wrong-number, and channel-suppression handling.
 
 ## Canary Guard Rules
 
@@ -23,11 +32,23 @@ The webhook must not send SMS, call JustCall, send email, place calls, move oppo
 - Candidates must be in location `61XPzSqRy7UKMwW9DeB8` and pipeline `nSf3NXYVkt8X4PgW9aZ3`.
 - Current stage must be Lead Entered `7067148a-2ee8-4e5b-93c8-31e0253fea68`.
 - Contacts and properties must be distinct.
-- DNC, opt-out, wrong-number, pending-reply, active-human-work, missing phone route, missing property fingerprint, unknown timezone, weekends, and local time outside 10:00 AM-6:00 PM block sendability.
+- DNC, opt-out, wrong-number, pending-reply, active-human-work, missing phone route, missing property fingerprint, unknown property timezone, weekends, and local time outside 10:00 AM-6:00 PM block sendability.
+
+The 10:00 AM-6:00 PM property-local window and no-weekend launch rule are `TECHNICAL_SAFETY_POLICY`, not Kayla-course procedure.
 
 ## Stage Movement
 
-Stage movement remains disabled and must display `STAGE_MOVEMENT_DISABLED_WORKFLOW_ISOLATION_PENDING` until the full marker path is proven with deterministic tests and deployed webhook verification.
+Stage movement after initial INT SMS is `COURSE_CONFLICT`.
+
+Evidence A: `ghl-automations/TRACK_STUDENT.md` lines 19-49 says Stage 1 is `Lead Entered -> INT Send` and `[✓] INT Sent -> advance to Stage 2`.
+
+Evidence B: `memory/REI_STAGE_BY_STAGE_GUIDE.md` lines 24-29 describes `INT`, call, collect information, `CCC`, notes, then move to Contact Made.
+
+Evidence C: `memory/FULL_COURSE_AUDIT.md` lines 169-175 describes call, seller info, `INT`, `CCC`, notes, then move to Contact Made.
+
+No production stage movement may occur after the SMS canary until the Stage 1 exit rule is authoritatively resolved. Telegram must display `STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED`.
+
+The first SMS canary tests provider delivery only, uses the exact initial course script, does not redefine Contact Made, does not move stages, and does not claim stage retention is course-correct.
 
 ## Current Status
 

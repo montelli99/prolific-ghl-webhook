@@ -17,7 +17,7 @@ function opp(overrides = {}) {
   return {
     opportunityId: overrides.opportunityId || 'abcDEF1234567890',
     contactId: overrides.contactId || 'ZYXwv9876543210',
-    propertyAddress: overrides.propertyAddress || '123 Main St, Dallas TX',
+    propertyAddress: overrides.propertyAddress || '123 Main St, Dallas TX 75201',
     contactName: overrides.contactName || 'Alice Agent',
     contactRole: overrides.contactRole || 'agent',
     stageId: overrides.stageId || LEAD_ENTERED_STAGE_ID,
@@ -43,13 +43,18 @@ await test('11 paused state blocks canary', () => assert.ok(guards.validateGhlCa
 await test('12 more than three blocks canary', () => assert.ok(guards.validateGhlCanaryPlan({ records: [opp({ opportunityId: 'a12345678', contactId: 'c12345678', propertyAddress: 'A' }), opp({ opportunityId: 'b12345678', contactId: 'd12345678', propertyAddress: 'B' }), opp({ opportunityId: 'e12345678', contactId: 'f12345678', propertyAddress: 'C' }), opp({ opportunityId: 'g12345678', contactId: 'h12345678', propertyAddress: 'D' })], timeZone: 'America/New_York', now: new Date('2026-07-31T16:00:00Z'), killSwitchState: 'CANARY_ALLOWED' }).errors.includes('CANARY_COUNT_EXCEEDS_THREE')));
 await test('13 duplicate contacts block canary', () => assert.ok(guards.validateGhlCanaryPlan({ records: [opp({ opportunityId: 'a12345678', contactId: 'sameContact9', propertyAddress: 'A' }), opp({ opportunityId: 'b12345678', contactId: 'sameContact9', propertyAddress: 'B' })], timeZone: 'America/New_York', now: new Date('2026-07-31T16:00:00Z'), killSwitchState: 'CANARY_ALLOWED' }).errors.some(error => error.includes('CANARY_REQUIRES_DISTINCT_CONTACTS'))));
 await test('14 duplicate properties block canary', () => assert.ok(guards.validateGhlCanaryPlan({ records: [opp({ opportunityId: 'a12345678', contactId: 'c12345678', propertyAddress: 'A' }), opp({ opportunityId: 'b12345678', contactId: 'd12345678', propertyAddress: 'A' })], timeZone: 'America/New_York', now: new Date('2026-07-31T16:00:00Z'), killSwitchState: 'CANARY_ALLOWED' }).errors.some(error => error.includes('CANARY_REQUIRES_DISTINCT_PROPERTIES'))));
-await test('15 stage movement remains disabled until isolation is proven', () => assert.ok(guards.validateGhlCanaryPlan({ records: [opp()], timeZone: 'America/New_York', now: new Date('2026-07-31T16:00:00Z'), killSwitchState: 'CANARY_ALLOWED', allowStageMove: true }).errors.some(error => error.includes('STAGE_MOVE_DISABLED'))));
+await test('15 stage movement remains disabled for unresolved course conflict', () => assert.equal(guards.evaluateGhlCanaryRecord(opp(), { now: new Date('2026-07-31T16:00:00Z'), workflowIsolationProven: true }).stageMovementCapability.status, 'STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED'));
 await test('16 valid GHL-only canary plan awaits Telegram approval', () => assert.equal(guards.validateGhlCanaryPlan({ records: [opp({ opportunityId: 'a12345678', contactId: 'c12345678', propertyAddress: 'A' }), opp({ opportunityId: 'b12345678', contactId: 'd12345678', propertyAddress: 'B' }), opp({ opportunityId: 'e12345678', contactId: 'f12345678', propertyAddress: 'C' })], timeZone: 'America/New_York', now: new Date('2026-07-31T16:00:00Z'), killSwitchState: 'CANARY_ALLOWED' }).status, 'ATLAS_TELEGRAM_KAYLA_CANARY_READY_AWAITING_TELEGRAM_APPROVAL'));
 await test('17 valid guard performs zero sends and writes', () => { const result = guards.validateGhlCanaryPlan({ records: [opp()], timeZone: 'America/New_York', now: new Date('2026-07-31T16:00:00Z'), killSwitchState: 'CANARY_ALLOWED' }); assert.equal(result.liveSends, 0); assert.equal(result.productionWrites, 0); assert.equal(result.stageMovements, 0); });
 await test('18 marker source is Telegram Atlas outreach', () => assert.equal(guards.buildTelegramOutreachMarker({ sessionId: 's', planHash: 'p', actionId: 'a', itemNumber: 1 }).source, guards.TELEGRAM_OUTREACH_SOURCE));
 await test('19 marker idempotency is stable', () => assert.equal(guards.buildTelegramOutreachMarker({ sessionId: 's', planHash: 'p', actionId: 'a', itemNumber: 1 }).idempotencyKey, guards.buildTelegramOutreachMarker({ sessionId: 's', planHash: 'p', actionId: 'a', itemNumber: 1 }).idempotencyKey));
 await test('20 manual live state is not canary state', () => assert.ok(guards.validateGhlCanaryPlan({ records: [opp()], timeZone: 'America/New_York', now: new Date('2026-07-31T16:00:00Z'), killSwitchState: 'MANUAL_LIVE_ALLOWED' }).errors.includes('CANARY_REQUIRES_CANARY_ALLOWED_STATE')));
-console.log(`\n${passed}/20 tests passed`);
+await test('21 technical canary max-three rule is labeled separately', () => assert.ok(guards.evaluateGhlCanaryRecord(opp()).ruleTaxonomy.technicalSafetyPolicies.includes('MAX_THREE_CANARY')));
+await test('22 DNC is compliance not course logic', () => assert.ok(guards.evaluateGhlCanaryRecord(opp({ dnc: true })).ruleTaxonomy.legalOrComplianceRules.includes('DNC')));
+await test('23 exact INT course source is exposed', () => assert.equal(guards.evaluateGhlCanaryRecord(opp()).scriptSelection.sourceFile, 'lead-tracking/AIREI_SCRIPTS_REFERENCE.md'));
+await test('24 property timezone derives from property address', () => assert.equal(guards.evaluateGhlCanaryRecord(opp()).timezoneDerivation.timeZone, 'America/Chicago'));
+await test('25 no claim is made that Lead Entered retention is course-correct', () => assert.match(guards.evaluateGhlCanaryRecord(opp()).conflictDisclosure, /does not establish/));
+console.log(`\n${passed}/25 tests passed`);
 }
 
 main().catch(error => {

@@ -31,13 +31,21 @@ function formatCanaryPreview(session) {
     const guard = item.ghlGuard || {};
     lines.push(`${item.number}. ${item.contactRole.role} (${Math.round((item.contactRole.confidence || 0) * 100)}%) | ${item.propertyAddress}`);
     lines.push(`Contact: ${item.maskedContact} | Opp: ${abbreviated(item.opportunityId)} | Stage: ${item.currentStage}`);
-    lines.push(`Kayla rule: ${item.kaylaRule} | Shortcut: ${item.shortcutName || 'none'}`);
+    lines.push(`Role evidence: ${guard.roleEvidence?.level || 'UNKNOWN'} | ${guard.roleEvidence?.reasons?.join('; ') || 'no source-backed role evidence'}`);
+    lines.push(`Kayla course step: ${item.nextRequiredAction || 'INT before call'} | Rule: INT_BEFORE_CALL`);
+    lines.push(`Source: ${guard.scriptSelection?.sourceFile || item.kaylaRule} ${guard.scriptSelection?.sourceLines || ''}`);
+    lines.push(`Shortcut: ${item.shortcutName || 'INT'} | Audience: ${(guard.scriptSelection?.shortcutName && guard.roleEvidence?.role) || item.contactRole.role}`);
     lines.push(`Message: ${item.renderedPreview || '(manual action; no SMS preview)'}`);
     lines.push(`Sender: ${item.senderNumber}`);
+    lines.push(`Property timezone: ${guard.timezoneDerivation?.timeZone || 'unknown'} | ${guard.timezoneDerivation?.currentWeekday || 'unknown'} ${guard.timezoneDerivation?.currentLocalTime || 'unknown'} | ${guard.timezoneDerivation?.confidence || 'UNKNOWN'}`);
     lines.push(`GHL guard: ${guard.passed ? 'PASSED' : 'BLOCKED'}${guard.blockedReasons?.length ? ` (${guard.blockedReasons.join(', ')})` : ''}`);
-    lines.push(`Restriction: DNC ${guard.dncStatus?.passed ? 'clear' : 'blocked'} | opt-out ${guard.optOutStatus?.passed ? 'clear' : 'blocked'} | wrong-number ${guard.wrongNumberStatus?.passed ? 'clear' : 'blocked'} | pending-reply ${guard.pendingReplyStatus?.passed ? 'clear' : 'blocked'} | human-work ${guard.activeHumanWorkStatus?.passed ? 'clear' : 'blocked'}`);
+    lines.push(`Course eligibility: ${guard.kaylaEligibilityStatus?.passed ? 'passed' : 'blocked'} | Script: ${guard.scriptSelection?.courseClassification || 'COURSE_MISSING'}`);
+    lines.push(`Technical safety: max 3, distinct contact/property, real IDs, property-local time window`);
+    lines.push(`Compliance: DNC ${guard.dncStatus?.passed ? 'clear' : 'blocked'} | opt-out ${guard.optOutStatus?.passed ? 'clear' : 'blocked'} | wrong-number ${guard.wrongNumberStatus?.passed ? 'clear' : 'blocked'}`);
+    lines.push(`Operational holds: pending-reply ${guard.pendingReplyStatus?.passed ? 'clear' : 'blocked'} | human-work ${guard.activeHumanWorkStatus?.passed ? 'clear' : 'blocked'}`);
     lines.push(`Workflow isolation: ${guard.workflowIsolationStatus?.status || 'WEBHOOK_ISOLATION_PENDING'}`);
     lines.push(`Stage movement: ${ghlGuards.STAGE_MOVEMENT_PENDING}`);
+    lines.push(guard.conflictDisclosure || 'Sending this SMS does not establish that the opportunity has satisfied Kayla\'s Contact Made definition. No automatic stage movement will occur.');
     lines.push(`Current sendability: ${guard.currentSendability || 'BLOCKED_GHL_GUARD'}`, '');
   }
   return lines.join('\n');

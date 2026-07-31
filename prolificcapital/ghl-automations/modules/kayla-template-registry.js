@@ -1,6 +1,7 @@
 'use strict';
 
 const { loadKaylaCourseSpec, SHORTCUT_BODIES } = require('./kayla-course-spec');
+const { getProductionScript } = require('./kayla-course-evidence');
 
 const AUDIENCE_BY_SHORTCUT = Object.freeze({
   INT: ['agent', 'owner', 'broker'],
@@ -41,6 +42,7 @@ function variablesFor(body) {
 function createTemplateRegistry(options = {}) {
   const spec = options.spec || loadKaylaCourseSpec(options);
   return Object.entries(SHORTCUT_BODIES).map(([shortcutName, body]) => ({
+    ...(getProductionScript(shortcutName) || {}),
     shortcutName,
     audience: AUDIENCE_BY_SHORTCUT[shortcutName] || ['unknown'],
     stage: STAGE_BY_SHORTCUT[shortcutName] || null,
@@ -48,13 +50,14 @@ function createTemplateRegistry(options = {}) {
     body,
     variables: variablesFor(body),
     requiredContext: variablesFor(body).map(v => v === 'address' || v === 'property address' ? 'propertyAddress' : v === 'name' ? 'contactName' : v),
-    source: 'docs/atlas-kayla-course-parity-spec.md#script-inventory',
-    status: 'APPROVED_BY_COURSE',
+    source: getProductionScript(shortcutName)?.sourceFile || 'docs/atlas-kayla-course-parity-spec.md#script-inventory',
+    sourceLines: getProductionScript(shortcutName)?.sourceLines || null,
+    status: getProductionScript(shortcutName)?.courseClassification === 'COURSE_EXPLICIT_APPROVED' ? 'APPROVED_BY_COURSE' : 'COURSE_MISSING',
     allowedChannel: 'JustCall SMS dry-run only',
     callBeforeAfterRule: shortcutName === 'INT' ? 'CALL_AFTER_TEXT' : shortcutName === 'CCC' ? 'TEXT_AFTER_CALL' : 'MANUAL_REVIEW',
     followUpInterval: shortcutName === 'LOI2DAYS' ? '48h after no answer in feedback sequence' : shortcutName === 'SD' ? '96h escalation or seller declined' : null,
     manualReviewRequirement: 'Required before any live send; dry-run approval only in this phase.',
-    courseRuleCitation: spec.courseRules.map(rule => rule.citation)[0],
+    courseRuleCitation: getProductionScript(shortcutName)?.sourceFile || spec.courseRules.map(rule => rule.citation)[0],
   }));
 }
 

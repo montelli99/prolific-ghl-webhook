@@ -3,6 +3,9 @@
 const crypto = require('crypto');
 const { LEAD_ENTERED_STAGE_ID, CONTACT_MADE_STAGE_ID } = require('./kayla-course-spec');
 const { evaluateEligibility, normalizeOpportunity, maskContact } = require('./telegram-outreach-dry-run');
+const { getCourseRule, getProductionScript } = require('./kayla-course-evidence');
+const { classifyRole, roleCanReceiveProductionScript } = require('./kayla-role-classifier');
+const { derivePropertyTimezone } = require('./property-timezone');
 
 const TARGET = Object.freeze({
   locationId: '61XPzSqRy7UKMwW9DeB8',
@@ -14,7 +17,7 @@ const TARGET = Object.freeze({
 
 const LIVE_KILL_SWITCH_STATES = Object.freeze(['PAUSED', 'DRY_RUN_ONLY', 'CANARY_ALLOWED', 'MANUAL_LIVE_ALLOWED']);
 const TELEGRAM_OUTREACH_SOURCE = 'TELEGRAM_ATLAS_OUTREACH';
-const STAGE_MOVEMENT_PENDING = 'STAGE_MOVEMENT_DISABLED_WORKFLOW_ISOLATION_PENDING';
+const STAGE_MOVEMENT_PENDING = 'STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED';
 const MAX_CANARY_COUNT = 3;
 const SAFE_ID = /^[A-Za-z0-9_-]{8,80}$/;
 const SYNTHETIC_ID = /^(opp|contact|sim|synthetic|test|fake|dry)[_-]|synthetic|fixture|example/i;
@@ -84,9 +87,13 @@ function evaluateGhlCanaryRecord(record, context = {}) {
   const identity = validateRealGhlIdentity(record);
   const compliance = evaluateGhlComplianceLocks(record);
   const eligibility = evaluateEligibility(record, { allRecords: records });
+  const roleEvidence = classifyRole(record);
+  const script = getProductionScript('INT');
+  const roleScript = roleCanReceiveProductionScript(roleEvidence, script);
+  const timezone = derivePropertyTimezone(record, { now: context.now || new Date() });
   const sameContactCount = records.filter(item => normalizeOpportunity(item).contactId === normalized.contactId).length;
   const samePropertyCount = records.filter(item => normalizeOpportunity(item).propertyAddress === normalized.propertyAddress).length;
-  const window = evaluateCanaryWindow({ now: context.now || new Date(), timeZone: normalized.timeZone || context.timeZone });
+  const window = evaluateCanaryWindow({ now: context.now || new Date(), timeZone: timezone.timeZone });
   const locationOk = !normalized.raw?.locationId || normalized.raw.locationId === TARGET.locationId;
   const pipelineOk = !normalized.raw?.pipelineId || normalized.raw.pipelineId === TARGET.pipelineId;
   const stageOk = normalized.currentStageId === TARGET.leadEnteredStageId;
@@ -100,8 +107,11 @@ function evaluateGhlCanaryRecord(record, context = {}) {
   if (!phoneOk) errors.push('MISSING_PHONE_ROUTE');
   if (sameContactCount > 1) errors.push('CANARY_REQUIRES_DISTINCT_CONTACTS');
   if (samePropertyCount > 1) errors.push('CANARY_REQUIRES_DISTINCT_PROPERTIES');
+  if (!roleScript.ok) errors.push(roleScript.reason);
   if (!eligibility.safe || !eligibility.due) errors.push(eligibility.resultClass || 'NOT_DUE');
-  if (!window.ok) errors.push(window.reason);
+  if (!timezone.ok) errors.push(timezone.reason);
+  else if (!window.ok) errors.push(window.reason);
+  const stageConflict = getCourseRule('STAGE1_EXIT_AFTER_INT');
   return {
     schema: 'atlas-ghl-telegram-canary-guard-v1',
     passed: errors.length === 0,
@@ -120,12 +130,22 @@ function evaluateGhlCanaryRecord(record, context = {}) {
     activeHumanWorkStatus: { passed: !compliance.checks.activeHumanWork, blocked: compliance.checks.activeHumanWork },
     propertyFingerprintStatus: { passed: propertyFingerprintOk },
     phoneRouteStatus: { passed: phoneOk },
-    timezoneStatus: { passed: Boolean(normalized.timeZone || context.timeZone), timeZone: normalized.timeZone || context.timeZone || null },
+    roleEvidence,
+    scriptSelection: { passed: roleScript.ok, shortcutName: script?.shortcutName || 'INT', sourceFile: script?.sourceFile || null, sourceLines: script?.sourceLines || null, courseClassification: script?.courseClassification || 'COURSE_MISSING', reason: roleScript.reason },
+    ruleTaxonomy: {
+      courseRules: ['INT_BEFORE_CALL'].map(ruleId => getCourseRule(ruleId)),
+      technicalSafetyPolicies: ['MAX_THREE_CANARY', 'DISTINCT_CONTACTS', 'DISTINCT_PROPERTIES', 'PROPERTY_LOCAL_TIME_WINDOW', 'SYNTHETIC_IDS_PROHIBITED'],
+      legalOrComplianceRules: ['DNC', 'OPT_OUT', 'WRONG_NUMBER'],
+      courseConflicts: [stageConflict],
+    },
+    timezoneDerivation: timezone,
+    timezoneStatus: { passed: timezone.ok, timeZone: timezone.timeZone || null, classification: 'TECHNICAL_SAFETY_POLICY' },
     weekdayStatus: { passed: window.ok || !/WEEKEND/.test(window.reason), day: window.day || null },
     localTimeWindowStatus: { passed: window.ok, reason: window.reason, hour: window.hour ?? null },
     kaylaEligibilityStatus: { passed: Boolean(eligibility.safe && eligibility.due), resultClass: eligibility.resultClass, reason: eligibility.reason },
-    stageMovementCapability: { passed: Boolean(context.workflowIsolationProven), status: context.workflowIsolationProven ? 'STAGE_MOVEMENT_ALLOWED_BY_PROVEN_ISOLATION' : STAGE_MOVEMENT_PENDING },
-    workflowIsolationStatus: { passed: Boolean(context.workflowIsolationProven), status: context.workflowIsolationProven ? 'WEBHOOK_ISOLATION_READY' : 'WEBHOOK_ISOLATION_PENDING' },
+    stageMovementCapability: { passed: false, status: STAGE_MOVEMENT_PENDING, classification: 'COURSE_CONFLICT', courseRule: stageConflict },
+    workflowIsolationStatus: { passed: Boolean(context.workflowIsolationProven), status: context.workflowIsolationProven ? 'WEBHOOK_ISOLATION_READY' : 'WEBHOOK_ISOLATION_READY_NOT_AUTHORITY_FOR_STAGE_MOVEMENT' },
+    conflictDisclosure: 'Sending this SMS does not establish that the opportunity has satisfied Kayla\'s Contact Made definition. No automatic stage movement will occur.',
     currentSendability: errors.length === 0 ? 'SENDABLE_NOW' : window.ok ? 'BLOCKED_GHL_GUARD' : 'BLOCKED_TIME_WINDOW',
     liveSends: 0,
     productionWrites: 0,

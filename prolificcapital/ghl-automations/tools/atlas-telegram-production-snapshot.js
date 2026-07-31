@@ -43,8 +43,25 @@ function writeArtifact(name, payload) {
 function firstPhone(contact = {}, opp = {}) { return contact.phone || contact.phoneNumber || opp.phone || opp.phoneNumber || ''; }
 function contactName(contact = {}, opp = {}) { return contact.name || contact.contactName || [contact.firstName, contact.lastName].filter(Boolean).join(' ') || opp.contactName || 'Unknown Atlas Contact'; }
 function redactGuard(guard) {
+  const roleEvidence = guard.roleEvidence ? {
+    role: guard.roleEvidence.role,
+    level: guard.roleEvidence.level,
+    reasons: guard.roleEvidence.reasons || [],
+    conflictingRoles: guard.roleEvidence.conflictingRoles || undefined,
+    evidence: {
+      explicitRole: guard.roleEvidence.evidence?.explicitRole || '',
+      hasSellerName: Boolean(guard.roleEvidence.evidence?.sellerName),
+      hasListingAgent: Boolean(guard.roleEvidence.evidence?.listingAgent),
+      hasBrokerage: Boolean(guard.roleEvidence.evidence?.brokerage),
+      hasCompany: Boolean(guard.roleEvidence.evidence?.company),
+      emailDomainHash: guard.roleEvidence.evidence?.email ? sha(String(guard.roleEvidence.evidence.email).split('@').pop()) : '',
+      tagCount: guard.roleEvidence.evidence?.tags?.length || 0,
+      repeatedPropertyCount: guard.roleEvidence.evidence?.repeatedPropertyCount || 0,
+    },
+  } : null;
   return {
     ...guard,
+    roleEvidence,
     opportunityIdValidation: { ...guard.opportunityIdValidation, opportunityId: maskId(guard.opportunityIdValidation?.opportunityId) },
     contactIdValidation: { ...guard.contactIdValidation, contactId: maskId(guard.contactIdValidation?.contactId) },
   };

@@ -1,0 +1,81 @@
+{
+  "artifactType": "atlas-kayla-exact-course-canary-closeout",
+  "generatedAt": "2026-07-31T09:36:59.4269970Z",
+  "status": "ATLAS_KAYLA_EXACT_COURSE_BLOCKED_ROLE_EVIDENCE",
+  "productionSnapshot": {
+    "atlasValidOpportunities": 206,
+    "uniqueAtlasContacts": 177,
+    "path": "lead-tracking/atlas-deals/audits/atlas-telegram-production-snapshot-308d00ddaadc.json",
+    "leadEnteredAtlasOpportunities": 206,
+    "physicalTargetPipelineOpportunities": 213,
+    "canonicalHash": "308d00ddaadc18ba63229a87dff53d2203d48e630fb0302d56882f1493731164"
+  },
+  "courseRules": [
+    {
+      "classification": "COURSE_EXPLICIT",
+      "sourceFile": "airei-course-notes/AIREI_MASTER_PLAYBOOK.md",
+      "ruleId": "INT_BEFORE_CALL",
+      "sourceLines": "70-73"
+    },
+    {
+      "classification": "COURSE_CONFLICT",
+      "sourceFile": "ghl-automations/TRACK_STUDENT.md; memory/REI_STAGE_BY_STAGE_GUIDE.md; memory/FULL_COURSE_AUDIT.md",
+      "ruleId": "STAGE1_EXIT_AFTER_INT",
+      "sourceLines": "19-49; 24-29; 169-175"
+    }
+  ],
+  "scriptSelection": {
+    "classification": "COURSE_EXPLICIT_APPROVED",
+    "shortcut": "INT",
+    "sourceLines": "10, 235-237",
+    "sourceFile": "lead-tracking/AIREI_SCRIPTS_REFERENCE.md"
+  },
+  "roleEnrichment": {
+    "qualifyingCandidates": 0,
+    "levelsAllowed": [
+      "CONFIRMED",
+      "HIGH_CONFIDENCE_INFERRED"
+    ],
+    "blocker": "ROLE_EVIDENCE_NOT_ESTABLISHED"
+  },
+  "timezoneDerivation": {
+    "policy": "TECHNICAL_SAFETY_POLICY",
+    "unknownTimezoneBlocks": true,
+    "source": "property address state/ZIP parse with DST-aware Intl timezone"
+  },
+  "senderVerification": {
+    "ok": false,
+    "reason": "SENDER_LOCK_MISMATCH_OR_ENV_NOT_CONFIGURED",
+    "secretsExposed": false,
+    "requiredSender": "+1 (571) ***-2619"
+  },
+  "canary": {
+    "productionWrites": 0,
+    "stageBehavior": "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED",
+    "reviewCandidates": 3,
+    "stageMovements": 0,
+    "sendableCandidates": 0,
+    "sends": 0,
+    "providerSends": 0
+  },
+  "tests": {
+    "pipelineReview": 41,
+    "intentRouter": 27,
+    "atlasImporter": 48,
+    "atlasOperations": 42,
+    "exactCourse": 24,
+    "telegram": 93,
+    "webhook": 42,
+    "provider": 11,
+    "guard": 25
+  },
+  "hashAlgorithm": "sha256",
+  "canonicalizationVersion": "atlas-json-v1",
+  "excludedSelfHashFields": [
+    "canonicalHash",
+    "artifactHash",
+    "selfHash",
+    "manifestChecksum"
+  ],
+  "canonicalHash": "980ae11e4b5045551147e845ac07bc9fc5e297097019ef5718a35e8a8b78ae51"
+}
