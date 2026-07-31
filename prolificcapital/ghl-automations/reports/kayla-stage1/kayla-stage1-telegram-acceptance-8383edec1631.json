@@ -1,0 +1,738 @@
+{
+  "artifactType": "kayla-stage1-telegram-acceptance",
+  "generatedAt": "2026-07-31T12:24:19.441Z",
+  "targetCommit": "50dcebd feat(pipeline): implement Kayla Stage 1 operator transaction",
+  "status": "KAYLA_MONTELLI_STAGE1_TELEGRAM_ACCEPTANCE_PASSED",
+  "checks": [
+    {
+      "name": "listing path visible",
+      "passed": true
+    },
+    {
+      "name": "listing INT before call",
+      "passed": true
+    },
+    {
+      "name": "listing agent script",
+      "passed": true
+    },
+    {
+      "name": "first no-answer does not unlock NOA",
+      "passed": true
+    },
+    {
+      "name": "show voice memo blocked after first no-answer",
+      "passed": true
+    },
+    {
+      "name": "show NOA blocked after first no-answer",
+      "passed": true
+    },
+    {
+      "name": "second no-answer unlocks voice memo",
+      "passed": true
+    },
+    {
+      "name": "second no-answer unlocks voice memo display",
+      "passed": true
+    },
+    {
+      "name": "second no-answer unlocks NOA display",
+      "passed": true
+    },
+    {
+      "name": "CCC not offered on no-answer path",
+      "passed": true
+    },
+    {
+      "name": "listing no stage movement",
+      "passed": true
+    },
+    {
+      "name": "direct path visible",
+      "passed": true
+    },
+    {
+      "name": "direct INT before call",
+      "passed": true
+    },
+    {
+      "name": "direct seller script",
+      "passed": true
+    },
+    {
+      "name": "direct completed call collection",
+      "passed": true
+    },
+    {
+      "name": "direct missing fields block completion",
+      "passed": true
+    },
+    {
+      "name": "direct unknown dispositions preserved",
+      "passed": true
+    },
+    {
+      "name": "direct CCC prompt after completed call",
+      "passed": true
+    },
+    {
+      "name": "direct notes deterministic preview",
+      "passed": true
+    },
+    {
+      "name": "direct complete state",
+      "passed": true
+    },
+    {
+      "name": "direct stage conflict visible",
+      "passed": true
+    },
+    {
+      "name": "unknown research required",
+      "passed": true
+    },
+    {
+      "name": "unknown no fabricated role",
+      "passed": true
+    },
+    {
+      "name": "unknown INT blocked before path",
+      "passed": true
+    },
+    {
+      "name": "unknown no script before path",
+      "passed": true
+    },
+    {
+      "name": "unknown CCC blocked before path",
+      "passed": true
+    },
+    {
+      "name": "unknown NOA blocked before path",
+      "passed": true
+    },
+    {
+      "name": "unknown next research step",
+      "passed": true
+    },
+    {
+      "name": "real runtime available",
+      "passed": true
+    },
+    {
+      "name": "real 1 opportunity loaded",
+      "passed": true
+    },
+    {
+      "name": "real 1 lead entered",
+      "passed": true
+    },
+    {
+      "name": "real 1 relationship evidence displayed",
+      "passed": true
+    },
+    {
+      "name": "real 1 contact path returned",
+      "passed": true
+    },
+    {
+      "name": "real 1 INT blocked when research required",
+      "passed": true
+    },
+    {
+      "name": "real 1 unsupported script blocked",
+      "passed": true
+    },
+    {
+      "name": "real 1 no production action text",
+      "passed": true
+    },
+    {
+      "name": "real 2 opportunity loaded",
+      "passed": true
+    },
+    {
+      "name": "real 2 lead entered",
+      "passed": true
+    },
+    {
+      "name": "real 2 relationship evidence displayed",
+      "passed": true
+    },
+    {
+      "name": "real 2 contact path returned",
+      "passed": true
+    },
+    {
+      "name": "real 2 INT blocked when research required",
+      "passed": true
+    },
+    {
+      "name": "real 2 unsupported script blocked",
+      "passed": true
+    },
+    {
+      "name": "real 2 no production action text",
+      "passed": true
+    },
+    {
+      "name": "real 3 opportunity loaded",
+      "passed": true
+    },
+    {
+      "name": "real 3 lead entered",
+      "passed": true
+    },
+    {
+      "name": "real 3 relationship evidence displayed",
+      "passed": true
+    },
+    {
+      "name": "real 3 contact path returned",
+      "passed": true
+    },
+    {
+      "name": "real 3 INT blocked when research required",
+      "passed": true
+    },
+    {
+      "name": "real 3 unsupported script blocked",
+      "passed": true
+    },
+    {
+      "name": "real 3 no production action text",
+      "passed": true
+    }
+  ],
+  "controlledFixtures": [
+    {
+      "label": "listing-agent",
+      "opportunity": {
+        "id": "fixt...-001",
+        "propertyHash": "1d0402db81d4",
+        "currentStage": "Lead Entered"
+      },
+      "exchanges": [
+        {
+          "operator": "Start Stage 1 for this lead",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: INT_REQUIRED\nInstruction: Send INT before calling.\nMissing actions: INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Who am I supposed to contact?",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: INT_REQUIRED\nInstruction: Send INT before calling.\nAvailable paths: LISTING_AGENT\nMissing actions: INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show INT",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: INT_REQUIRED\nInstruction: Send INT before calling.\nClient, are you still accepting offers for [property]\nMissing actions: INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "I sent INT",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CALL_1_REQUIRED\nInstruction: Start first call attempt using the selected path script.\nMissing actions: CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show the agent script",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CALL_1_REQUIRED\nInstruction: Start first call attempt using the selected path script.\nHappy Friday, I'm calling regarding the property at [property]\n\nBased on the photos online the property looks great inside and out, I'm SHOCKED it hasn't sold yet. Now.. Regarding other buyers who have walked it - have you received any feedback?\n\nInteresting, okay - Regarding the roof and HVAC; when were those last installed?\n\nYeah it sounds great - now the property itself, is it currently occupied or vacant?\n\nIf occupied: Ask if the owner is living in it or if it is being rented out. If rented: What is the current rent? When did they sign? What kind of lease are they on?\n\nIf vacant: Noted, and I am curious - it looks like a great house, why wouldn't the seller just rent it out and collect a couple thousand dollars each month?\n\nThen: Are utilities still on?\n\nI would purchase outright by using a DSCR loan which is solely based on what it makes as a rental. As long as the rent covers the mortgage I'll be good to go at the price you're asking.\n\nI'm going to give my lender a quick call and see how I can get approved. Is there a good email I can send over details to?\nMissing actions: CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "No answer",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CALL_2_REQUIRED\nInstruction: Course requires a second call before no-answer handling.\nMissing actions: NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show CCC",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CALL_2_REQUIRED\nInstruction: Course requires a second call before no-answer handling.\nBlocked: CALL_COMPLETED_REQUIRED_BEFORE_CCC: CCC follows a completed call. This lead is currently on Kayla's no-answer sequence.\nMissing actions: NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show voice memo",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CALL_2_REQUIRED\nInstruction: Course requires a second call before no-answer handling.\nBlocked: SECOND_CALL_REQUIRED_BEFORE_NO_ANSWER_SEQUENCE: Kayla's process requires a second call attempt before the voice memo and NOA sequence. Record the second call result first.\nMissing actions: NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show NOA",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CALL_2_REQUIRED\nInstruction: Course requires a second call before no-answer handling.\nBlocked: SECOND_CALL_REQUIRED_BEFORE_NO_ANSWER_SEQUENCE: Kayla's process requires a second call attempt before the voice memo and NOA sequence. Record the second call result first.\nMissing actions: NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "I called again and there was no answer",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: VOICE_MEMO_REQUIRED\nInstruction: Send the documented no-answer voice memo.\nMissing actions: VOICE\\_MEMO\\_REQUIRED, NOA\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show voice memo",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: VOICE_MEMO_REQUIRED\nInstruction: Send the documented no-answer voice memo.\nHappy Friday Client - just tried to call you regarding the purchase of your property on [property]\n\nNOA: Are you still accepting offers for [property]\nMissing actions: VOICE\\_MEMO\\_REQUIRED, NOA\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show NOA",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: VOICE_MEMO_REQUIRED\nInstruction: Send the documented no-answer voice memo.\nHappy Friday Client - just tried to call you regarding the purchase of your property on [property]\n\nNOA: Are you still accepting offers for [property]\nMissing actions: VOICE\\_MEMO\\_REQUIRED, NOA\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "What does Kayla say to do next?",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: VOICE_MEMO_REQUIRED\nInstruction: Send the documented no-answer voice memo.\nMissing actions: VOICE\\_MEMO\\_REQUIRED, NOA\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        }
+      ],
+      "session": {
+        "state": "VOICE_MEMO_REQUIRED",
+        "selectedContactPath": "LISTING_AGENT",
+        "courseScript": "AGENT_INITIAL",
+        "unresolvedRequirements": [
+          "VOICE_MEMO_REQUIRED",
+          "NOA_REQUIRED",
+          "NOTES_REQUIRED",
+          "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED"
+        ],
+        "stageDecisionStatus": "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED",
+        "counters": {
+          "sends": 0,
+          "calls": 0,
+          "ghlWrites": 0,
+          "stageMovements": 0
+        }
+      }
+    },
+    {
+      "label": "direct-seller",
+      "opportunity": {
+        "id": "fixt...-001",
+        "propertyHash": "57eaf989b299",
+        "currentStage": "Lead Entered"
+      },
+      "exchanges": [
+        {
+          "operator": "Start Stage 1 for this lead",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: INT_REQUIRED\nInstruction: Send INT before calling.\nMissing actions: INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Who am I supposed to contact?",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: INT_REQUIRED\nInstruction: Send INT before calling.\nAvailable paths: DIRECT_SELLER\nMissing actions: INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show INT",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: INT_REQUIRED\nInstruction: Send INT before calling.\nClient, are you still accepting offers for [property]\nMissing actions: INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "I sent INT",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: CALL_1_REQUIRED\nInstruction: Start first call attempt using the selected path script.\nMissing actions: CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show the seller script",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: CALL_1_REQUIRED\nInstruction: Start first call attempt using the selected path script.\nHappy Friday, my name is Montelli are you still accepting offers at [property]\n\nGreat - I'm interested in potentially purchasing this as a rental for my portfolio. I just have a couple questions - did I catch you at a good time?\n\nRegarding the roof and HVAC; when were those last installed?\n\nNow the property itself, is it currently occupied or vacant?\n\nIf occupied: Ask if they are living in it or if it is being rented out. If rented: What is the current rent? When did they sign? What kind of lease are they on?\n\nIf vacant: Noted, and I am curious - it looks like a great house, why wouldn't you just rent it out and collect a couple thousand dollars each month?\n\nThen: Are utilities still on?\n\nCan I confirm that asking price?\n\nI'm going to give my lender a quick call and see how I can get approved. Is there a good email I can send over details to?\nMissing actions: CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "They answered",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: REQUIRED_FIELDS_INCOMPLETE\nInstruction: Record the course-required call information.\nMissing actions: FIELD\\_REQUIRED:roofAge, FIELD\\_REQUIRED:hvacAge, FIELD\\_REQUIRED:occupancy, FIELD\\_REQUIRED:utilityResponsibility, CCC\\_REQUIRED, CONTACT\\_CARD\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "I recorded notes",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: REQUIRED_FIELDS_INCOMPLETE\nInstruction: Record the course-required call information.\nBlocked: REQUIRED_ACTIONS_UNRESOLVED: Stage 1 operator work is not complete. Required information still unresolved: FIELD_REQUIRED:roofAge, FIELD_REQUIRED:hvacAge, FIELD_REQUIRED:occupancy, FIELD_REQUIRED:utilityResponsibility, CCC_REQUIRED, CONTACT_CARD_REQUIRED. Record an answer or mark it unknown/not provided where allowed.\nMissing actions: FIELD\\_REQUIRED:roofAge, FIELD\\_REQUIRED:hvacAge, FIELD\\_REQUIRED:occupancy, FIELD\\_REQUIRED:utilityResponsibility, CCC\\_REQUIRED, CONTACT\\_CARD\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show me the questions",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: REQUIRED_FIELDS_INCOMPLETE\nInstruction: Record the course-required call information.\n- Confirm the contact name.\n- Confirm the contact phone.\n- Is there a good email I can send over details to?\n- Regarding the roof, when was it last installed?\n- Regarding the HVAC, when was it last installed?\n- Is the property currently occupied or vacant?\n- If occupied, is the owner living in it or is it rented out?\n- If rented, what is the current rent?\n- When did they sign and what kind of lease are they on?\n- Are utilities still on?\n- Record seller flexibility or offer feedback if provided.\n- For rehab properties, how would you rate condition 1-10 and what would it need to be a 10?\n- Do you have any other properties you are looking to offload?\n- Record whether the call completed or no answer.\n- Record call attempt count.\n- Record next exact course step.\nMissing actions: FIELD\\_REQUIRED:roofAge, FIELD\\_REQUIRED:hvacAge, FIELD\\_REQUIRED:occupancy, FIELD\\_REQUIRED:utilityResponsibility, CCC\\_REQUIRED, CONTACT\\_CARD\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Roof unknown HVAC not provided occupied rent 1400 lease one year utilities on email seller@example.test other properties none",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: CCC_REQUIRED\nInstruction: Send CCC after the completed call.\nMissing actions: CCC\\_REQUIRED, CONTACT\\_CARD\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show CCC",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: CCC_REQUIRED\nInstruction: Send CCC after the completed call.\nIt is great aligning with you Client, I look forward to connecting the dots with you shortly at [property]\nMissing actions: CCC\\_REQUIRED, CONTACT\\_CARD\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "I sent CCC and contact card",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: NOTES_REQUIRED\nInstruction: Record structured Stage 1 notes in GHL.\nMissing actions: NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show the notes",
+          "telegram": "```\nKAYLA STAGE 1 CONTACT RECORD\n\nProperty: [property]\nLead source: direct seller\nContact path: DIRECT_SELLER\nContact person: Sam Seller\nContact relationship: DIRECT_SELLER\nINT sent: yes\nCall attempt 1: COMPLETED\nCall attempt 2: not recorded\nCall outcome: COMPLETED\nAgent/seller details: Sam Seller\nRoof age: unknown\nHVAC age: not provided\nOccupancy: occupied\nRent: 1400\nLease terms: Roof unknown HVAC not provided occupied rent 1400 lease one year utilities on email [email] other properties none\nUtilities: utilities on\nListing/buyer feedback: (not recorded)\nSeller flexibility: (not recorded)\nOther properties: Roof unknown HVAC not provided occupied rent 1400 lease one year utilities on email [email] other properties none\nCCC sent: yes\nContact card sent: yes\nVoice memo sent: not confirmed\nNOA sent: not confirmed\nOperator notes: (none)\nNext course step: Record structured Stage 1 notes in GHL.\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nCourse conflict: Kayla documents conflict on the exact event that moves this lead to Contact Made. No automatic stage movement will occur.\n```"
+        },
+        {
+          "operator": "I recorded notes",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: STAGE_1_OPERATOR_WORK_COMPLETE\nInstruction: Stage 1 operator work is complete; stage movement remains blocked by course conflict.\nMissing actions: none\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "What does Kayla say to do next?",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: STAGE_1_OPERATOR_WORK_COMPLETE\nInstruction: Stage 1 operator work is complete; stage movement remains blocked by course conflict.\nMissing actions: none\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        }
+      ],
+      "session": {
+        "state": "STAGE_1_OPERATOR_WORK_COMPLETE",
+        "selectedContactPath": "DIRECT_SELLER",
+        "courseScript": "SELLER_INITIAL",
+        "unresolvedRequirements": [
+          "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED"
+        ],
+        "stageDecisionStatus": "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED",
+        "counters": {
+          "sends": 0,
+          "calls": 0,
+          "ghlWrites": 0,
+          "stageMovements": 0
+        }
+      }
+    },
+    {
+      "label": "unknown-contact",
+      "opportunity": {
+        "id": "fixt...-001",
+        "propertyHash": "43ec7a90d99d",
+        "currentStage": "Lead Entered"
+      },
+      "exchanges": [
+        {
+          "operator": "Start Stage 1 for this lead",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Who am I supposed to contact?",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nAvailable paths: RESEARCH_REQUIRED\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show INT",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show the agent script",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show the seller script",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show CCC",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show NOA",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "What does Kayla say to do next?",
+          "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        }
+      ],
+      "session": {
+        "state": "CONTACT_PATH_REQUIRED",
+        "selectedContactPath": null,
+        "courseScript": null,
+        "unresolvedRequirements": [
+          "CONTACT_PATH_REQUIRED",
+          "INT_REQUIRED",
+          "CALL_REQUIRED",
+          "NOTES_REQUIRED",
+          "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED"
+        ],
+        "stageDecisionStatus": "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED",
+        "counters": {
+          "sends": 0,
+          "calls": 0,
+          "ghlWrites": 0,
+          "stageMovements": 0
+        }
+      }
+    }
+  ],
+  "realReadOnly": {
+    "auth": {
+      "ok": true,
+      "status": "AUTH_READY"
+    },
+    "records": [
+      {
+        "visibleRecord": {
+          "opportunityId": "x6wH...6lTZ",
+          "opportunityHash": "6916efcd1cf6",
+          "propertyLoaded": true,
+          "propertyHash": "032c6699e29b",
+          "currentStage": "Lead Entered",
+          "relationshipEvidence": {
+            "leadSourceKnown": true,
+            "listingAgentPresent": false,
+            "sellerNamePresent": false,
+            "agentPhonePresent": true,
+            "sellerPhonePresent": false
+          },
+          "contactPath": "RESEARCH_REQUIRED",
+          "scriptId": null
+        },
+        "exchanges": [
+          {
+            "operator": "Start Stage 1 for this lead",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Who am I supposed to contact?",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nAvailable paths: RESEARCH_REQUIRED\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show INT",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show the seller script",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show CCC",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show NOA",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "What does Kayla say to do next?",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          }
+        ],
+        "session": {
+          "state": "CONTACT_PATH_REQUIRED",
+          "selectedContactPath": null,
+          "courseScript": null,
+          "stageDecisionStatus": "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED",
+          "counters": {
+            "sends": 0,
+            "calls": 0,
+            "ghlWrites": 0,
+            "stageMovements": 0
+          }
+        }
+      },
+      {
+        "visibleRecord": {
+          "opportunityId": "Y9s3...FtJU",
+          "opportunityHash": "e78d73bbf31b",
+          "propertyLoaded": true,
+          "propertyHash": "0c07a823a1f0",
+          "currentStage": "Lead Entered",
+          "relationshipEvidence": {
+            "leadSourceKnown": true,
+            "listingAgentPresent": false,
+            "sellerNamePresent": false,
+            "agentPhonePresent": true,
+            "sellerPhonePresent": false
+          },
+          "contactPath": "RESEARCH_REQUIRED",
+          "scriptId": null
+        },
+        "exchanges": [
+          {
+            "operator": "Start Stage 1 for this lead",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Who am I supposed to contact?",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nAvailable paths: RESEARCH_REQUIRED\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show INT",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show the seller script",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show CCC",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show NOA",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "What does Kayla say to do next?",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          }
+        ],
+        "session": {
+          "state": "CONTACT_PATH_REQUIRED",
+          "selectedContactPath": null,
+          "courseScript": null,
+          "stageDecisionStatus": "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED",
+          "counters": {
+            "sends": 0,
+            "calls": 0,
+            "ghlWrites": 0,
+            "stageMovements": 0
+          }
+        }
+      },
+      {
+        "visibleRecord": {
+          "opportunityId": "GosQ...B690",
+          "opportunityHash": "aa2356008f63",
+          "propertyLoaded": true,
+          "propertyHash": "cb500e237a32",
+          "currentStage": "Lead Entered",
+          "relationshipEvidence": {
+            "leadSourceKnown": true,
+            "listingAgentPresent": false,
+            "sellerNamePresent": false,
+            "agentPhonePresent": true,
+            "sellerPhonePresent": false
+          },
+          "contactPath": "RESEARCH_REQUIRED",
+          "scriptId": null
+        },
+        "exchanges": [
+          {
+            "operator": "Start Stage 1 for this lead",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Who am I supposed to contact?",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nAvailable paths: RESEARCH_REQUIRED\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show INT",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show the seller script",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show CCC",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show NOA",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nBlocked: CONTACT_PATH_REQUIRED: Kayla's agent or seller procedure cannot be selected yet. Review the lead source and listing information, then identify whether this is a listing-agent, direct-seller, FSBO, or PPC path.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "What does Kayla say to do next?",
+            "telegram": "*Kayla Stage 1 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: CONTACT_PATH_REQUIRED\nInstruction: Review lead source and listing information to identify agent or seller procedure.\nMissing actions: CONTACT\\_PATH\\_REQUIRED, INT\\_REQUIRED, CALL\\_REQUIRED, NOTES\\_REQUIRED\nStage decision: STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          }
+        ],
+        "session": {
+          "state": "CONTACT_PATH_REQUIRED",
+          "selectedContactPath": null,
+          "courseScript": null,
+          "stageDecisionStatus": "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED",
+          "counters": {
+            "sends": 0,
+            "calls": 0,
+            "ghlWrites": 0,
+            "stageMovements": 0
+          }
+        }
+      }
+    ],
+    "requestLog": [
+      {
+        "category": "contacts.probe",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "opportunities.probe",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "customFields.probe",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "pipelines.probe",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "users.probe",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "opportunities.search",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "opportunities.search",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "opportunities.search",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "acceptance.opportunity",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "acceptance.contact",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "acceptance.opportunity",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "acceptance.contact",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "acceptance.opportunity",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "category": "acceptance.contact",
+        "method": "GET",
+        "status": 200
+      }
+    ]
+  },
+  "productionSafety": {
+    "smsSends": 0,
+    "calls": 0,
+    "productionWrites": 0,
+    "notesCreated": 0,
+    "stageMovements": 0,
+    "workflowModifications": 0,
+    "localSessionCounters": [
+      {
+        "sends": 0,
+        "calls": 0,
+        "ghlWrites": 0,
+        "stageMovements": 0
+      },
+      {
+        "sends": 0,
+        "calls": 0,
+        "ghlWrites": 0,
+        "stageMovements": 0
+      },
+      {
+        "sends": 0,
+        "calls": 0,
+        "ghlWrites": 0,
+        "stageMovements": 0
+      },
+      {
+        "sends": 0,
+        "calls": 0,
+        "ghlWrites": 0,
+        "stageMovements": 0
+      },
+      {
+        "sends": 0,
+        "calls": 0,
+        "ghlWrites": 0,
+        "stageMovements": 0
+      },
+      {
+        "sends": 0,
+        "calls": 0,
+        "ghlWrites": 0,
+        "stageMovements": 0
+      }
+    ]
+  }
+}

@@ -24,6 +24,30 @@ const FIELD_SCHEMA = Object.freeze({
   nextAction: { label: 'next action', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: true, type: 'string', question: 'Record next exact course step.', source: 'TRACK_STUDENT.md:19-66', destination: 'notes fallback', preventsCompletion: false },
 });
 
+const FIELD_DISPOSITIONS = Object.freeze({
+  RECORDED: 'RECORDED',
+  UNKNOWN_NOT_PROVIDED: 'UNKNOWN_NOT_PROVIDED',
+  NOT_APPLICABLE: 'NOT_APPLICABLE',
+  DEFERRED_COURSE_ALLOWED: 'DEFERRED_COURSE_ALLOWED',
+  UNRESOLVED_REQUIRED: 'UNRESOLVED_REQUIRED',
+});
+
+function conditionApplies(field, answers = {}) {
+  if (field.conditional === 'occupied') return answers.occupancy === 'occupied';
+  if (field.conditional === 'rented') return /rent|tenant|lease/i.test(`${answers.tenantStatus || ''} ${answers.leaseTerms || ''}`) || Boolean(answers.monthlyRent);
+  return true;
+}
+
+function normalizeFieldDispositions(path, answers = {}, existing = {}) {
+  const dispositions = { ...existing };
+  for (const field of fieldsForPath(path)) {
+    if (!conditionApplies(field, answers)) dispositions[field.id] = FIELD_DISPOSITIONS.NOT_APPLICABLE;
+    else if (String(answers[field.id] || '').trim() && ![FIELD_DISPOSITIONS.UNKNOWN_NOT_PROVIDED, FIELD_DISPOSITIONS.NOT_APPLICABLE, FIELD_DISPOSITIONS.DEFERRED_COURSE_ALLOWED].includes(dispositions[field.id])) dispositions[field.id] = FIELD_DISPOSITIONS.RECORDED;
+    else if (!dispositions[field.id]) dispositions[field.id] = field.required && field.preventsCompletion ? FIELD_DISPOSITIONS.UNRESOLVED_REQUIRED : FIELD_DISPOSITIONS.DEFERRED_COURSE_ALLOWED;
+  }
+  return dispositions;
+}
+
 function fieldsForPath(path) {
   return Object.entries(FIELD_SCHEMA)
     .filter(([, spec]) => spec.paths.includes(path))
@@ -31,9 +55,25 @@ function fieldsForPath(path) {
 }
 
 function missingRequiredFields(path, answers = {}) {
+  const dispositions = normalizeFieldDispositions(path, answers, answers.fieldDispositions || {});
   return fieldsForPath(path)
-    .filter(field => field.required && field.preventsCompletion && !String(answers[field.id] || '').trim())
+    .filter(field => field.required && field.preventsCompletion && conditionApplies(field, answers) && dispositions[field.id] === FIELD_DISPOSITIONS.UNRESOLVED_REQUIRED)
     .map(field => field.id);
+}
+
+function applyFieldDisposition(answers = {}, fieldId, disposition, reason = '') {
+  if (!Object.values(FIELD_DISPOSITIONS).includes(disposition)) return answers;
+  return {
+    ...answers,
+    fieldDispositions: {
+      ...(answers.fieldDispositions || {}),
+      [fieldId]: disposition,
+    },
+    fieldDispositionReasons: reason ? {
+      ...(answers.fieldDispositionReasons || {}),
+      [fieldId]: reason,
+    } : answers.fieldDispositionReasons,
+  };
 }
 
 function validateAnswer(fieldId, value) {
@@ -44,4 +84,4 @@ function validateAnswer(fieldId, value) {
   return { ok: true };
 }
 
-module.exports = { FIELD_SCHEMA, fieldsForPath, missingRequiredFields, validateAnswer };
+module.exports = { FIELD_SCHEMA, FIELD_DISPOSITIONS, fieldsForPath, missingRequiredFields, validateAnswer, normalizeFieldDispositions, applyFieldDisposition, conditionApplies };
