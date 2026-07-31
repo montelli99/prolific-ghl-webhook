@@ -2,6 +2,7 @@
 
 const dry = require('./telegram-outreach-dry-run');
 const { loadAtlasDryRunOpportunities } = require('./kayla-production-data-loader');
+const ghlGuards = require('./atlas-ghl-telegram-live-guards');
 
 function escapeMd(text) { return String(text ?? '').replace(/[_*`\[]/g, '\\$&'); }
 
@@ -22,6 +23,62 @@ function planForIntent(intent, ctx, options) {
   return { reply: dry.formatPlan(session) };
 }
 
+function abbreviated(id) { return String(id || '').slice(0, 8); }
+
+function formatCanaryPreview(session) {
+  const lines = ['*Atlas Kayla GHL Canary Preview*', `Session: ${session.sessionId}`, `Plan hash: ${session.immutablePlanHash}`, 'Live sends: 0', 'Production writes: 0', 'Stage movements: 0', ''];
+  for (const item of session.selectedRecords) {
+    const guard = item.ghlGuard || {};
+    lines.push(`${item.number}. ${item.contactRole.role} (${Math.round((item.contactRole.confidence || 0) * 100)}%) | ${item.propertyAddress}`);
+    lines.push(`Contact: ${item.maskedContact} | Opp: ${abbreviated(item.opportunityId)} | Stage: ${item.currentStage}`);
+    lines.push(`Kayla rule: ${item.kaylaRule} | Shortcut: ${item.shortcutName || 'none'}`);
+    lines.push(`Message: ${item.renderedPreview || '(manual action; no SMS preview)'}`);
+    lines.push(`Sender: ${item.senderNumber}`);
+    lines.push(`GHL guard: ${guard.passed ? 'PASSED' : 'BLOCKED'}${guard.blockedReasons?.length ? ` (${guard.blockedReasons.join(', ')})` : ''}`);
+    lines.push(`Restriction: DNC ${guard.dncStatus?.passed ? 'clear' : 'blocked'} | opt-out ${guard.optOutStatus?.passed ? 'clear' : 'blocked'} | wrong-number ${guard.wrongNumberStatus?.passed ? 'clear' : 'blocked'} | pending-reply ${guard.pendingReplyStatus?.passed ? 'clear' : 'blocked'} | human-work ${guard.activeHumanWorkStatus?.passed ? 'clear' : 'blocked'}`);
+    lines.push(`Workflow isolation: ${guard.workflowIsolationStatus?.status || 'WEBHOOK_ISOLATION_PENDING'}`);
+    lines.push(`Stage movement: ${ghlGuards.STAGE_MOVEMENT_PENDING}`);
+    lines.push(`Current sendability: ${guard.currentSendability || 'BLOCKED_GHL_GUARD'}`, '');
+  }
+  return lines.join('\n');
+}
+
+function canaryPreviewForIntent(intent, ctx, options) {
+  const opportunities = options?.opportunities || loadAtlasDryRunOpportunities(options);
+  const plan = dry.buildPlan({ opportunities, count: intent.count || 3, roleFilter: intent.roleFilter || 'all', mode: 'INITIAL_CONTACT', ctx, options });
+  const now = options.now || new Date();
+  const timeZone = Object.prototype.hasOwnProperty.call(options, 'timeZone') ? options.timeZone : (options.defaultTimeZone || process.env.ATLAS_CANARY_TIMEZONE || 'America/New_York');
+  const rawRecords = opportunities.slice(0, 3);
+  const guarded = rawRecords.map((record, index) => {
+    const eligibility = dry.evaluateEligibility(record, { allRecords: rawRecords });
+    const normalized = dry.normalizeOpportunity(record);
+    const planned = plan.selectedRecords.find(item => item.opportunityId === normalized.opportunityId);
+    return {
+      ...(planned || {}),
+      number: index + 1,
+      opportunityId: normalized.opportunityId,
+      contactId: normalized.contactId,
+      maskedContact: dry.maskContact(normalized.contactId),
+      contactRole: eligibility.contactRole,
+      propertyAddress: normalized.propertyAddress,
+      currentStage: eligibility.currentStage,
+      kaylaRule: eligibility.sourceCitation || 'docs/atlas-kayla-course-parity-spec.md#course-rules',
+      nextRequiredAction: eligibility.nextCourseApprovedAction || eligibility.reason,
+      shortcutName: eligibility.requiredScriptOrShortcut,
+      renderedPreview: eligibility.renderedPreview,
+      senderNumber: plan.senderNumberLock,
+      status: eligibility.safe && eligibility.due ? 'AVAILABLE' : 'BLOCKED',
+      eligibility,
+      ghlGuard: ghlGuards.evaluateGhlCanaryRecord(record, { records: rawRecords, now, timeZone, workflowIsolationProven: false }),
+    };
+  });
+  const guardedPlan = { ...plan, selectedRecords: guarded, dryRunMode: true, canaryPreviewMode: true };
+  const session = dry.createSession({ chatId: ctx.chatId || ctx.sourceTopicId || 'default', telegramUserId: ctx.telegramUserId, mode: 'INITIAL_CONTACT', requestedCount: intent.count || 3, requestedRoleFilter: intent.roleFilter || 'all', plan: guardedPlan }, options);
+  session.canaryGuardSchema = 'atlas-ghl-telegram-canary-guard-v1';
+  dry.saveSession(session, options);
+  return { reply: formatCanaryPreview(session), session };
+}
+
 function handleKaylaOutreachCommand(ctx, text, options = {}) {
   try {
     const intent = dry.parseIntent(text);
@@ -40,6 +97,7 @@ function handleKaylaOutreachCommand(ctx, text, options = {}) {
       return { reply: `Outreach state: ${state.state}\nSession: ${session ? `${session.sessionId} (${session.state})` : 'none'}\nLive sends: 0\nProduction writes: 0` };
     }
     if (['SHOW_UNTOUCHED_LEADS', 'SHOW_AGENTS_DUE', 'SHOW_OWNERS_DUE', 'SHOW_TEXTS_DUE', 'SHOW_CALLS_DUE', 'SHOW_FOLLOW_UPS_DUE', 'SHOW_TODAYS_KAYLA_WORK'].includes(intent.intent)) return planForIntent(intent, ctx, options);
+    if (intent.intent === 'PREVIEW_CANARY') return canaryPreviewForIntent(intent, ctx, options);
     if (intent.intent === 'PREVIEW_PLAN') {
       const session = requireSession(ctx, options);
       session.state = 'PREVIEWED';
@@ -90,4 +148,4 @@ function handleKaylaOutreachCommand(ctx, text, options = {}) {
   }
 }
 
-module.exports = { handleKaylaOutreachCommand };
+module.exports = { handleKaylaOutreachCommand, canaryPreviewForIntent, formatCanaryPreview };

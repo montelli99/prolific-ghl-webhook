@@ -138,7 +138,7 @@ function evaluateEligibility(input, options = {}) {
   const role = classifyRole(record);
   const locks = layeredLocks(record, (options.allRecords || []).map(normalizeOpportunity));
   const stage = getStageById(spec, record.currentStageId);
-  const base = { opportunityId: record.opportunityId, contactId: record.contactId, propertyContext: record.propertyAddress, contactRole: role, currentStage: stage ? stage.stageName : record.currentStageName, kaylaProcessState: stage ? stage.mode : 'UNKNOWN', multiPropertyContext: locks, missingEvidence: [], workflowConflict: null, priorOutreachUncertainty: record.priorOutreachUncertain, safe: false };
+  const base = { opportunityId: record.opportunityId, contactId: record.contactId, propertyContext: record.propertyAddress, contactRole: role, currentStage: stage ? stage.stageName : record.currentStageName, kaylaProcessState: stage ? stage.mode : 'UNKNOWN', multiPropertyContext: locks, missingEvidence: [], workflowConflict: null, priorOutreachUncertainty: record.priorOutreachUncertain, rawRecord: record, safe: false };
   const block = (resultClass, reason) => ({ ...base, resultClass, due: false, reason, safe: false });
 
   if (!record.opportunityId || !record.contactId) return block('BLOCKED_IDENTITY', 'Missing opportunity or contact identity.');
@@ -366,6 +366,7 @@ function parseIntent(text) {
   if (/skip/.test(lower)) return { intent: 'SKIP_PLAN_ITEM', numbers: parseNumbers(lower) };
   if (/restore/.test(lower)) return { intent: 'RESTORE_PLAN_ITEM', numbers: parseNumbers(lower) };
   if (/select/.test(lower)) return { intent: 'SELECT_PLAN_ITEMS', numbers: parseNumbers(lower) };
+  if (/canary/.test(lower) && /preview|plan|show/.test(lower)) return { intent: 'PREVIEW_CANARY', count: Math.min(count, 3) };
   if (/preview/.test(lower)) return { intent: 'PREVIEW_PLAN', count };
   if (/why.*\d+|due/.test(lower) && /why/.test(lower)) return { intent: 'SHOW_COURSE_RULE', numbers: parseNumbers(lower) };
   if (/shortcut|script/.test(lower)) return { intent: 'SHOW_EXACT_SCRIPT', numbers: parseNumbers(lower) };
