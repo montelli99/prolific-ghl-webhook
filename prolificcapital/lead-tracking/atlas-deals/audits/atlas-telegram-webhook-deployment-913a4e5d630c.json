@@ -1,0 +1,49 @@
+{
+  "artifactType": "atlas-telegram-webhook-deployment",
+  "generatedAt": "2026-07-31T08:44:59.5378000Z",
+  "nestedRepositoryCommit": "26bcc12dd62d9dbf618afe6a5c021f63f97ac8b9",
+  "deployedRevision": "26bcc12dd62d9dbf618afe6a5c021f63f97ac8b9",
+  "deploymentTimestamp": "2026-07-31T08:44:59.5847951Z",
+  "healthResult": {
+    "ok": true,
+    "fieldMapHashValid": true,
+    "handlerVersion": "atlas-webhook-ghl-only-v2"
+  },
+  "locationLock": "61XPzSqRy7UKMwW9DeB8",
+  "pipelineLock": "nSf3NXYVkt8X4PgW9aZ3",
+  "telegramMarkerCapability": {
+    "supported": true,
+    "source": "TELEGRAM_ATLAS_OUTREACH",
+    "acknowledgement": "ATLAS_TELEGRAM_STAGE_TRANSITION_ACKNOWLEDGED_NO_OUTREACH",
+    "requiredFields": [
+      "source",
+      "opportunityId",
+      "contactId",
+      "locationId",
+      "pipelineId",
+      "atlas_telegram_action_id",
+      "atlas_telegram_transition_id",
+      "atlas_telegram_idempotency_key",
+      "atlas_telegram_from_stage_id",
+      "atlas_telegram_to_stage_id",
+      "atlas_telegram_transition_at"
+    ],
+    "sendsDuringAcknowledgement": 0,
+    "writesDuringAcknowledgement": 0,
+    "stageMovementsDuringAcknowledgement": 0
+  },
+  "sends": 0,
+  "providerSends": 0,
+  "writes": 0,
+  "stageMovements": 0,
+  "divinityRecordsTouched": 0,
+  "hashAlgorithm": "sha256",
+  "canonicalizationVersion": "atlas-json-v1",
+  "excludedSelfHashFields": [
+    "canonicalHash",
+    "artifactHash",
+    "selfHash",
+    "manifestChecksum"
+  ],
+  "canonicalHash": "913a4e5d630ca7b946c807713f0bdd6074cae125a4a0edfe2d4aba1050da9773"
+}
