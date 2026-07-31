@@ -1,0 +1,64 @@
+{
+  "artifactType": "atlas-telegram-live-closeout-register",
+  "generatedAt": "2026-07-31T08:46:14.6089401Z",
+  "parentGuardCommit": "0be59cbfa5353017df770f6042ac913312ad45e7",
+  "parentArtifactCommit": "979f3349d4b4b70f91363c82f1633dba853c1201",
+  "nestedWebhookCommit": "26bcc12dd62d9dbf618afe6a5c021f63f97ac8b9",
+  "deployedRevision": "26bcc12dd62d9dbf618afe6a5c021f63f97ac8b9",
+  "deploymentUrl": "https://prolific-ghl-webhook-0b16.onrender.com",
+  "healthPath": "/health/atlas",
+  "guardSchema": "atlas-ghl-telegram-canary-guard-v1",
+  "webhookAck": "ATLAS_TELEGRAM_STAGE_TRANSITION_ACKNOWLEDGED_NO_OUTREACH",
+  "locationLock": "61XPzSqRy7UKMwW9DeB8",
+  "pipelineLock": "nSf3NXYVkt8X4PgW9aZ3",
+  "leadEnteredStageId": "7067148a-2ee8-4e5b-93c8-31e0253fea68",
+  "contactMadeStageId": "934c4c52-4b22-457a-8d10-55ab6600fdee",
+  "productionSnapshot": {
+    "atlasValidOpportunities": 206,
+    "uniqueAtlasContacts": 177,
+    "path": "lead-tracking/atlas-deals/audits/atlas-telegram-production-snapshot-61d3de5c51ed.json",
+    "leadEnteredAtlasOpportunities": 206,
+    "physicalTargetPipelineOpportunities": 213,
+    "canonicalHash": "61d3de5c51ed3e765e2b76217b38e4ccef0fe1f65758e9373285b430c9eee67e"
+  },
+  "canaryPreview": {
+    "reviewCandidates": 3,
+    "status": "NOT_CURRENTLY_SENDABLE_TIME_WINDOW_OR_GUARD",
+    "sendableCandidates": 0,
+    "blockers": [
+      "BLOCKED_ROLE_UNCERTAIN",
+      "UNKNOWN_TIMEZONE_BLOCKS_CANARY",
+      "STAGE_MOVEMENT_DISABLED_WORKFLOW_ISOLATION_PENDING"
+    ]
+  },
+  "readiness": {
+    "PROVIDER_EXECUTION_READY": false,
+    "STAGE_MOVEMENT_READY": false,
+    "WEBHOOK_ISOLATION_READY": true,
+    "GHL_GUARD_READY": true
+  },
+  "zeroEffectProof": {
+    "productionWrites": 0,
+    "webhookHealthOutreach": 0,
+    "divinityRecordsTouched": 0,
+    "stageMovements": 0,
+    "ghlSends": 0,
+    "webhookHealthWrites": 0,
+    "providerSends": 0
+  },
+  "remainingBlockers": [
+    "Provider execution intentionally disabled in this task",
+    "Canary preview currently blocked by unknown timezone and role uncertainty",
+    "Stage movement remains disabled until owner-approved marker path proof in live operations",
+    "Telegram owner approval not requested or received"
+  ],
+  "hashAlgorithm": "sha256",
+  "canonicalizationVersion": "atlas-json-v1",
+  "excludedSelfHashFields": [
+    "canonicalHash",
+    "artifactHash",
+    "selfHash",
+    "manifestChecksum"
+  ],
+  "canonicalHash": "62e9b2f0f5a9743142f0b9331287b54313250958b8e74945c4abc0835231315e"
+}
