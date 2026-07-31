@@ -13,6 +13,8 @@ const { MONTELLI_STAGE_MAP, normalizeMontelliStageValue } = require('./montelli-
 const {
   normalizeWebhookPayload,
   extractImportMarkers,
+  extractTelegramOutreachMarkers,
+  acknowledgeTelegramOutreachTransition,
   validateAgainstTarget,
   buildAuditReceipt,
   createDiagnosticLogger,
@@ -129,6 +131,18 @@ app.post('/webhook/ghl', async (req, res) => {
     const payload = req.body;
     const webhookType = payload.type;
 
+    const normalizedPayload = normalizeWebhookPayload(req);
+    const telegramMarkers = extractTelegramOutreachMarkers(normalizedPayload, null);
+    if (telegramMarkers.malformed || telegramMarkers.markedTelegramOutreach || telegramMarkers.source) {
+      const ack = acknowledgeTelegramOutreachTransition(normalizedPayload, telegramMarkers);
+      res.status(ack.ok ? 200 : 403).json(ack);
+      if (ack.ok) {
+        const validation = validateAgainstTarget('generic', normalizedPayload, null);
+        atlasWebhookDiagnostics.write({ ...buildAuditReceipt({ endpoint: 'generic', payload: normalizedPayload, validation, markers: telegramMarkers }), telegramTransition: ack, tookMs: Date.now() - t0 });
+      }
+      return;
+    }
+
     // Always acknowledge immediately — GHL expects 200 within seconds
     res.status(200).json({ received: true, type: webhookType });
 
@@ -144,7 +158,6 @@ app.post('/webhook/ghl', async (req, res) => {
           return;
         }
 
-        const normalizedPayload = normalizeWebhookPayload(req);
         const payloadMarkers = extractImportMarkers(normalizedPayload, null);
         const opportunity = payloadMarkers.markedImport ? null : await fetchAtlasOpportunity(normalizedPayload.opportunityId);
         const importMarkers = extractImportMarkers(normalizedPayload, opportunity);
@@ -294,6 +307,17 @@ async function fetchAtlasOpportunity(opportunityId) {
 async function prepareAtlasWebhook(endpoint, req, res) {
   const payload = normalizeWebhookPayload(req);
   req.ghlWorkflowPayload = payload;
+
+  const telegramMarkers = extractTelegramOutreachMarkers(payload, null);
+  if (telegramMarkers.malformed || telegramMarkers.markedTelegramOutreach || telegramMarkers.source) {
+    const ack = acknowledgeTelegramOutreachTransition(payload, telegramMarkers);
+    res.status(ack.ok ? 200 : 403).json(ack);
+    if (ack.ok) {
+      const validation = validateAgainstTarget(endpoint, payload, null);
+      atlasWebhookDiagnostics.write({ ...buildAuditReceipt({ endpoint, payload, validation, markers: telegramMarkers }), telegramTransition: ack });
+    }
+    return null;
+  }
 
   if (payload.pipelineId === FORBIDDEN_PIPELINE_ID) {
     res.status(403).json({ status: 'REJECTED', reason: 'forbidden pipeline' });
@@ -704,6 +728,15 @@ app.get('/health/atlas', (req, res) => {
       leadEntered: true,
       generic: true,
       offerReadySuppression: false,
+    },
+    telegramOutreachMarkers: {
+      supported: true,
+      source: 'TELEGRAM_ATLAS_OUTREACH',
+      acknowledgement: 'ATLAS_TELEGRAM_STAGE_TRANSITION_ACKNOWLEDGED_NO_OUTREACH',
+      requiredFields: ['source', 'opportunityId', 'contactId', 'locationId', 'pipelineId', 'atlas_telegram_action_id', 'atlas_telegram_transition_id', 'atlas_telegram_idempotency_key', 'atlas_telegram_from_stage_id', 'atlas_telegram_to_stage_id', 'atlas_telegram_transition_at'],
+      sendsDuringAcknowledgement: 0,
+      writesDuringAcknowledgement: 0,
+      stageMovementsDuringAcknowledgement: 0,
     },
     databaseUrlProvisionedByThisRevision: false,
     atlasPathUsesDatabaseUrl: false,
