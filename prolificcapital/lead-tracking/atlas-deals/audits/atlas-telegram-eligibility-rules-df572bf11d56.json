@@ -1,0 +1,47 @@
+{
+  "artifactType": "atlas-telegram-eligibility-rules",
+  "generatedAt": "2026-07-31T07:21:59.980Z",
+  "liveSends": 0,
+  "productionWrites": 0,
+  "stageMovements": 0,
+  "workflowModifications": 0,
+  "killSwitchState": "DRY_RUN_ONLY",
+  "hash": {
+    "hashAlgorithm": "sha256",
+    "canonicalizationVersion": "atlas-json-v1",
+    "excludedSelfHashFields": [
+      "canonicalHash",
+      "artifactHash",
+      "selfHash",
+      "manifestChecksum"
+    ]
+  },
+  "payload": {
+    "resultClasses": [
+      "ELIGIBLE_INITIAL_TEXT",
+      "ELIGIBLE_INITIAL_CALL",
+      "ELIGIBLE_FOLLOW_UP_TEXT",
+      "ELIGIBLE_FOLLOW_UP_CALL",
+      "ELIGIBLE_OFFER_FEEDBACK",
+      "ELIGIBLE_NEGOTIATION_ACTION",
+      "ELIGIBLE_CONTRACT_ACTION",
+      "NOT_DUE",
+      "BLOCKED_MISSING_COURSE_RULE",
+      "BLOCKED_COURSE_CONFLICT",
+      "BLOCKED_IDENTITY",
+      "BLOCKED_DNC",
+      "BLOCKED_WRONG_NUMBER",
+      "BLOCKED_PRIOR_OUTREACH_UNCERTAIN",
+      "BLOCKED_PENDING_REPLY",
+      "BLOCKED_ACTIVE_HUMAN_WORK",
+      "BLOCKED_MULTI_PROPERTY_CONTEXT",
+      "BLOCKED_WORKFLOW_CONFLICT",
+      "BLOCKED_MISSING_SCRIPT",
+      "BLOCKED_MISSING_PROPERTY_CONTEXT",
+      "BLOCKED_PROVIDER_CONFIGURATION",
+      "BLOCKED_SENDER_MISMATCH"
+    ],
+    "sampleCount": 272
+  },
+  "canonicalHash": "df572bf11d56d82f6e935da006932d8234b37b03a742e9ae6de0c4de2a2d3556"
+}

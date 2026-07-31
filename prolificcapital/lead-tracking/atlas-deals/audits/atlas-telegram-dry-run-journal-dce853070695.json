@@ -1,0 +1,146 @@
+{
+  "artifactType": "atlas-telegram-dry-run-journal",
+  "generatedAt": "2026-07-31T07:21:59.987Z",
+  "liveSends": 0,
+  "productionWrites": 0,
+  "stageMovements": 0,
+  "workflowModifications": 0,
+  "killSwitchState": "DRY_RUN_ONLY",
+  "hash": {
+    "hashAlgorithm": "sha256",
+    "canonicalizationVersion": "atlas-json-v1",
+    "excludedSelfHashFields": [
+      "canonicalHash",
+      "artifactHash",
+      "selfHash",
+      "manifestChecksum"
+    ]
+  },
+  "payload": {
+    "journalLineCount": 12,
+    "journalPreview": [
+      {
+        "at": "2026-07-31T07:21:59.755Z",
+        "type": "SESSION_CREATED",
+        "sessionId": "session_b83615000a619573",
+        "state": "PLANNED",
+        "planHash": "d30e1551215fe92ed1bdcd3d42c15648aa5e0a06c593a78b5893ea138ef8c316",
+        "liveSends": 0,
+        "productionWrites": 0,
+        "stageMovements": 0,
+        "workflowModifications": 0,
+        "killSwitchState": "DRY_RUN_ONLY"
+      },
+      {
+        "at": "2026-07-31T07:21:59.782Z",
+        "type": "SESSION_CREATED",
+        "sessionId": "session_1fe924707cdcd245",
+        "state": "PLANNED",
+        "planHash": "56f174d2af4b46aaa9db2061367032b674fe59bd69d89dc40b8d96c0527c2040",
+        "liveSends": 0,
+        "productionWrites": 0,
+        "stageMovements": 0,
+        "workflowModifications": 0,
+        "killSwitchState": "DRY_RUN_ONLY"
+      },
+      {
+        "at": "2026-07-31T07:21:59.805Z",
+        "type": "SESSION_CREATED",
+        "sessionId": "session_66b03365a7fc26d0",
+        "state": "PLANNED",
+        "planHash": "56f174d2af4b46aaa9db2061367032b674fe59bd69d89dc40b8d96c0527c2040",
+        "liveSends": 0,
+        "productionWrites": 0,
+        "stageMovements": 0,
+        "workflowModifications": 0,
+        "killSwitchState": "DRY_RUN_ONLY"
+      },
+      {
+        "at": "2026-07-31T07:21:59.828Z",
+        "type": "SESSION_CREATED",
+        "sessionId": "session_8e409852a9240f95",
+        "state": "PLANNED",
+        "planHash": "56f174d2af4b46aaa9db2061367032b674fe59bd69d89dc40b8d96c0527c2040",
+        "liveSends": 0,
+        "productionWrites": 0,
+        "stageMovements": 0,
+        "workflowModifications": 0,
+        "killSwitchState": "DRY_RUN_ONLY"
+      },
+      {
+        "at": "2026-07-31T07:21:59.853Z",
+        "type": "SESSION_ITEM_STATUS",
+        "sessionId": "session_0c3355ca0bebd9db",
+        "numbers": [
+          1
+        ],
+        "status": "HELD",
+        "liveSends": 0,
+        "productionWrites": 0,
+        "stageMovements": 0,
+        "workflowModifications": 0,
+        "killSwitchState": "DRY_RUN_ONLY"
+      },
+      {
+        "at": "2026-07-31T07:21:59.871Z",
+        "type": "SESSION_ITEM_STATUS",
+        "sessionId": "session_0c3355ca0bebd9db",
+        "numbers": [
+          2
+        ],
+        "status": "SKIPPED",
+        "liveSends": 0,
+        "productionWrites": 0,
+        "stageMovements": 0,
+        "workflowModifications": 0,
+        "killSwitchState": "DRY_RUN_ONLY"
+      },
+      {
+        "at": "2026-07-31T07:21:59.891Z",
+        "type": "SESSION_SELECTED",
+        "sessionId": "session_0c3355ca0bebd9db",
+        "numbers": [],
+        "liveSends": 0,
+        "productionWrites": 0,
+        "stageMovements": 0,
+        "workflowModifications": 0,
+        "killSwitchState": "DRY_RUN_ONLY"
+      },
+      {
+        "at": "2026-07-31T07:21:59.911Z",
+        "type": "SESSION_APPROVED_DRY_RUN",
+        "sessionId": "session_0c3355ca0bebd9db",
+        "planHash": "2f07796956fbb2eac209aa9d9b95c5b4440272ad3ba0c69ec12cad49ad7f7bcf",
+        "numbers": [],
+        "liveSends": 0,
+        "productionWrites": 0,
+        "stageMovements": 0,
+        "workflowModifications": 0,
+        "killSwitchState": "DRY_RUN_ONLY"
+      },
+      {
+        "at": "2026-07-31T07:21:59.961Z",
+        "type": "KILL_SWITCH_CHANGED",
+        "state": "PAUSED",
+        "by": "9104",
+        "liveSends": 0,
+        "productionWrites": 0,
+        "stageMovements": 0,
+        "workflowModifications": 0,
+        "killSwitchState": "PAUSED"
+      },
+      {
+        "at": "2026-07-31T07:21:59.969Z",
+        "type": "KILL_SWITCH_CHANGED",
+        "state": "DRY_RUN_ONLY",
+        "by": "9104",
+        "liveSends": 0,
+        "productionWrites": 0,
+        "stageMovements": 0,
+        "workflowModifications": 0,
+        "killSwitchState": "DRY_RUN_ONLY"
+      }
+    ]
+  },
+  "canonicalHash": "dce853070695b7ee7024c3a9bcb86916fa827ee05bc7a8444d49a2477d98c810"
+}

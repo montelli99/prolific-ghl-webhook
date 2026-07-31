@@ -1,0 +1,89 @@
+{
+  "artifactType": "atlas-telegram-production-data-rehearsal",
+  "generatedAt": "2026-07-31T07:21:59.989Z",
+  "liveSends": 0,
+  "productionWrites": 0,
+  "stageMovements": 0,
+  "workflowModifications": 0,
+  "killSwitchState": "DRY_RUN_ONLY",
+  "hash": {
+    "hashAlgorithm": "sha256",
+    "canonicalizationVersion": "atlas-json-v1",
+    "excludedSelfHashFields": [
+      "canonicalHash",
+      "artifactHash",
+      "selfHash",
+      "manifestChecksum"
+    ]
+  },
+  "payload": {
+    "opportunityCount": 272,
+    "scenarios": [
+      {
+        "scenario": "A",
+        "replyPreview": "*Atlas Kayla Dry-Run Plan*\nSession: session_0c3355ca0bebd9db\nState: PLANNED\nPlan hash: 2f07796956fbb2eac209aa9d9b95c5b4440272ad3ba0c69ec12cad49ad7f7bcf\nSender: +*******2619\n\nZero-send proof: live sends 0; production writes 0; stage movements 0; workflow modifications 0."
+      },
+      {
+        "scenario": "B",
+        "replyPreview": "*Atlas Kayla Dry-Run Plan*\nSession: session_b83615000a619573\nState: PLANNED\nPlan hash: d30e1551215fe92ed1bdcd3d42c15648aa5e0a06c593a78b5893ea138ef8c316\nSender: +*******2619\n\nZero-send proof: live sends 0; production writes 0; stage movements 0; workflow modifications 0."
+      },
+      {
+        "scenario": "C",
+        "replyPreview": "*Atlas Kayla Dry-Run Plan*\nSession: session_1fe924707cdcd245\nState: PLANNED\nPlan hash: 56f174d2af4b46aaa9db2061367032b674fe59bd69d89dc40b8d96c0527c2040\nSender: +*******2619\n\nZero-send proof: live sends 0; production writes 0; stage movements 0; workflow modifications 0."
+      },
+      {
+        "scenario": "D",
+        "replyPreview": "*Atlas Kayla Dry-Run Plan*\nSession: session_66b03365a7fc26d0\nState: PLANNED\nPlan hash: 56f174d2af4b46aaa9db2061367032b674fe59bd69d89dc40b8d96c0527c2040\nSender: +*******2619\n\nZero-send proof: live sends 0; production writes 0; stage movements 0; workflow modifications 0."
+      },
+      {
+        "scenario": "E",
+        "replyPreview": "*Atlas Kayla Dry-Run Plan*\nSession: session_8e409852a9240f95\nState: PLANNED\nPlan hash: 56f174d2af4b46aaa9db2061367032b674fe59bd69d89dc40b8d96c0527c2040\nSender: +*******2619\n\nZero-send proof: live sends 0; production writes 0; stage movements 0; workflow modifications 0."
+      },
+      {
+        "scenario": "F",
+        "replyPreview": "*Atlas Kayla Dry-Run Plan*\nSession: session_0c3355ca0bebd9db\nState: PREVIEWED\nPlan hash: 2f07796956fbb2eac209aa9d9b95c5b4440272ad3ba0c69ec12cad49ad7f7bcf\nSender: +*******2619\n\nZero-send proof: live sends 0; production writes 0; stage movements 0; workflow modifications 0."
+      },
+      {
+        "scenario": "G",
+        "replyPreview": "*Atlas Kayla Dry-Run Plan*\nSession: session_0c3355ca0bebd9db\nState: PARTIALLY_SELECTED\nPlan hash: 2f07796956fbb2eac209aa9d9b95c5b4440272ad3ba0c69ec12cad49ad7f7bcf\nSender: +*******2619\n\nZero-send proof: live sends 0; production writes 0; stage movements 0; workflow modifications 0."
+      },
+      {
+        "scenario": "H",
+        "replyPreview": "*Atlas Kayla Dry-Run Plan*\nSession: session_0c3355ca0bebd9db\nState: PARTIALLY_SELECTED\nPlan hash: 2f07796956fbb2eac209aa9d9b95c5b4440272ad3ba0c69ec12cad49ad7f7bcf\nSender: +*******2619\n\nZero-send proof: live sends 0; production writes 0; stage movements 0; workflow modifications 0."
+      },
+      {
+        "scenario": "I",
+        "replyPreview": "*Atlas Kayla Dry-Run Plan*\nSession: session_0c3355ca0bebd9db\nState: PARTIALLY_SELECTED\nPlan hash: 2f07796956fbb2eac209aa9d9b95c5b4440272ad3ba0c69ec12cad49ad7f7bcf\nSender: +*******2619\n\nZero-send proof: live sends 0; production writes 0; stage movements 0; workflow modifications 0."
+      },
+      {
+        "scenario": "J-K",
+        "replyPreview": "Dry-run simulation complete.\nSession: session_0c3355ca0bebd9db\nPlan hash: 2f07796956fbb2eac209aa9d9b95c5b4440272ad3ba0c69ec12cad49ad7f7bcf\nSimulated actions: 0\nLive sends: 0\nProduction writes: 0\nStage movements: 0"
+      },
+      {
+        "scenario": "L",
+        "replyPreview": "Expected dry-run stage results:"
+      },
+      {
+        "scenario": "M",
+        "replyPreview": "Today simulated activity for session_0c3355ca0bebd9db: 0 action(s). Live sends: 0. Production writes: 0."
+      },
+      {
+        "scenario": "N",
+        "replyPreview": "Outreach paused. State: PAUSED. Live sends remain 0."
+      },
+      {
+        "scenario": "O",
+        "replyPreview": "Dry-run outreach is blocked: OUTREACH\\_PAUSED"
+      },
+      {
+        "scenario": "P",
+        "replyPreview": "Dry run resumed. State: DRY_RUN_ONLY. Live mode is unavailable."
+      }
+    ],
+    "liveSends": 0,
+    "productionWrites": 0,
+    "stageMovements": 0,
+    "workflowModifications": 0
+  },
+  "canonicalHash": "80db419d6f9075554c6d5ff2bacffc239509a80098ecc27cbf59fde8f8ec4b1a"
+}

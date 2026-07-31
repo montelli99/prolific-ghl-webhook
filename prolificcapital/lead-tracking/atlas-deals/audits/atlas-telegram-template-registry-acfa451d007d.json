@@ -1,0 +1,311 @@
+{
+  "artifactType": "atlas-telegram-template-registry",
+  "generatedAt": "2026-07-31T07:21:59.981Z",
+  "liveSends": 0,
+  "productionWrites": 0,
+  "stageMovements": 0,
+  "workflowModifications": 0,
+  "killSwitchState": "DRY_RUN_ONLY",
+  "hash": {
+    "hashAlgorithm": "sha256",
+    "canonicalizationVersion": "atlas-json-v1",
+    "excludedSelfHashFields": [
+      "canonicalHash",
+      "artifactHash",
+      "selfHash",
+      "manifestChecksum"
+    ]
+  },
+  "payload": {
+    "templates": [
+      {
+        "shortcutName": "INT",
+        "audience": [
+          "agent",
+          "owner",
+          "broker"
+        ],
+        "stage": 1,
+        "actionType": "TEXT",
+        "body": "[Name], are you still accepting offers for [address]? My name is [your name], I'm looking to purchase this as a rental for my portfolio.",
+        "variables": [
+          "address",
+          "name",
+          "your name"
+        ],
+        "requiredContext": [
+          "propertyAddress",
+          "contactName",
+          "your name"
+        ],
+        "source": "docs/atlas-kayla-course-parity-spec.md#script-inventory",
+        "status": "APPROVED_BY_COURSE",
+        "allowedChannel": "JustCall SMS dry-run only",
+        "callBeforeAfterRule": "CALL_AFTER_TEXT",
+        "followUpInterval": null,
+        "manualReviewRequirement": "Required before any live send; dry-run approval only in this phase.",
+        "courseRuleCitation": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+      },
+      {
+        "shortcutName": "NOA",
+        "audience": [
+          "agent",
+          "owner",
+          "broker"
+        ],
+        "stage": 1,
+        "actionType": "TEXT",
+        "body": "Are you still accepting offers for [address]?",
+        "variables": [
+          "address"
+        ],
+        "requiredContext": [
+          "propertyAddress"
+        ],
+        "source": "docs/atlas-kayla-course-parity-spec.md#script-inventory",
+        "status": "APPROVED_BY_COURSE",
+        "allowedChannel": "JustCall SMS dry-run only",
+        "callBeforeAfterRule": "MANUAL_REVIEW",
+        "followUpInterval": null,
+        "manualReviewRequirement": "Required before any live send; dry-run approval only in this phase.",
+        "courseRuleCitation": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+      },
+      {
+        "shortcutName": "DNCT",
+        "audience": [
+          "agent",
+          "owner",
+          "broker"
+        ],
+        "stage": 1,
+        "actionType": "TEXT",
+        "body": "[Name], would you be opposed to accepting an offer for [address]? My name is [name], I'm looking at purchasing as a rental for my portfolio.",
+        "variables": [
+          "address",
+          "name"
+        ],
+        "requiredContext": [
+          "propertyAddress",
+          "contactName"
+        ],
+        "source": "docs/atlas-kayla-course-parity-spec.md#script-inventory",
+        "status": "APPROVED_BY_COURSE",
+        "allowedChannel": "JustCall SMS dry-run only",
+        "callBeforeAfterRule": "MANUAL_REVIEW",
+        "followUpInterval": null,
+        "manualReviewRequirement": "Required before any live send; dry-run approval only in this phase.",
+        "courseRuleCitation": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+      },
+      {
+        "shortcutName": "CCC",
+        "audience": [
+          "agent",
+          "owner",
+          "broker"
+        ],
+        "stage": 2,
+        "actionType": "TEXT_AFTER_CALL",
+        "body": "It is great aligning with you [name], I look forward to connecting the dots with you shortly at [address]. Feel free to browse through our closings with similar clients on our website — Divinity Aligned LLC: Expert Solutions for Life's Major Transitions",
+        "variables": [
+          "address",
+          "name"
+        ],
+        "requiredContext": [
+          "propertyAddress",
+          "contactName"
+        ],
+        "source": "docs/atlas-kayla-course-parity-spec.md#script-inventory",
+        "status": "APPROVED_BY_COURSE",
+        "allowedChannel": "JustCall SMS dry-run only",
+        "callBeforeAfterRule": "TEXT_AFTER_CALL",
+        "followUpInterval": null,
+        "manualReviewRequirement": "Required before any live send; dry-run approval only in this phase.",
+        "courseRuleCitation": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+      },
+      {
+        "shortcutName": "GCJ",
+        "audience": [
+          "agent",
+          "owner",
+          "broker"
+        ],
+        "stage": 4,
+        "actionType": "TEXT_AFTER_CALL",
+        "body": "[Name] - happy [day]! Creating a group chat for the purchase on [address] with my business partner Jaxon. He is currently in a meeting with our lender; The LOI will be coming from our partner at Homewithkaylamauser@gmail.com ; simply inform us it has been received for presentation, and also ensure to check other folders as well. Have a blessed rest of the week!",
+        "variables": [
+          "address",
+          "day",
+          "name"
+        ],
+        "requiredContext": [
+          "propertyAddress",
+          "day",
+          "contactName"
+        ],
+        "source": "docs/atlas-kayla-course-parity-spec.md#script-inventory",
+        "status": "APPROVED_BY_COURSE",
+        "allowedChannel": "JustCall SMS dry-run only",
+        "callBeforeAfterRule": "MANUAL_REVIEW",
+        "followUpInterval": null,
+        "manualReviewRequirement": "Required before any live send; dry-run approval only in this phase.",
+        "courseRuleCitation": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+      },
+      {
+        "shortcutName": "LOI",
+        "audience": [
+          "agent",
+          "owner",
+          "broker"
+        ],
+        "stage": 6,
+        "actionType": "TEXT",
+        "body": "Happy [day]! For the intent of my call — I have just now found some time to iron out any further details regarding the offer we had finalized. Have you gained any initial feedback from your seller just yet?",
+        "variables": [
+          "day"
+        ],
+        "requiredContext": [
+          "day"
+        ],
+        "source": "docs/atlas-kayla-course-parity-spec.md#script-inventory",
+        "status": "APPROVED_BY_COURSE",
+        "allowedChannel": "JustCall SMS dry-run only",
+        "callBeforeAfterRule": "MANUAL_REVIEW",
+        "followUpInterval": null,
+        "manualReviewRequirement": "Required before any live send; dry-run approval only in this phase.",
+        "courseRuleCitation": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+      },
+      {
+        "shortcutName": "LOI2DAYS",
+        "audience": [
+          "agent",
+          "owner",
+          "broker"
+        ],
+        "stage": 7,
+        "actionType": "TEXT",
+        "body": "Happy Sunday! I hate to be a bother — We spoke recently. I was curious: did you end up losing the listing or did your seller just give up on selling?",
+        "variables": [],
+        "requiredContext": [],
+        "source": "docs/atlas-kayla-course-parity-spec.md#script-inventory",
+        "status": "APPROVED_BY_COURSE",
+        "allowedChannel": "JustCall SMS dry-run only",
+        "callBeforeAfterRule": "MANUAL_REVIEW",
+        "followUpInterval": "48h after no answer in feedback sequence",
+        "manualReviewRequirement": "Required before any live send; dry-run approval only in this phase.",
+        "courseRuleCitation": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+      },
+      {
+        "shortcutName": "INLOI",
+        "audience": [
+          "agent",
+          "owner",
+          "broker"
+        ],
+        "stage": 6,
+        "actionType": "TEXT_AFTER_CALL",
+        "body": "[Name], thank you for the swift response – the photos online look great. I'm sure they don't even do the property justice! We will set up a home inspection like any real estate purchase – within 24 hours. We are not willing to incur costs with a contractor/inspector when the seller could simply sell it to another buyer while I spend a few thousand dollars to do due diligence. As a business owner yourself, I can only hope this is understandable.",
+        "variables": [
+          "name"
+        ],
+        "requiredContext": [
+          "contactName"
+        ],
+        "source": "docs/atlas-kayla-course-parity-spec.md#script-inventory",
+        "status": "APPROVED_BY_COURSE",
+        "allowedChannel": "JustCall SMS dry-run only",
+        "callBeforeAfterRule": "MANUAL_REVIEW",
+        "followUpInterval": null,
+        "manualReviewRequirement": "Required before any live send; dry-run approval only in this phase.",
+        "courseRuleCitation": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+      },
+      {
+        "shortcutName": "F50",
+        "audience": [
+          "owner"
+        ],
+        "stage": 2,
+        "actionType": "TEXT",
+        "body": "Happy [day]! I understand your intent to sell outright, would you be completely opposed to taking half your price now and the rest in one lump sum in the near future?",
+        "variables": [
+          "day"
+        ],
+        "requiredContext": [
+          "day"
+        ],
+        "source": "docs/atlas-kayla-course-parity-spec.md#script-inventory",
+        "status": "APPROVED_BY_COURSE",
+        "allowedChannel": "JustCall SMS dry-run only",
+        "callBeforeAfterRule": "MANUAL_REVIEW",
+        "followUpInterval": null,
+        "manualReviewRequirement": "Required before any live send; dry-run approval only in this phase.",
+        "courseRuleCitation": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+      },
+      {
+        "shortcutName": "F10",
+        "audience": [
+          "owner"
+        ],
+        "stage": 2,
+        "actionType": "TEXT",
+        "body": "Happy [day]! I understand your intent to sell outright, would you be completely opposed to taking 10% of your price now and the rest in one lump sum in just 24 months?",
+        "variables": [
+          "day"
+        ],
+        "requiredContext": [
+          "day"
+        ],
+        "source": "docs/atlas-kayla-course-parity-spec.md#script-inventory",
+        "status": "APPROVED_BY_COURSE",
+        "allowedChannel": "JustCall SMS dry-run only",
+        "callBeforeAfterRule": "MANUAL_REVIEW",
+        "followUpInterval": null,
+        "manualReviewRequirement": "Required before any live send; dry-run approval only in this phase.",
+        "courseRuleCitation": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+      },
+      {
+        "shortcutName": "PEND",
+        "audience": [
+          "agent",
+          "broker"
+        ],
+        "stage": 14,
+        "actionType": "TEXT",
+        "body": "Tami, happy Thursday! I came across your listing at [address] and noticed it's pending. Congratulations, that's exciting! Wishing you a smooth closing — Feel free to keep my offer in your back pocket; I'm intending to acquire this as a rental property. I'm gonna give my DSCR Lender a quick call and send an offer over if I get approved. Feel free to browse through my closings with similar clients on our website — Divinity Aligned LLC: Expert Solutions for Life's Major Transitions",
+        "variables": [
+          "address"
+        ],
+        "requiredContext": [
+          "propertyAddress"
+        ],
+        "source": "docs/atlas-kayla-course-parity-spec.md#script-inventory",
+        "status": "APPROVED_BY_COURSE",
+        "allowedChannel": "JustCall SMS dry-run only",
+        "callBeforeAfterRule": "MANUAL_REVIEW",
+        "followUpInterval": null,
+        "manualReviewRequirement": "Required before any live send; dry-run approval only in this phase.",
+        "courseRuleCitation": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+      },
+      {
+        "shortcutName": "SD",
+        "audience": [
+          "agent",
+          "owner",
+          "broker"
+        ],
+        "stage": 8,
+        "actionType": "TEXT",
+        "body": "Happy Wednesday! Thank you for the update – feel free to revisit this right before the listing expires if your seller has not been able to find their number with owner occupants. Wishing you a smooth closing – feel free to keep us in mind for the future if you have listings that can't sell out right and are owned outright. This would be a great solution for homeowners who aren't seeing the outright number they're hoping for. Buy-box: Red States (Landlord Friendly) Turnkey Properties Single Family & Multi Family $150,000 - $550,000 3 bed + 10k + Population No HOA's No pools No flood zones",
+        "variables": [],
+        "requiredContext": [],
+        "source": "docs/atlas-kayla-course-parity-spec.md#script-inventory",
+        "status": "APPROVED_BY_COURSE",
+        "allowedChannel": "JustCall SMS dry-run only",
+        "callBeforeAfterRule": "MANUAL_REVIEW",
+        "followUpInterval": "96h escalation or seller declined",
+        "manualReviewRequirement": "Required before any live send; dry-run approval only in this phase.",
+        "courseRuleCitation": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+      }
+    ]
+  },
+  "canonicalHash": "acfa451d007dc03a5fe5bc187eb2494a0ec3696ee1046d7e4d6a69befdc409c6"
+}

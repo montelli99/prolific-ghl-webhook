@@ -1,0 +1,44 @@
+{
+  "artifactType": "atlas-telegram-live-blocker-register",
+  "generatedAt": "2026-07-31T07:21:59.991Z",
+  "liveSends": 0,
+  "productionWrites": 0,
+  "stageMovements": 0,
+  "workflowModifications": 0,
+  "killSwitchState": "DRY_RUN_ONLY",
+  "hash": {
+    "hashAlgorithm": "sha256",
+    "canonicalizationVersion": "atlas-json-v1",
+    "excludedSelfHashFields": [
+      "canonicalHash",
+      "artifactHash",
+      "selfHash",
+      "manifestChecksum"
+    ]
+  },
+  "payload": {
+    "blockers": [
+      {
+        "code": "BLOCKS_CANARY",
+        "item": "Fresh JustCall credentials unavailable for current shell."
+      },
+      {
+        "code": "BLOCKS_CANARY",
+        "item": "Exact 2619 number must be re-verified immediately before live canary."
+      },
+      {
+        "code": "BLOCKS_CANARY",
+        "item": "Contact Made live movement has broad workflow side-effect risk."
+      },
+      {
+        "code": "BLOCKS_CANARY",
+        "item": "STOP/HELP and DNC persistence/readback path not proven in this dry-run layer."
+      },
+      {
+        "code": "BLOCKS_SCALE_ONLY",
+        "item": "Provider throughput and quiet-hours behavior remain not fully observable."
+      }
+    ]
+  },
+  "canonicalHash": "837983cafd1c3a6195c4d4c74f6edcf83d526641109dd587c388dbb6e133243c"
+}

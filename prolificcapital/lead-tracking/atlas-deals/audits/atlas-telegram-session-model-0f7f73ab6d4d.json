@@ -1,0 +1,48 @@
+{
+  "artifactType": "atlas-telegram-session-model",
+  "generatedAt": "2026-07-31T07:21:59.979Z",
+  "liveSends": 0,
+  "productionWrites": 0,
+  "stageMovements": 0,
+  "workflowModifications": 0,
+  "killSwitchState": "DRY_RUN_ONLY",
+  "hash": {
+    "hashAlgorithm": "sha256",
+    "canonicalizationVersion": "atlas-json-v1",
+    "excludedSelfHashFields": [
+      "canonicalHash",
+      "artifactHash",
+      "selfHash",
+      "manifestChecksum"
+    ]
+  },
+  "payload": {
+    "sessionStates": [
+      "DRAFT",
+      "PLANNED",
+      "PREVIEWED",
+      "PARTIALLY_SELECTED",
+      "APPROVED_DRY_RUN",
+      "SIMULATED_EXECUTING",
+      "SIMULATED_COMPLETE",
+      "CANCELED",
+      "EXPIRED",
+      "BLOCKED"
+    ],
+    "modes": [
+      "INITIAL_CONTACT",
+      "CALL_DUE",
+      "TEXT_DUE",
+      "FOLLOW_UP",
+      "OFFER_FEEDBACK",
+      "NEGOTIATION_ACTION",
+      "CONTRACT_ACTION"
+    ],
+    "killSwitchStates": [
+      "PAUSED",
+      "DRY_RUN_ONLY",
+      "LIVE_ALLOWED"
+    ]
+  },
+  "canonicalHash": "0f7f73ab6d4da9f475a66a4ff06f733ff3109ff2a80500f23af763b78dd8daf3"
+}
