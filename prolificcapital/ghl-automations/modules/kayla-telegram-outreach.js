@@ -1,8 +1,17 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const dry = require('./telegram-outreach-dry-run');
 const { loadAtlasDryRunOpportunities } = require('./kayla-production-data-loader');
 const ghlGuards = require('./atlas-ghl-telegram-live-guards');
+const stage1 = require('./kayla-stage1-transaction');
+const { CONTACT_PATHS } = require('./kayla-stage1-contact-path');
+
+function stage1Dir(options = {}) { return options.stage1DataDir || path.resolve(__dirname, '..', 'data', 'kayla-stage1'); }
+function stage1File(ctx = {}, options = {}) { return path.join(stage1Dir(options), `${ctx.chatId || ctx.sourceTopicId || 'default'}-${ctx.telegramUserId || 'operator'}.json`); }
+function readStage1Session(ctx, options = {}) { try { return JSON.parse(fs.readFileSync(stage1File(ctx, options), 'utf8')); } catch (_) { return null; } }
+function saveStage1Session(ctx, session, options = {}) { fs.mkdirSync(stage1Dir(options), { recursive: true }); fs.writeFileSync(stage1File(ctx, options), `${JSON.stringify(session, null, 2)}\n`); }
 
 function escapeMd(text) { return String(text ?? '').replace(/[_*`\[]/g, '\\$&'); }
 
@@ -87,8 +96,118 @@ function canaryPreviewForIntent(intent, ctx, options) {
   return { reply: formatCanaryPreview(session), session };
 }
 
+function parseStage1Intent(text) {
+  const t = String(text || '').toLowerCase();
+  if (/show.*stage 1.*leads|stage 1 work/.test(t)) return { intent: 'SHOW_STAGE_1_WORK' };
+  if (/start.*(first lead|stage 1|lead)/.test(t)) return { intent: 'START_STAGE_1_REVIEW' };
+  if (/who.*contact|contact paths/.test(t)) return { intent: 'SHOW_CONTACT_PATHS' };
+  if (/listing agent|this is the agent/.test(t)) return { intent: 'SELECT_CONTACT_PATH', path: CONTACT_PATHS.LISTING_AGENT };
+  if (/direct seller|this is.*seller|seller path/.test(t)) return { intent: 'SELECT_CONTACT_PATH', path: CONTACT_PATHS.DIRECT_SELLER };
+  if (/research.*contact|need to research|who the contact is/.test(t)) return { intent: 'MARK_RESEARCH_REQUIRED' };
+  if (/show.*int|int shortcut/.test(t)) return { intent: 'SHOW_INT' };
+  if (/sent.*int|int sent/.test(t)) return { intent: 'CONFIRM_INT_SENT' };
+  if (/show.*(agent|seller).*script|call script/.test(t)) return { intent: 'SHOW_CALL_SCRIPT' };
+  if (/start.*call|calling now/.test(t)) return { intent: 'START_CALL_ATTEMPT' };
+  if (/no answer|did not answer|didn't answer/.test(t)) return { intent: 'RECORD_CALL_NO_ANSWER' };
+  if (/they answered|call completed|answered/.test(t)) return { intent: 'RECORD_CALL_COMPLETED' };
+  if (/what.*ask|show.*questions|required questions/.test(t)) return { intent: 'SHOW_REQUIRED_QUESTIONS' };
+  if (/roof|hvac|rent|lease|utilities|occupied|vacant/.test(t)) return { intent: 'RECORD_CALL_ANSWERS', answers: parseAnswers(text) };
+  if (/voice memo|noa/.test(t) && /show/.test(t)) return { intent: 'SHOW_NO_ANSWER_SEQUENCE' };
+  if (/sent.*voice memo.*noa|sent.*noa.*voice memo/.test(t)) return { intent: 'CONFIRM_VOICE_MEMO_AND_NOA' };
+  if (/sent.*voice memo/.test(t)) return { intent: 'CONFIRM_VOICE_MEMO_SENT' };
+  if (/sent.*noa/.test(t)) return { intent: 'CONFIRM_NOA_SENT' };
+  if (/show.*ccc/.test(t)) return { intent: 'SHOW_CCC' };
+  if (/sent.*ccc.*contact card|sent.*contact card.*ccc/.test(t)) return { intent: 'CONFIRM_CCC_AND_CONTACT_CARD' };
+  if (/sent.*ccc/.test(t)) return { intent: 'CONFIRM_CCC_SENT' };
+  if (/sent.*contact card/.test(t)) return { intent: 'CONFIRM_CONTACT_CARD_SENT' };
+  if (/show.*notes|show.*note/.test(t)) return { intent: 'SHOW_STAGE_1_NOTE' };
+  if (/entered.*notes|notes recorded|recorded.*notes/.test(t)) return { intent: 'CONFIRM_NOTES_RECORDED' };
+  if (/what.*next|next course step/.test(t)) return { intent: 'SHOW_NEXT_COURSE_STEP' };
+  if (/stage.*conflict|contact made/.test(t)) return { intent: 'SHOW_STAGE_DECISION_CONFLICT' };
+  if (/cancel.*stage 1/.test(t)) return { intent: 'CANCEL_STAGE_1_SESSION' };
+  return null;
+}
+
+function parseAnswers(text) {
+  const value = String(text || '');
+  const answers = { operatorNotes: value };
+  const roof = value.match(/roof\D+(\d+\s*(?:years?|yrs?)?\s*old|new|unknown)/i);
+  const hvac = value.match(/hvac\D+(\d+\s*(?:years?|yrs?)?\s*old|new|unknown)/i);
+  const rent = value.match(/rent\D+\$?([0-9,]+)/i);
+  if (roof) answers.roofAge = roof[1];
+  if (hvac) answers.hvacAge = hvac[1];
+  if (rent) answers.monthlyRent = rent[1];
+  if (/occupied/i.test(value)) answers.occupancy = 'occupied';
+  if (/vacant/i.test(value)) answers.occupancy = 'vacant';
+  if (/utilities.*on/i.test(value)) answers.utilityResponsibility = 'utilities on';
+  if (/lease/i.test(value)) answers.leaseTerms = value;
+  if (/email/i.test(value)) answers.contactEmail = value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || answers.contactEmail;
+  if (/other propert/i.test(value)) answers.otherProperties = value;
+  return answers;
+}
+
+function firstStage1Opportunity(options = {}) {
+  return (options.stage1Opportunities || options.opportunities || [])[0] || { opportunityId: 'stage1DemoOpp123', contactId: 'stage1DemoContact123', propertyAddress: '123 Main St Dallas TX 75201', stageName: 'Lead Entered' };
+}
+
+function formatStage1(session, detail = '') {
+  const missing = session.unresolvedRequirements.filter(item => item !== stage1.STAGE_MOVEMENT_STATUS).join(', ') || 'none';
+  return [
+    '*Kayla Stage 1 Operator Console*',
+    `Property: ${escapeMd(session.property.address || '(missing)')}`,
+    `Contact path: ${session.selectedContactPath || 'RESEARCH_REQUIRED'}`,
+    `Current state: ${session.state}`,
+    `Instruction: ${escapeMd(session.nextExactCourseStep)}`,
+    detail,
+    `Missing actions: ${escapeMd(missing)}`,
+    `Stage decision: ${stage1.STAGE_MOVEMENT_STATUS}`,
+    'Production sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0',
+  ].filter(Boolean).join('\n');
+}
+
+function handleStage1Command(ctx, text, options = {}) {
+  const intent = parseStage1Intent(text);
+  if (!intent) return null;
+  let session = readStage1Session(ctx, options);
+  if (intent.intent === 'SHOW_STAGE_1_WORK') return { reply: 'Stage 1 work: Lead review, contact-path selection, INT, calls, questions, CCC/contact card or no-answer sequence, notes. Production sends/calls/writes/stage movements: 0.' };
+  if (intent.intent === 'START_STAGE_1_REVIEW' || !session) {
+    session = stage1.createStage1Session(firstStage1Opportunity(options), { operatorId: ctx.telegramUserId });
+    stage1.addEvent(session, 'LEAD_REVIEWED', {}, { operatorId: ctx.telegramUserId });
+    saveStage1Session(ctx, session, options);
+    return { reply: formatStage1(session) };
+  }
+  if (intent.intent === 'SHOW_CONTACT_PATHS') return { reply: formatStage1(session, `Available paths: ${session.availableContactPaths.join(', ')}`) };
+  if (intent.intent === 'SELECT_CONTACT_PATH') stage1.addEvent(session, 'CONTACT_PATH_SELECTED', { path: intent.path }, { operatorId: ctx.telegramUserId });
+  else if (intent.intent === 'MARK_RESEARCH_REQUIRED') { session.selectedContactPath = null; session.state = 'CONTACT_PATH_REQUIRED'; session.nextExactCourseStep = 'Contact path is not established for this property. Review the lead source and listing information to identify whether Kayla agent or seller procedure applies.'; }
+  else if (intent.intent === 'SHOW_INT') return { reply: formatStage1(session, stage1.currentScript({ ...session, state: 'INT_REQUIRED' }, options).body) };
+  else if (intent.intent === 'CONFIRM_INT_SENT') stage1.addEvent(session, 'INT_CONFIRMED_SENT', {}, { operatorId: ctx.telegramUserId });
+  else if (intent.intent === 'SHOW_CALL_SCRIPT') return { reply: formatStage1(session, stage1.currentScript(session, options).body) };
+  else if (intent.intent === 'START_CALL_ATTEMPT') stage1.addEvent(session, 'CALL_ATTEMPT_STARTED', {}, { operatorId: ctx.telegramUserId });
+  else if (intent.intent === 'RECORD_CALL_NO_ANSWER') stage1.addEvent(session, 'CALL_NO_ANSWER_RECORDED', {}, { operatorId: ctx.telegramUserId });
+  else if (intent.intent === 'RECORD_CALL_COMPLETED') stage1.addEvent(session, 'CALL_COMPLETED_RECORDED', {}, { operatorId: ctx.telegramUserId });
+  else if (intent.intent === 'SHOW_REQUIRED_QUESTIONS') return { reply: formatStage1(session, session.requiredQuestions.map(q => `- ${q.question}`).join('\n')) };
+  else if (intent.intent === 'RECORD_CALL_ANSWERS') stage1.addEvent(session, 'CALL_INFORMATION_RECORDED', { answers: intent.answers }, { operatorId: ctx.telegramUserId });
+  else if (intent.intent === 'SHOW_NO_ANSWER_SEQUENCE') return { reply: formatStage1(session, stage1.currentScript({ ...session, state: 'VOICE_MEMO_REQUIRED' }, options).body + '\n\nNOA: ' + stage1.currentScript({ ...session, state: 'NOA_REQUIRED' }, options).body) };
+  else if (intent.intent === 'CONFIRM_VOICE_MEMO_AND_NOA') { stage1.addEvent(session, 'VOICE_MEMO_CONFIRMED_SENT', {}, { operatorId: ctx.telegramUserId }); stage1.addEvent(session, 'NOA_CONFIRMED_SENT', {}, { operatorId: ctx.telegramUserId }); }
+  else if (intent.intent === 'CONFIRM_VOICE_MEMO_SENT') stage1.addEvent(session, 'VOICE_MEMO_CONFIRMED_SENT', {}, { operatorId: ctx.telegramUserId });
+  else if (intent.intent === 'CONFIRM_NOA_SENT') stage1.addEvent(session, 'NOA_CONFIRMED_SENT', {}, { operatorId: ctx.telegramUserId });
+  else if (intent.intent === 'SHOW_CCC') return { reply: formatStage1(session, stage1.currentScript({ ...session, state: 'CCC_REQUIRED' }, options).body) };
+  else if (intent.intent === 'CONFIRM_CCC_AND_CONTACT_CARD') { stage1.addEvent(session, 'CCC_CONFIRMED_SENT', {}, { operatorId: ctx.telegramUserId }); stage1.addEvent(session, 'CONTACT_CARD_CONFIRMED_SENT', {}, { operatorId: ctx.telegramUserId }); }
+  else if (intent.intent === 'CONFIRM_CCC_SENT') stage1.addEvent(session, 'CCC_CONFIRMED_SENT', {}, { operatorId: ctx.telegramUserId });
+  else if (intent.intent === 'CONFIRM_CONTACT_CARD_SENT') stage1.addEvent(session, 'CONTACT_CARD_CONFIRMED_SENT', {}, { operatorId: ctx.telegramUserId });
+  else if (intent.intent === 'SHOW_STAGE_1_NOTE') return { reply: '```\n' + stage1.buildStage1Note(session) + '\n```' };
+  else if (intent.intent === 'CONFIRM_NOTES_RECORDED') stage1.addEvent(session, 'NOTES_CONFIRMED_RECORDED', {}, { operatorId: ctx.telegramUserId });
+  else if (intent.intent === 'SHOW_NEXT_COURSE_STEP') return { reply: formatStage1(session) };
+  else if (intent.intent === 'SHOW_STAGE_DECISION_CONFLICT') return { reply: 'Kayla available course documents conflict on the exact event that moves this lead to Contact Made. Your Stage 1 actions can be recorded, but no automatic stage movement will occur until the authoritative rule is confirmed.' };
+  else if (intent.intent === 'CANCEL_STAGE_1_SESSION') stage1.addEvent(session, 'SESSION_CANCELED', {}, { operatorId: ctx.telegramUserId });
+  saveStage1Session(ctx, session, options);
+  return { reply: formatStage1(session, session.lastBlockedReason ? `Blocked: ${session.lastBlockedReason}` : '') };
+}
+
 function handleKaylaOutreachCommand(ctx, text, options = {}) {
   try {
+    const stage1Result = handleStage1Command(ctx, text, options);
+    if (stage1Result) return stage1Result;
     const intent = dry.parseIntent(text);
     if (intent.intent === 'CLARIFY') return { reply: intent.question };
     if (intent.intent === 'PAUSE_OUTREACH') {
@@ -156,4 +275,4 @@ function handleKaylaOutreachCommand(ctx, text, options = {}) {
   }
 }
 
-module.exports = { handleKaylaOutreachCommand, canaryPreviewForIntent, formatCanaryPreview };
+module.exports = { handleKaylaOutreachCommand, canaryPreviewForIntent, formatCanaryPreview, parseStage1Intent, handleStage1Command };

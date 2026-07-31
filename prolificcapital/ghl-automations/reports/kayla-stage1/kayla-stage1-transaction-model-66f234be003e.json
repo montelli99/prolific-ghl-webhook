@@ -1,0 +1,50 @@
+{
+  "artifactType": "kayla-stage1-transaction-model",
+  "generatedAt": "2026-07-31T11:35:22.015Z",
+  "hashAlgorithm": "sha256",
+  "canonicalizationVersion": "atlas-json-v1",
+  "excludedSelfHashFields": [
+    "canonicalHash",
+    "artifactHash",
+    "selfHash",
+    "manifestChecksum"
+  ],
+  "payload": {
+    "schema": "kayla-stage1-transaction-v1",
+    "states": {
+      "LEAD_REVIEW_REQUIRED": "LEAD_REVIEW_REQUIRED",
+      "CONTACT_PATH_REQUIRED": "CONTACT_PATH_REQUIRED",
+      "CONTACT_PATH_SELECTED": "CONTACT_PATH_SELECTED",
+      "INT_REQUIRED": "INT_REQUIRED",
+      "INT_CONFIRMED_SENT": "INT_CONFIRMED_SENT",
+      "CALL_1_REQUIRED": "CALL_1_REQUIRED",
+      "CALL_1_NO_ANSWER": "CALL_1_NO_ANSWER",
+      "CALL_1_COMPLETED": "CALL_1_COMPLETED",
+      "CALL_2_REQUIRED": "CALL_2_REQUIRED",
+      "CALL_2_NO_ANSWER": "CALL_2_NO_ANSWER",
+      "CALL_2_COMPLETED": "CALL_2_COMPLETED",
+      "NO_ANSWER_SEQUENCE_REQUIRED": "NO_ANSWER_SEQUENCE_REQUIRED",
+      "VOICE_MEMO_REQUIRED": "VOICE_MEMO_REQUIRED",
+      "VOICE_MEMO_CONFIRMED_SENT": "VOICE_MEMO_CONFIRMED_SENT",
+      "NOA_REQUIRED": "NOA_REQUIRED",
+      "NOA_CONFIRMED_SENT": "NOA_CONFIRMED_SENT",
+      "CCC_REQUIRED": "CCC_REQUIRED",
+      "CCC_CONFIRMED_SENT": "CCC_CONFIRMED_SENT",
+      "CONTACT_CARD_REQUIRED": "CONTACT_CARD_REQUIRED",
+      "CONTACT_CARD_CONFIRMED_SENT": "CONTACT_CARD_CONFIRMED_SENT",
+      "NOTES_REQUIRED": "NOTES_REQUIRED",
+      "NOTES_CONFIRMED_RECORDED": "NOTES_CONFIRMED_RECORDED",
+      "REQUIRED_FIELDS_INCOMPLETE": "REQUIRED_FIELDS_INCOMPLETE",
+      "STAGE_DECISION_BLOCKED_COURSE_CONFLICT": "STAGE_DECISION_BLOCKED_COURSE_CONFLICT",
+      "STAGE_1_OPERATOR_WORK_COMPLETE": "STAGE_1_OPERATOR_WORK_COMPLETE"
+    },
+    "stageMovementStatus": "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED",
+    "externalActions": {
+      "sends": 0,
+      "calls": 0,
+      "ghlWrites": 0,
+      "stageMovements": 0
+    }
+  },
+  "canonicalHash": "66f234be003ee6b6853cd1f00f12ec28e2ae6ffe03c047e50e527c3f5290a097"
+}

@@ -1,0 +1,172 @@
+{
+  "artifactType": "kayla-stage1-telegram-intent-map",
+  "generatedAt": "2026-07-31T11:35:22.025Z",
+  "hashAlgorithm": "sha256",
+  "canonicalizationVersion": "atlas-json-v1",
+  "excludedSelfHashFields": [
+    "canonicalHash",
+    "artifactHash",
+    "selfHash",
+    "manifestChecksum"
+  ],
+  "payload": [
+    {
+      "text": "Show me my Stage 1 leads.",
+      "parsed": {
+        "intent": "SHOW_STAGE_1_WORK"
+      }
+    },
+    {
+      "text": "Start the first lead.",
+      "parsed": {
+        "intent": "START_STAGE_1_REVIEW"
+      }
+    },
+    {
+      "text": "Who am I supposed to contact?",
+      "parsed": {
+        "intent": "SHOW_CONTACT_PATHS"
+      }
+    },
+    {
+      "text": "This is the listing agent.",
+      "parsed": {
+        "intent": "SELECT_CONTACT_PATH",
+        "path": "LISTING_AGENT"
+      }
+    },
+    {
+      "text": "This is a direct seller.",
+      "parsed": {
+        "intent": "SELECT_CONTACT_PATH",
+        "path": "DIRECT_SELLER"
+      }
+    },
+    {
+      "text": "I need to research who the contact is.",
+      "parsed": {
+        "intent": "SHOW_CONTACT_PATHS"
+      }
+    },
+    {
+      "text": "Show the INT shortcut.",
+      "parsed": {
+        "intent": "SHOW_INT"
+      }
+    },
+    {
+      "text": "I sent INT.",
+      "parsed": {
+        "intent": "CONFIRM_INT_SENT"
+      }
+    },
+    {
+      "text": "Show the agent script.",
+      "parsed": {
+        "intent": "SHOW_CALL_SCRIPT"
+      }
+    },
+    {
+      "text": "Show the seller script.",
+      "parsed": {
+        "intent": "SHOW_CALL_SCRIPT"
+      }
+    },
+    {
+      "text": "Start the first call.",
+      "parsed": {
+        "intent": "START_CALL_ATTEMPT"
+      }
+    },
+    {
+      "text": "No answer.",
+      "parsed": {
+        "intent": "RECORD_CALL_NO_ANSWER"
+      }
+    },
+    {
+      "text": "I called again and there was no answer.",
+      "parsed": {
+        "intent": "RECORD_CALL_NO_ANSWER"
+      }
+    },
+    {
+      "text": "Show the voice memo.",
+      "parsed": {
+        "intent": "SHOW_NO_ANSWER_SEQUENCE"
+      }
+    },
+    {
+      "text": "I sent the voice memo and NOA.",
+      "parsed": {
+        "intent": "CONFIRM_VOICE_MEMO_AND_NOA"
+      }
+    },
+    {
+      "text": "They answered.",
+      "parsed": {
+        "intent": "RECORD_CALL_COMPLETED"
+      }
+    },
+    {
+      "text": "Show me the questions.",
+      "parsed": {
+        "intent": "SHOW_REQUIRED_QUESTIONS"
+      }
+    },
+    {
+      "text": "The roof is 10 years old and HVAC is 6 years old.",
+      "parsed": {
+        "intent": "RECORD_CALL_ANSWERS",
+        "answers": {
+          "operatorNotes": "The roof is 10 years old and HVAC is 6 years old.",
+          "roofAge": "10 years old",
+          "hvacAge": "6 years old"
+        }
+      }
+    },
+    {
+      "text": "Show CCC.",
+      "parsed": {
+        "intent": "SHOW_CCC"
+      }
+    },
+    {
+      "text": "I sent CCC and the contact card.",
+      "parsed": {
+        "intent": "CONFIRM_CCC_AND_CONTACT_CARD"
+      }
+    },
+    {
+      "text": "Show the notes.",
+      "parsed": {
+        "intent": "SHOW_STAGE_1_NOTE"
+      }
+    },
+    {
+      "text": "I entered the notes.",
+      "parsed": {
+        "intent": "CONFIRM_NOTES_RECORDED"
+      }
+    },
+    {
+      "text": "What does Kayla say to do next?",
+      "parsed": {
+        "intent": "SHOW_NEXT_COURSE_STEP"
+      }
+    },
+    {
+      "text": "Show the stage conflict.",
+      "parsed": {
+        "intent": "SHOW_STAGE_DECISION_CONFLICT"
+      }
+    },
+    {
+      "text": "Cancel Stage 1 session.",
+      "parsed": {
+        "intent": "CANCEL_STAGE_1_SESSION"
+      }
+    }
+  ],
+  "canonicalHash": "f95e869791d109f7b6991c9c31c94cd3ec6f2c2e98459fcdbe76ab881bb46b31"
+}

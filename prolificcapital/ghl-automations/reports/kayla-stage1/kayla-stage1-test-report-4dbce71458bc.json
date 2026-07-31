@@ -1,0 +1,28 @@
+{
+  "artifactType": "kayla-stage1-test-report",
+  "generatedAt": "2026-07-31T11:35:22.026Z",
+  "hashAlgorithm": "sha256",
+  "canonicalizationVersion": "atlas-json-v1",
+  "excludedSelfHashFields": [
+    "canonicalHash",
+    "artifactHash",
+    "selfHash",
+    "manifestChecksum"
+  ],
+  "payload": {
+    "commands": [
+      "node ghl-automations/modules/_test_kayla_stage1_transaction.js",
+      "node ghl-automations/modules/_test_kayla_exact_course_canary.js",
+      "node ghl-automations/modules/_test_kayla_telegram_dry_run.js",
+      "node ghl-automations/modules/_test_atlas_ghl_telegram_live_guards.js",
+      "node ghl-automations/modules/_test_intent_router.js",
+      "node ghl-automations/modules/_test_justcall_integration.js",
+      "node ghl-automations/modules/_test_atlas_ghl_import.js",
+      "node ghl-automations/tools/_test_pipeline_telegram_review.js",
+      "node ghl-automations/modules/_test_atlas_operations_v1.js",
+      "node atlas-ghl-webhook-safety.test.js"
+    ],
+    "status": "PASS_RECORDED_IN_SESSION"
+  },
+  "canonicalHash": "4dbce71458bc1cd8304d4adb27e66156b5ca80debbc9331e68e43493f1516e71"
+}

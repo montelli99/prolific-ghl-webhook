@@ -1,0 +1,47 @@
+'use strict';
+
+const FIELD_SCHEMA = Object.freeze({
+  contactName: { label: 'contact/agent name', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: true, type: 'string', question: 'Confirm the contact name.', source: 'AIREI_SYSTEM_PLAYBOOK_v2.md:81', destination: 'contact.name or notes', preventsCompletion: true },
+  contactPhone: { label: 'contact phone', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: true, type: 'phone', question: 'Confirm the contact phone.', source: 'AIREI_SYSTEM_PLAYBOOK_v2.md:81', destination: 'contact.phone or notes', preventsCompletion: true },
+  contactEmail: { label: 'contact email', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: true, type: 'email', question: 'Is there a good email I can send over details to?', source: 'AIREI_SCRIPTS_REFERENCE.md:49-51,79-81', destination: 'contact.email or notes', preventsCompletion: true },
+  sellerName: { label: 'seller name', paths: ['LISTING_AGENT', 'BROKER'], required: false, type: 'string', question: 'If speaking to agent, collect seller name when provided.', source: 'AIREI_SYSTEM_PLAYBOOK_v2.md:81', destination: 'notes fallback', preventsCompletion: false },
+  sellerPhone: { label: 'seller phone where provided', paths: ['LISTING_AGENT', 'BROKER'], required: false, type: 'phone', question: 'If agent provides seller phone, record it.', source: 'AIREI_SYSTEM_PLAYBOOK_v2.md:81', destination: 'notes fallback', preventsCompletion: false },
+  sellerEmail: { label: 'seller email where provided', paths: ['LISTING_AGENT', 'BROKER'], required: false, type: 'email', question: 'If agent provides seller email, record it.', source: 'AIREI_SYSTEM_PLAYBOOK_v2.md:81', destination: 'notes fallback', preventsCompletion: false },
+  roofAge: { label: 'roof age', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: true, type: 'string', question: 'Regarding the roof, when was it last installed?', source: 'AIREI_SCRIPTS_REFERENCE.md:33,63,91', destination: 'notes fallback', preventsCompletion: true },
+  hvacAge: { label: 'HVAC age', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: true, type: 'string', question: 'Regarding the HVAC, when was it last installed?', source: 'AIREI_SCRIPTS_REFERENCE.md:33,63,91', destination: 'notes fallback', preventsCompletion: true },
+  occupancy: { label: 'occupancy', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: true, type: 'enum', question: 'Is the property currently occupied or vacant?', source: 'AIREI_SCRIPTS_REFERENCE.md:35,65,97', destination: 'notes fallback', preventsCompletion: true },
+  tenantStatus: { label: 'tenant status', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: false, conditional: 'occupied', type: 'string', question: 'If occupied, is the owner living in it or is it rented out?', source: 'AIREI_SCRIPTS_REFERENCE.md:37-40,67-70', destination: 'notes fallback', preventsCompletion: false },
+  monthlyRent: { label: 'monthly rent', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: false, conditional: 'rented', type: 'money', question: 'If rented, what is the current rent?', source: 'AIREI_SCRIPTS_REFERENCE.md:39,69,101', destination: 'existing rent field if known, otherwise notes', preventsCompletion: false },
+  leaseTerms: { label: 'lease terms', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: false, conditional: 'rented', type: 'string', question: 'When did they sign and what kind of lease are they on?', source: 'AIREI_SCRIPTS_REFERENCE.md:39,69,101', destination: 'notes fallback', preventsCompletion: false },
+  utilityResponsibility: { label: 'utility responsibility', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: true, type: 'string', question: 'Are utilities still on?', source: 'AIREI_SCRIPTS_REFERENCE.md:45,75,107', destination: 'notes fallback', preventsCompletion: true },
+  listingFeedback: { label: 'listing feedback', paths: ['LISTING_AGENT', 'BROKER'], required: true, type: 'string', question: 'Have you received any feedback from other buyers who walked it?', source: 'AIREI_SCRIPTS_REFERENCE.md:31', destination: 'notes fallback', preventsCompletion: true },
+  buyerFeedback: { label: 'buyer feedback', paths: ['LISTING_AGENT', 'BROKER'], required: false, type: 'string', question: 'Record buyer/listing feedback from the agent.', source: 'KAYLA_COACHING_REFERENCE.md:22-24', destination: 'notes fallback', preventsCompletion: false },
+  sellerFlexibility: { label: 'seller flexibility', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: false, type: 'string', question: 'Record seller flexibility or offer feedback if provided.', source: 'FULL_COURSE_AUDIT.md:30-35', destination: 'notes fallback', preventsCompletion: false },
+  propertyCondition: { label: 'property condition', paths: ['DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: false, type: 'string', question: 'For rehab properties, how would you rate condition 1-10 and what would it need to be a 10?', source: 'AIREI_SCRIPTS_REFERENCE.md:93-95', destination: 'notes fallback', preventsCompletion: false },
+  otherProperties: { label: 'other properties', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: true, type: 'string', question: 'Do you have any other properties you are looking to offload?', source: 'AIREI_SCRIPTS_REFERENCE.md:238; KAYLA_COACHING_REFERENCE.md:34-37', destination: 'notes fallback', preventsCompletion: false },
+  callOutcome: { label: 'call outcome', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: true, type: 'enum', question: 'Record whether the call completed or no answer.', source: 'TRACK_STUDENT.md:45-66', destination: 'notes fallback', preventsCompletion: true },
+  attemptCount: { label: 'attempt count', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: true, type: 'number', question: 'Record call attempt count.', source: 'TRACK_STUDENT.md:45-66', destination: 'notes fallback', preventsCompletion: true },
+  nextAction: { label: 'next action', paths: ['LISTING_AGENT', 'BROKER', 'DIRECT_SELLER', 'FSBO_SELLER', 'PPC_SELLER'], required: true, type: 'string', question: 'Record next exact course step.', source: 'TRACK_STUDENT.md:19-66', destination: 'notes fallback', preventsCompletion: false },
+});
+
+function fieldsForPath(path) {
+  return Object.entries(FIELD_SCHEMA)
+    .filter(([, spec]) => spec.paths.includes(path))
+    .map(([id, spec]) => ({ id, ...spec }));
+}
+
+function missingRequiredFields(path, answers = {}) {
+  return fieldsForPath(path)
+    .filter(field => field.required && field.preventsCompletion && !String(answers[field.id] || '').trim())
+    .map(field => field.id);
+}
+
+function validateAnswer(fieldId, value) {
+  const field = FIELD_SCHEMA[fieldId];
+  if (!field) return { ok: false, reason: 'UNKNOWN_FIELD' };
+  if (field.type === 'email' && value && !/.+@.+\..+/.test(String(value))) return { ok: false, reason: 'INVALID_EMAIL' };
+  if (field.type === 'phone' && value && String(value).replace(/\D/g, '').length < 10) return { ok: false, reason: 'INVALID_PHONE' };
+  return { ok: true };
+}
+
+module.exports = { FIELD_SCHEMA, fieldsForPath, missingRequiredFields, validateAnswer };

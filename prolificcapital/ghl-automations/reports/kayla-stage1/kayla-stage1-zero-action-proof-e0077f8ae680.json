@@ -1,0 +1,19 @@
+{
+  "artifactType": "kayla-stage1-zero-action-proof",
+  "generatedAt": "2026-07-31T11:29:29.542Z",
+  "hashAlgorithm": "sha256",
+  "canonicalizationVersion": "atlas-json-v1",
+  "excludedSelfHashFields": [
+    "canonicalHash",
+    "artifactHash",
+    "selfHash",
+    "manifestChecksum"
+  ],
+  "payload": {
+    "sends": 0,
+    "calls": 0,
+    "ghlWrites": 0,
+    "stageMovements": 0
+  },
+  "canonicalHash": "e0077f8ae680a43643e964fa8d4e3b06607b58c401ea3e7674cb56622d9a609f"
+}

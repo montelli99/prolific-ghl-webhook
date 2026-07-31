@@ -1,0 +1,53 @@
+{
+  "artifactType": "kayla-stage1-abandoned-drift-cleanup",
+  "generatedAt": "2026-07-31T11:35:22.011Z",
+  "hashAlgorithm": "sha256",
+  "canonicalizationVersion": "atlas-json-v1",
+  "excludedSelfHashFields": [
+    "canonicalHash",
+    "artifactHash",
+    "selfHash",
+    "manifestChecksum"
+  ],
+  "payload": {
+    "filesInspected": [
+      "ghl-automations/modules/kayla-course-evidence.js",
+      "ghl-automations/modules/kayla-role-classifier.js",
+      "ghl-automations/modules/property-timezone.js",
+      "ghl-automations/modules/atlas-sender-verification.js",
+      "ghl-automations/modules/_test_kayla_exact_course_canary.js",
+      "ghl-automations/modules/kayla-production-data-loader.js",
+      "ghl-automations/tools/atlas-telegram-production-snapshot.js",
+      ".learnings/CHANGELOG.md",
+      ".learnings/ERRORS.md",
+      ".learnings/LEARNINGS.md",
+      "memory/REI_STAGE_BY_STAGE_GUIDE.md"
+    ],
+    "classifications": {
+      "PIPELINE_FIRST_VALID": [],
+      "ABANDONED_ATLAS_ROLE_RECOVERY": [
+        "kayla-role-classifier.js import-source role evidence hunks",
+        "kayla-production-data-loader.js import-ready role index hunks",
+        "atlas-telegram-production-snapshot.js import-ready join hunks",
+        "atlas-sender-verification.js env-loader hunk from abandoned sender recovery",
+        "_test_kayla_exact_course_canary.js import role tests"
+      ],
+      "BUG_FIX_REQUIRED": [
+        "raw is not defined was fixed by removing the abandoned classifier hunk"
+      ],
+      "UNRELATED": [
+        ".learnings/* existing edits",
+        "memory/REI_STAGE_BY_STAGE_GUIDE.md existing edit"
+      ],
+      "UNKNOWN": []
+    },
+    "preservedHunks": [
+      "Unrelated existing user/workspace edits were left untouched."
+    ],
+    "revertedHunks": [
+      "All abandoned role-recovery edits in pipeline files were restored to fbb7b69 baseline before Stage 1 implementation."
+    ],
+    "defectRootCause": "The abandoned classifier hunk called sourceEvidence(raw, ...) inside classifyRole without a raw binding in scope. It also made Stage 1 depend on import-ready role evidence, which was out of scope."
+  },
+  "canonicalHash": "9504ff112af3bb9f7d872ad6d1ed45e1e722150b2f22d8d34f61820724c9cb66"
+}

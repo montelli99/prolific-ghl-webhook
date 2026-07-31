@@ -1,0 +1,17 @@
+{
+  "artifactType": "kayla-stage1-unresolved-stage-exit-conflict",
+  "generatedAt": "2026-07-31T11:35:22.027Z",
+  "hashAlgorithm": "sha256",
+  "canonicalizationVersion": "atlas-json-v1",
+  "excludedSelfHashFields": [
+    "canonicalHash",
+    "artifactHash",
+    "selfHash",
+    "manifestChecksum"
+  ],
+  "payload": {
+    "status": "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED",
+    "explanation": "Kayla course documents conflict on the exact event that moves Stage 1 to Contact Made. The operator console records work but does not move production opportunities."
+  },
+  "canonicalHash": "3f85d2317e0396900dd8b81f4ffde8f17dfb55968427c952011a581580ea4b6f"
+}

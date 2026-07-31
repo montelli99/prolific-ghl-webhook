@@ -1,0 +1,77 @@
+#!/usr/bin/env node
+'use strict';
+
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const contact = require('./kayla-stage1-contact-path');
+const scripts = require('./kayla-stage1-scripts');
+const info = require('./kayla-stage1-information');
+const tx = require('./kayla-stage1-transaction');
+const tg = require('./kayla-telegram-outreach');
+
+let passed = 0;
+async function test(name, fn) { await fn(); passed++; console.log(`PASS ${passed} ${name}`); }
+function opp(overrides = {}) { return { opportunityId: 'realOpp123456789', contactId: 'realContact123456', propertyAddress: '123 Main St Dallas TX 75201', stageName: 'Lead Entered', leadSource: 'MLS', listingAgent: 'Alice Agent', agentPhone: '+15555550123', ...overrides }; }
+function session(overrides = {}) { return tx.createStage1Session(opp(overrides), { operatorId: 'op1' }); }
+const completeAnswers = { contactName: 'Alice Agent', contactPhone: '+15555550123', contactEmail: 'alice@example.com', roofAge: '10 years', hvacAge: '6 years', occupancy: 'occupied', utilityResponsibility: 'utilities on', listingFeedback: 'price feedback', otherProperties: 'asked' };
+
+(async () => {
+await test('raw defect eliminated by restored role classifier path', () => assert.doesNotThrow(() => require('./kayla-role-classifier').classifyRole({ raw: { listingAgent: 'Alice Agent' }, contactName: 'Alice Agent' })));
+await test('contact selector uses property-specific listing agent path', () => assert.equal(contact.selectContactPath(opp()).path, 'LISTING_AGENT'));
+await test('direct seller path can be selected from explicit seller', () => assert.equal(contact.selectContactPath(opp({ leadSource: 'direct seller', listingAgent: '', sellerName: 'Sam Seller', raw: { explicitSeller: true } })).path, 'DIRECT_SELLER'));
+await test('FSBO seller path can be selected', () => assert.equal(contact.selectContactPath(opp({ leadSource: 'FSBO', listingAgent: '', sellerName: 'Sam Seller' })).path, 'FSBO_SELLER'));
+await test('PPC seller path can be selected', () => assert.equal(contact.selectContactPath(opp({ leadSource: 'PPC inbound', listingAgent: '', sellerName: 'Sam Seller' })).path, 'PPC_SELLER'));
+await test('unknown path becomes research required', () => assert.equal(contact.selectContactPath(opp({ leadSource: '', listingAgent: '', raw: {} })).path, 'RESEARCH_REQUIRED'));
+await test('one opportunity may include agent and seller participants', () => { const s = tx.createStage1Session(opp({ sellerName: 'Sam Seller', raw: { explicitSeller: true } })); assert.ok(s.availableContactPaths.includes('LISTING_AGENT')); assert.ok(s.availableContactPaths.includes('DIRECT_SELLER')); });
+await test('new session starts at lead review or contact path requirement', () => assert.equal(session().state, 'LEAD_REVIEW_REQUIRED'));
+await test('operator lead review advances to INT required', () => { const s = session(); tx.addEvent(s, 'LEAD_REVIEWED'); assert.equal(s.state, 'INT_REQUIRED'); });
+await test('INT is shown before calling', () => assert.match(tx.currentScript({ ...session(), state: 'INT_REQUIRED' }).body, /still accepting offers/));
+await test('call cannot be course-compliant before INT confirmation', () => { const s = session(); tx.addEvent(s, 'CALL_ATTEMPT_STARTED'); assert.equal(s.lastBlockedReason, 'INT_REQUIRED'); });
+await test('first no-answer increments attempt count', () => { const s = session(); tx.addEvent(s, 'LEAD_REVIEWED'); tx.addEvent(s, 'INT_CONFIRMED_SENT'); tx.addEvent(s, 'CALL_NO_ANSWER_RECORDED'); assert.equal(s.attemptHistory.length, 1); });
+await test('NOA is blocked after one unanswered call', () => { const s = session(); tx.addEvent(s, 'LEAD_REVIEWED'); tx.addEvent(s, 'INT_CONFIRMED_SENT'); tx.addEvent(s, 'CALL_NO_ANSWER_RECORDED'); tx.addEvent(s, 'NOA_CONFIRMED_SENT'); assert.equal(s.lastBlockedReason, 'VOICE_MEMO_REQUIRED'); });
+await test('second no-answer unlocks no-answer sequence', () => { const s = session(); tx.addEvent(s, 'LEAD_REVIEWED'); tx.addEvent(s, 'INT_CONFIRMED_SENT'); tx.addEvent(s, 'CALL_NO_ANSWER_RECORDED'); tx.addEvent(s, 'CALL_NO_ANSWER_RECORDED'); assert.equal(s.state, 'VOICE_MEMO_REQUIRED'); });
+await test('voice memo prompt appears after documented condition', () => assert.match(tx.currentScript({ ...session(), state: 'VOICE_MEMO_REQUIRED' }).body, /just tried to call/));
+await test('NOA prompt appears after documented condition', () => assert.match(tx.currentScript({ ...session(), state: 'NOA_REQUIRED' }).body, /still accepting offers/));
+await test('completed call does not enter no-answer path', () => { const s = session(); tx.addEvent(s, 'LEAD_REVIEWED'); tx.addEvent(s, 'INT_CONFIRMED_SENT'); tx.addEvent(s, 'CALL_COMPLETED_RECORDED'); assert.notEqual(s.state, 'VOICE_MEMO_REQUIRED'); });
+await test('listing-agent path uses AGENT_INITIAL', () => assert.equal(session().courseScript, 'AGENT_INITIAL'));
+await test('direct seller path uses SELLER_INITIAL', () => assert.equal(tx.createStage1Session(opp({ leadSource: 'direct seller', listingAgent: '', sellerName: 'Sam Seller', raw: { explicitSeller: true } })).courseScript, 'SELLER_INITIAL'));
+await test('seller rehab script requires supported condition', () => assert.equal(contact.scriptForContactPath('DIRECT_SELLER', { rehab: true }), 'SELLER_REHAB'));
+await test('agent and seller scripts cannot be substituted by path', () => assert.ok(!scripts.getStage1Script('SELLER_INITIAL').intendedContactPaths.includes('LISTING_AGENT')));
+await test('missing script blocks', () => assert.equal(scripts.renderStage1Script('MISSING').reason, 'COURSE_MISSING_SCRIPT'));
+await test('exact source reference is present', () => assert.match(scripts.getStage1Script('AGENT_INITIAL').sourceFile, /AIREI_SCRIPTS_REFERENCE/));
+await test('agent questions are displayed', () => assert.ok(info.fieldsForPath('LISTING_AGENT').some(f => /feedback/i.test(f.id))));
+await test('seller questions are displayed', () => assert.ok(info.fieldsForPath('DIRECT_SELLER').some(f => f.id === 'roofAge')));
+await test('answers persist', () => { const s = session(); tx.addEvent(s, 'CALL_INFORMATION_RECORDED', { answers: completeAnswers }); assert.equal(s.collectedFields.roofAge, '10 years'); });
+await test('required missing fields remain visible', () => assert.ok(info.missingRequiredFields('LISTING_AGENT', {}).includes('roofAge')));
+await test('operator can correct answer with journal history', () => { const s = session(); tx.addEvent(s, 'CALL_INFORMATION_RECORDED', { answers: { roofAge: '10' } }); tx.addEvent(s, 'CALL_INFORMATION_RECORDED', { answers: { roofAge: '12' } }, { idempotencyKey: 'correction' }); assert.equal(s.collectedFields.roofAge, '12'); assert.equal(s.journal.length, 2); });
+await test('other-properties question is included', () => assert.ok(info.fieldsForPath('LISTING_AGENT').some(f => f.id === 'otherProperties')));
+await test('completed call unlocks CCC after required info', () => { const s = session(); tx.addEvent(s, 'LEAD_REVIEWED'); tx.addEvent(s, 'INT_CONFIRMED_SENT'); tx.addEvent(s, 'CALL_COMPLETED_RECORDED'); tx.addEvent(s, 'CALL_INFORMATION_RECORDED', { answers: completeAnswers }); assert.equal(s.state, 'CCC_REQUIRED'); });
+await test('CCC is blocked without completed call', () => { const s = session(); tx.addEvent(s, 'CCC_CONFIRMED_SENT'); assert.equal(s.lastBlockedReason, 'CALL_COMPLETED_REQUIRED_BEFORE_CCC'); });
+await test('contact card confirmation is tracked', () => { const s = session(); s.callOutcome = 'COMPLETED'; s.cccStatus = 'CONFIRMED_SENT'; tx.addEvent(s, 'CONTACT_CARD_CONFIRMED_SENT'); assert.equal(s.contactCardStatus, 'CONFIRMED_SENT'); });
+await test('notes preview is deterministic', () => assert.equal(tx.buildStage1Note(session()), tx.buildStage1Note(session())));
+await test('notes cannot claim unconfirmed actions', () => assert.match(tx.buildStage1Note(session()), /INT sent: not confirmed/));
+await test('no-answer notes differ from completed-call notes', () => { const a = session(); const b = session(); b.callOutcome = 'NO_ANSWER'; assert.notEqual(tx.buildStage1Note(a), tx.buildStage1Note(b)); });
+await test('stage movement remains disabled', () => assert.equal(session().stageDecisionStatus, tx.STAGE_MOVEMENT_STATUS));
+await test('no test claims INT alone equals Contact Made', () => { const s = session(); tx.addEvent(s, 'LEAD_REVIEWED'); tx.addEvent(s, 'INT_CONFIRMED_SENT'); assert.notEqual(s.state, 'STAGE_1_OPERATOR_WORK_COMPLETE'); });
+await test('no test claims Lead Entered retention is course-correct', () => assert.equal(session().stageDecisionStatus, tx.STAGE_MOVEMENT_STATUS));
+await test('course conflict is displayed', () => assert.ok(session().courseEvidence.some(e => e.classification === 'COURSE_CONFLICT')));
+await test('operator-work-complete state does not move GHL', () => { const s = session(); s.notesStatus = 'CONFIRMED_RECORDED'; tx.addEvent(s, 'NOTES_CONFIRMED_RECORDED'); assert.equal(s.counters.stageMovements, 0); });
+await test('Telegram natural-language Stage 1 start works', () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stage1-')); const r = tg.handleStage1Command({ chatId: 'c', telegramUserId: 'u' }, 'Start the first lead', { stage1DataDir: dir, opportunities: [opp()] }); assert.match(r.reply, /Kayla Stage 1/); });
+await test('Telegram no answer records correct attempt', () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stage1-')); const ctx = { chatId: 'c', telegramUserId: 'u' }; tg.handleStage1Command(ctx, 'Start the first lead', { stage1DataDir: dir, opportunities: [opp()] }); tg.handleStage1Command(ctx, 'I sent INT', { stage1DataDir: dir }); const r = tg.handleStage1Command(ctx, 'No answer', { stage1DataDir: dir }); assert.match(r.reply, /CALL_2_REQUIRED/); });
+await test('Telegram second no-answer triggers correct next prompt', () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stage1-')); const ctx = { chatId: 'c', telegramUserId: 'u' }; tg.handleStage1Command(ctx, 'Start the first lead', { stage1DataDir: dir, opportunities: [opp()] }); tg.handleStage1Command(ctx, 'I sent INT', { stage1DataDir: dir }); tg.handleStage1Command(ctx, 'No answer', { stage1DataDir: dir }); const r = tg.handleStage1Command(ctx, 'No answer', { stage1DataDir: dir }); assert.match(r.reply, /VOICE_MEMO_REQUIRED/); });
+await test('Telegram they answered selects completed-call path', () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stage1-')); const ctx = { chatId: 'c', telegramUserId: 'u' }; tg.handleStage1Command(ctx, 'Start the first lead', { stage1DataDir: dir, opportunities: [opp()] }); tg.handleStage1Command(ctx, 'I sent INT', { stage1DataDir: dir }); const r = tg.handleStage1Command(ctx, 'They answered', { stage1DataDir: dir }); assert.match(r.reply, /REQUIRED_FIELDS_INCOMPLETE/); });
+await test('Telegram what do I ask displays questions', () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stage1-')); const ctx = { chatId: 'c', telegramUserId: 'u' }; tg.handleStage1Command(ctx, 'Start the first lead', { stage1DataDir: dir, opportunities: [opp()] }); const r = tg.handleStage1Command(ctx, 'What do I ask?', { stage1DataDir: dir }); assert.match(r.reply, /roof/i); });
+await test('Telegram what next returns exact next course action', () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stage1-')); const ctx = { chatId: 'c', telegramUserId: 'u' }; tg.handleStage1Command(ctx, 'Start the first lead', { stage1DataDir: dir, opportunities: [opp()] }); const r = tg.handleStage1Command(ctx, 'What next?', { stage1DataDir: dir }); assert.match(r.reply, /Instruction:/); });
+await test('unsupported skip-ahead is blocked', () => { const s = session(); tx.addEvent(s, 'NOA_CONFIRMED_SENT'); assert.equal(s.lastBlockedReason, 'VOICE_MEMO_REQUIRED'); });
+await test('duplicate confirmation is idempotent', () => { const s = session(); tx.addEvent(s, 'LEAD_REVIEWED', {}, { idempotencyKey: 'x' }); tx.addEvent(s, 'LEAD_REVIEWED', {}, { idempotencyKey: 'x' }); assert.equal(s.journal.length, 1); });
+await test('restart restores session', () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stage1-')); const ctx = { chatId: 'c', telegramUserId: 'u' }; tg.handleStage1Command(ctx, 'Start the first lead', { stage1DataDir: dir, opportunities: [opp()] }); const r = tg.handleStage1Command(ctx, 'What next?', { stage1DataDir: dir }); assert.match(r.reply, /Kayla Stage 1/); });
+await test('production preview zero sends', () => assert.equal(session().counters.sends, 0));
+await test('production preview zero calls', () => assert.equal(session().counters.calls, 0));
+await test('production preview zero GHL writes', () => assert.equal(session().counters.ghlWrites, 0));
+await test('production preview zero stage movements', () => assert.equal(session().counters.stageMovements, 0));
+await test('event journal includes source and payload hash', () => { const s = session(); const result = tx.addEvent(s, 'LEAD_REVIEWED', { reviewed: true }); assert.equal(result.event.source, 'kayla-stage1-transaction'); assert.ok(result.event.payloadHash); });
+await test('no unrelated project data is referenced', () => assert.doesNotMatch(JSON.stringify(tx.createStage1Session(opp())), /atlas-deals|import-ready|reconciliation/i));
+console.log(`\n${passed}/55 tests passed`);
+})().catch(error => { console.error(error.stack || error.message); process.exit(1); });

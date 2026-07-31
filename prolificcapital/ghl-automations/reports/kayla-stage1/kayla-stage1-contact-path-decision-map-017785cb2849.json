@@ -1,0 +1,25 @@
+{
+  "artifactType": "kayla-stage1-contact-path-decision-map",
+  "generatedAt": "2026-07-31T11:35:22.018Z",
+  "hashAlgorithm": "sha256",
+  "canonicalizationVersion": "atlas-json-v1",
+  "excludedSelfHashFields": [
+    "canonicalHash",
+    "artifactHash",
+    "selfHash",
+    "manifestChecksum"
+  ],
+  "payload": {
+    "paths": {
+      "LISTING_AGENT": "LISTING_AGENT",
+      "BROKER": "BROKER",
+      "DIRECT_SELLER": "DIRECT_SELLER",
+      "FSBO_SELLER": "FSBO_SELLER",
+      "PPC_SELLER": "PPC_SELLER",
+      "OTHER_CONFIRMED_COURSE_PATH": "OTHER_CONFIRMED_COURSE_PATH",
+      "RESEARCH_REQUIRED": "RESEARCH_REQUIRED"
+    },
+    "rule": "Select a property-specific contact path from explicit transaction evidence or prompt research required."
+  },
+  "canonicalHash": "017785cb2849bccffac5c8afd4a6b439bdce3b7f4f9b8a231de58923da10c5b9"
+}

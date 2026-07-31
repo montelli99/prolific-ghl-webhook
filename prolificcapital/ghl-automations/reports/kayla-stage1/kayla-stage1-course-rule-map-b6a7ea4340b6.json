@@ -1,0 +1,551 @@
+{
+  "artifactType": "kayla-stage1-course-rule-map",
+  "generatedAt": "2026-07-31T11:29:29.539Z",
+  "hashAlgorithm": "sha256",
+  "canonicalizationVersion": "atlas-json-v1",
+  "excludedSelfHashFields": [
+    "canonicalHash",
+    "artifactHash",
+    "selfHash",
+    "manifestChecksum"
+  ],
+  "payload": {
+    "scriptRegistry": {
+      "INT": {
+        "id": "INT",
+        "type": "shortcut",
+        "exactSourceWording": "[Name], are you still accepting offers for [address]? My name is [your name], I'm looking to purchase this as a rental for my portfolio.",
+        "sourceFile": "lead-tracking/AIREI_SCRIPTS_REFERENCE.md",
+        "sourceLines": "10, 235-237",
+        "intendedContactPaths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER"
+        ],
+        "trigger": "Before every call.",
+        "requiredVariables": [
+          "Name",
+          "address",
+          "your name"
+        ],
+        "prohibitedUseCases": [
+          "Do not treat INT alone as completed Stage 1 work."
+        ],
+        "requiredPrecedingEvent": null,
+        "requiredFollowingEvent": "CALL_ATTEMPT_STARTED",
+        "confirmationRequirement": "Operator confirms INT was sent outside this simulation.",
+        "courseClassification": "COURSE_EXPLICIT"
+      },
+      "AGENT_INITIAL": {
+        "id": "AGENT_INITIAL",
+        "type": "call_script",
+        "exactSourceWording": "Happy [day it is], I'm calling regarding the property at [address] - I'm interested in potentially purchasing this as a rental for my portfolio. I just have a couple questions - did I catch you at a good time?\n\nBased on the photos online the property looks great inside and out, I'm SHOCKED it hasn't sold yet. Now.. Regarding other buyers who have walked it - have you received any feedback?\n\nInteresting, okay - Regarding the roof and HVAC; when were those last installed?\n\nYeah it sounds great - now the property itself, is it currently occupied or vacant?\n\nIf occupied: Ask if the owner is living in it or if it is being rented out. If rented: What is the current rent? When did they sign? What kind of lease are they on?\n\nIf vacant: Noted, and I am curious - it looks like a great house, why wouldn't the seller just rent it out and collect a couple thousand dollars each month?\n\nThen: Are utilities still on?\n\nI would purchase outright by using a DSCR loan which is solely based on what it makes as a rental. As long as the rent covers the mortgage I'll be good to go at the price you're asking.\n\nI'm going to give my lender a quick call and see how I can get approved. Is there a good email I can send over details to?",
+        "sourceFile": "lead-tracking/AIREI_SCRIPTS_REFERENCE.md",
+        "sourceLines": "25-51",
+        "intendedContactPaths": [
+          "LISTING_AGENT",
+          "BROKER"
+        ],
+        "trigger": "Listed-property agent or broker contact path selected.",
+        "requiredVariables": [
+          "day it is",
+          "address"
+        ],
+        "prohibitedUseCases": [
+          "Do not use for confirmed direct seller path."
+        ],
+        "requiredPrecedingEvent": "INT_CONFIRMED_SENT",
+        "requiredFollowingEvent": "CALL_COMPLETED_RECORDED or CALL_NO_ANSWER_RECORDED",
+        "confirmationRequirement": "Operator records call outcome and answers.",
+        "courseClassification": "COURSE_EXPLICIT"
+      },
+      "SELLER_INITIAL": {
+        "id": "SELLER_INITIAL",
+        "type": "call_script",
+        "exactSourceWording": "Happy [day it is], my name is [your name] are you still accepting offers at [property address]?\n\nGreat - I'm interested in potentially purchasing this as a rental for my portfolio. I just have a couple questions - did I catch you at a good time?\n\nRegarding the roof and HVAC; when were those last installed?\n\nNow the property itself, is it currently occupied or vacant?\n\nIf occupied: Ask if they are living in it or if it is being rented out. If rented: What is the current rent? When did they sign? What kind of lease are they on?\n\nIf vacant: Noted, and I am curious - it looks like a great house, why wouldn't you just rent it out and collect a couple thousand dollars each month?\n\nThen: Are utilities still on?\n\nCan I confirm that asking price?\n\nI'm going to give my lender a quick call and see how I can get approved. Is there a good email I can send over details to?",
+        "sourceFile": "lead-tracking/AIREI_SCRIPTS_REFERENCE.md",
+        "sourceLines": "55-81",
+        "intendedContactPaths": [
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "trigger": "Confirmed direct seller, FSBO seller, or PPC seller contact path selected.",
+        "requiredVariables": [
+          "day it is",
+          "your name",
+          "property address"
+        ],
+        "prohibitedUseCases": [
+          "Do not use for listing agent path."
+        ],
+        "requiredPrecedingEvent": "INT_CONFIRMED_SENT",
+        "requiredFollowingEvent": "CALL_COMPLETED_RECORDED or CALL_NO_ANSWER_RECORDED",
+        "confirmationRequirement": "Operator records call outcome and answers.",
+        "courseClassification": "COURSE_EXPLICIT"
+      },
+      "SELLER_REHAB": {
+        "id": "SELLER_REHAB",
+        "type": "call_script",
+        "exactSourceWording": "Happy [day it is], my name is [your name] I'm interested in potentially purchasing [property address]. Regarding the roof and HVAC, when were those last installed? How would you rate condition 1-10? What would it need for it to be a 10? Occupied or vacant? If vacant: what has you opposed to putting a few bucks in and making a profit? Are utilities still on? What are you looking to net? What is the best email I can send over details to?",
+        "sourceFile": "lead-tracking/AIREI_SCRIPTS_REFERENCE.md",
+        "sourceLines": "85-113",
+        "intendedContactPaths": [
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "trigger": "Seller path plus supported renovation/distressed condition.",
+        "requiredVariables": [
+          "day it is",
+          "your name",
+          "property address"
+        ],
+        "prohibitedUseCases": [
+          "Do not use without supported renovation condition."
+        ],
+        "requiredPrecedingEvent": "INT_CONFIRMED_SENT",
+        "requiredFollowingEvent": "CALL_COMPLETED_RECORDED or CALL_NO_ANSWER_RECORDED",
+        "confirmationRequirement": "Operator confirms rehab condition applies.",
+        "courseClassification": "COURSE_EXPLICIT"
+      },
+      "NO_ANSWER_VOICE_MEMO": {
+        "id": "NO_ANSWER_VOICE_MEMO",
+        "type": "voice_memo_script",
+        "exactSourceWording": "Happy [Day it is] [Client Name] - just tried to call you regarding the purchase of your property on [address]. I'm going to call my DSCR lender to get approved, they simply just look at the rental income. Going to loop you into a group chat with my business partner Jaxon - have a blessed evening.",
+        "sourceFile": "lead-tracking/AIREI_SCRIPTS_REFERENCE.md",
+        "sourceLines": "176-180",
+        "intendedContactPaths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "trigger": "After two unanswered calls.",
+        "requiredVariables": [
+          "Day it is",
+          "Client Name",
+          "address"
+        ],
+        "prohibitedUseCases": [
+          "Do not offer after only one unanswered call."
+        ],
+        "requiredPrecedingEvent": "CALL_NO_ANSWER_RECORDED twice",
+        "requiredFollowingEvent": "NOA_CONFIRMED_SENT",
+        "confirmationRequirement": "Operator confirms voice memo sent.",
+        "courseClassification": "COURSE_EXPLICIT"
+      },
+      "NOA": {
+        "id": "NOA",
+        "type": "shortcut",
+        "exactSourceWording": "Are you still accepting offers for [ADDRESS]?",
+        "sourceFile": "lead-tracking/AIREI_SCRIPTS_REFERENCE.md",
+        "sourceLines": "11, 176-180",
+        "intendedContactPaths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "trigger": "After two unanswered calls and no-answer handling begins.",
+        "requiredVariables": [
+          "ADDRESS"
+        ],
+        "prohibitedUseCases": [
+          "Do not send after one unanswered call."
+        ],
+        "requiredPrecedingEvent": "CALL_NO_ANSWER_RECORDED twice",
+        "requiredFollowingEvent": "NOTES_CONFIRMED_RECORDED",
+        "confirmationRequirement": "Operator confirms NOA sent.",
+        "courseClassification": "COURSE_EXPLICIT"
+      },
+      "CCC": {
+        "id": "CCC",
+        "type": "shortcut",
+        "exactSourceWording": "It is great aligning with you [name], I look forward to connecting the dots with you shortly at [address]. Feel free to browse through our closings with similar clients on our website - Divinity Aligned LLC: Expert Solutions for Life's Major Transitions",
+        "sourceFile": "lead-tracking/AIREI_SCRIPTS_REFERENCE.md",
+        "sourceLines": "13, 235-237",
+        "intendedContactPaths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "trigger": "After every completed call.",
+        "requiredVariables": [
+          "name",
+          "address"
+        ],
+        "prohibitedUseCases": [
+          "Do not send merely because INT was sent."
+        ],
+        "requiredPrecedingEvent": "CALL_COMPLETED_RECORDED",
+        "requiredFollowingEvent": "CONTACT_CARD_CONFIRMED_SENT",
+        "confirmationRequirement": "Operator confirms CCC sent.",
+        "courseClassification": "COURSE_EXPLICIT"
+      },
+      "CONTACT_CARD": {
+        "id": "CONTACT_CARD",
+        "type": "operator_action",
+        "exactSourceWording": "Send CCC + contact card after EVERY call.",
+        "sourceFile": "lead-tracking/AIREI_SCRIPTS_REFERENCE.md",
+        "sourceLines": "235-237",
+        "intendedContactPaths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "trigger": "After every completed call, paired with CCC.",
+        "requiredVariables": [],
+        "prohibitedUseCases": [
+          "Do not mark sent without operator confirmation."
+        ],
+        "requiredPrecedingEvent": "CALL_COMPLETED_RECORDED",
+        "requiredFollowingEvent": "NOTES_CONFIRMED_RECORDED",
+        "confirmationRequirement": "Operator confirms contact card sent.",
+        "courseClassification": "COURSE_EXPLICIT"
+      }
+    },
+    "questionFieldSchema": {
+      "contactName": {
+        "label": "contact/agent name",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": true,
+        "type": "string",
+        "question": "Confirm the contact name.",
+        "source": "AIREI_SYSTEM_PLAYBOOK_v2.md:81",
+        "destination": "contact.name or notes",
+        "preventsCompletion": true
+      },
+      "contactPhone": {
+        "label": "contact phone",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": true,
+        "type": "phone",
+        "question": "Confirm the contact phone.",
+        "source": "AIREI_SYSTEM_PLAYBOOK_v2.md:81",
+        "destination": "contact.phone or notes",
+        "preventsCompletion": true
+      },
+      "contactEmail": {
+        "label": "contact email",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": true,
+        "type": "email",
+        "question": "Is there a good email I can send over details to?",
+        "source": "AIREI_SCRIPTS_REFERENCE.md:49-51,79-81",
+        "destination": "contact.email or notes",
+        "preventsCompletion": true
+      },
+      "sellerName": {
+        "label": "seller name",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER"
+        ],
+        "required": false,
+        "type": "string",
+        "question": "If speaking to agent, collect seller name when provided.",
+        "source": "AIREI_SYSTEM_PLAYBOOK_v2.md:81",
+        "destination": "notes fallback",
+        "preventsCompletion": false
+      },
+      "sellerPhone": {
+        "label": "seller phone where provided",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER"
+        ],
+        "required": false,
+        "type": "phone",
+        "question": "If agent provides seller phone, record it.",
+        "source": "AIREI_SYSTEM_PLAYBOOK_v2.md:81",
+        "destination": "notes fallback",
+        "preventsCompletion": false
+      },
+      "sellerEmail": {
+        "label": "seller email where provided",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER"
+        ],
+        "required": false,
+        "type": "email",
+        "question": "If agent provides seller email, record it.",
+        "source": "AIREI_SYSTEM_PLAYBOOK_v2.md:81",
+        "destination": "notes fallback",
+        "preventsCompletion": false
+      },
+      "roofAge": {
+        "label": "roof age",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": true,
+        "type": "string",
+        "question": "Regarding the roof, when was it last installed?",
+        "source": "AIREI_SCRIPTS_REFERENCE.md:33,63,91",
+        "destination": "notes fallback",
+        "preventsCompletion": true
+      },
+      "hvacAge": {
+        "label": "HVAC age",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": true,
+        "type": "string",
+        "question": "Regarding the HVAC, when was it last installed?",
+        "source": "AIREI_SCRIPTS_REFERENCE.md:33,63,91",
+        "destination": "notes fallback",
+        "preventsCompletion": true
+      },
+      "occupancy": {
+        "label": "occupancy",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": true,
+        "type": "enum",
+        "question": "Is the property currently occupied or vacant?",
+        "source": "AIREI_SCRIPTS_REFERENCE.md:35,65,97",
+        "destination": "notes fallback",
+        "preventsCompletion": true
+      },
+      "tenantStatus": {
+        "label": "tenant status",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": false,
+        "conditional": "occupied",
+        "type": "string",
+        "question": "If occupied, is the owner living in it or is it rented out?",
+        "source": "AIREI_SCRIPTS_REFERENCE.md:37-40,67-70",
+        "destination": "notes fallback",
+        "preventsCompletion": false
+      },
+      "monthlyRent": {
+        "label": "monthly rent",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": false,
+        "conditional": "rented",
+        "type": "money",
+        "question": "If rented, what is the current rent?",
+        "source": "AIREI_SCRIPTS_REFERENCE.md:39,69,101",
+        "destination": "existing rent field if known, otherwise notes",
+        "preventsCompletion": false
+      },
+      "leaseTerms": {
+        "label": "lease terms",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": false,
+        "conditional": "rented",
+        "type": "string",
+        "question": "When did they sign and what kind of lease are they on?",
+        "source": "AIREI_SCRIPTS_REFERENCE.md:39,69,101",
+        "destination": "notes fallback",
+        "preventsCompletion": false
+      },
+      "utilityResponsibility": {
+        "label": "utility responsibility",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": true,
+        "type": "string",
+        "question": "Are utilities still on?",
+        "source": "AIREI_SCRIPTS_REFERENCE.md:45,75,107",
+        "destination": "notes fallback",
+        "preventsCompletion": true
+      },
+      "listingFeedback": {
+        "label": "listing feedback",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER"
+        ],
+        "required": true,
+        "type": "string",
+        "question": "Have you received any feedback from other buyers who walked it?",
+        "source": "AIREI_SCRIPTS_REFERENCE.md:31",
+        "destination": "notes fallback",
+        "preventsCompletion": true
+      },
+      "buyerFeedback": {
+        "label": "buyer feedback",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER"
+        ],
+        "required": false,
+        "type": "string",
+        "question": "Record buyer/listing feedback from the agent.",
+        "source": "KAYLA_COACHING_REFERENCE.md:22-24",
+        "destination": "notes fallback",
+        "preventsCompletion": false
+      },
+      "sellerFlexibility": {
+        "label": "seller flexibility",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": false,
+        "type": "string",
+        "question": "Record seller flexibility or offer feedback if provided.",
+        "source": "FULL_COURSE_AUDIT.md:30-35",
+        "destination": "notes fallback",
+        "preventsCompletion": false
+      },
+      "propertyCondition": {
+        "label": "property condition",
+        "paths": [
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": false,
+        "type": "string",
+        "question": "For rehab properties, how would you rate condition 1-10 and what would it need to be a 10?",
+        "source": "AIREI_SCRIPTS_REFERENCE.md:93-95",
+        "destination": "notes fallback",
+        "preventsCompletion": false
+      },
+      "otherProperties": {
+        "label": "other properties",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": true,
+        "type": "string",
+        "question": "Do you have any other properties you are looking to offload?",
+        "source": "AIREI_SCRIPTS_REFERENCE.md:238; KAYLA_COACHING_REFERENCE.md:34-37",
+        "destination": "notes fallback",
+        "preventsCompletion": false
+      },
+      "callOutcome": {
+        "label": "call outcome",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": true,
+        "type": "enum",
+        "question": "Record whether the call completed or no answer.",
+        "source": "TRACK_STUDENT.md:45-66",
+        "destination": "notes fallback",
+        "preventsCompletion": true
+      },
+      "attemptCount": {
+        "label": "attempt count",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": true,
+        "type": "number",
+        "question": "Record call attempt count.",
+        "source": "TRACK_STUDENT.md:45-66",
+        "destination": "notes fallback",
+        "preventsCompletion": true
+      },
+      "nextAction": {
+        "label": "next action",
+        "paths": [
+          "LISTING_AGENT",
+          "BROKER",
+          "DIRECT_SELLER",
+          "FSBO_SELLER",
+          "PPC_SELLER"
+        ],
+        "required": true,
+        "type": "string",
+        "question": "Record next exact course step.",
+        "source": "TRACK_STUDENT.md:19-66",
+        "destination": "notes fallback",
+        "preventsCompletion": false
+      }
+    },
+    "contactPathDecisionMap": [
+      "LISTING_AGENT",
+      "BROKER",
+      "DIRECT_SELLER",
+      "FSBO_SELLER",
+      "PPC_SELLER",
+      "OTHER_CONFIRMED_COURSE_PATH",
+      "RESEARCH_REQUIRED"
+    ],
+    "stageConflict": "STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED"
+  },
+  "canonicalHash": "b6a7ea4340b60d091756cb62dd8f8e2e63ef5b530a30c4c7f0bdcf69b67f2dc8"
+}
