@@ -6,6 +6,7 @@ const dry = require('./telegram-outreach-dry-run');
 const { loadAtlasDryRunOpportunities } = require('./kayla-production-data-loader');
 const ghlGuards = require('./atlas-ghl-telegram-live-guards');
 const stage1 = require('./kayla-stage1-transaction');
+const stage2tg = require('./kayla-stage2-telegram');
 const { CONTACT_PATHS } = require('./kayla-stage1-contact-path');
 
 function stage1Dir(options = {}) { return options.stage1DataDir || path.resolve(__dirname, '..', 'data', 'kayla-stage1'); }
@@ -256,6 +257,8 @@ function handleKaylaOutreachCommand(ctx, text, options = {}) {
   try {
     const stage1Result = handleStage1Command(ctx, text, options);
     if (stage1Result) return stage1Result;
+    const stage2Result = stage2tg.handleStage2Command(ctx, text, options);
+    if (stage2Result) return stage2Result;
     const intent = dry.parseIntent(text);
     if (intent.intent === 'CLARIFY') return { reply: intent.question };
     if (intent.intent === 'PAUSE_OUTREACH') {

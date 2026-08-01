@@ -1,0 +1,559 @@
+{
+  "artifactType": "kayla-stage2-telegram-acceptance",
+  "generatedAt": "2026-08-01T03:16:35.764Z",
+  "targetCommit": "0d885a0 docs(pipeline): resolve Stage 2 rules from course corpus",
+  "status": "KAYLA_MONTELLI_STAGE2_CORE_ACCEPTANCE_PASSED",
+  "checks": [
+    {
+      "name": "contract validates",
+      "passed": true
+    },
+    {
+      "name": "S2-ALT-001 unresolved",
+      "passed": true
+    },
+    {
+      "name": "listing entry verified",
+      "passed": true
+    },
+    {
+      "name": "listing facts displayed",
+      "passed": true
+    },
+    {
+      "name": "listing missing shown",
+      "passed": true
+    },
+    {
+      "name": "listing roof unknown allowed",
+      "passed": true
+    },
+    {
+      "name": "listing turnkey evaluation",
+      "passed": true
+    },
+    {
+      "name": "listing comps reviewed",
+      "passed": true
+    },
+    {
+      "name": "listing F50 available",
+      "passed": true
+    },
+    {
+      "name": "listing F10 blocked",
+      "passed": true
+    },
+    {
+      "name": "listing handoff destination",
+      "passed": true
+    },
+    {
+      "name": "listing handoff drafted",
+      "passed": true
+    },
+    {
+      "name": "listing handoff submitted",
+      "passed": true
+    },
+    {
+      "name": "listing GCJ blocked",
+      "passed": true
+    },
+    {
+      "name": "listing offer ready eligible",
+      "passed": true
+    },
+    {
+      "name": "listing simulated move",
+      "passed": true
+    },
+    {
+      "name": "listing notes preview",
+      "passed": true
+    },
+    {
+      "name": "listing no stage movement",
+      "passed": true
+    },
+    {
+      "name": "direct entry verified",
+      "passed": true
+    },
+    {
+      "name": "direct renovation evaluation",
+      "passed": true
+    },
+    {
+      "name": "direct F10 available",
+      "passed": true
+    },
+    {
+      "name": "direct F50 blocked",
+      "passed": true
+    },
+    {
+      "name": "direct handoff drafted",
+      "passed": true
+    },
+    {
+      "name": "direct simulated move",
+      "passed": true
+    },
+    {
+      "name": "missing facts incomplete",
+      "passed": true
+    },
+    {
+      "name": "missing evaluation blocked",
+      "passed": true
+    },
+    {
+      "name": "missing completion blocked",
+      "passed": true
+    },
+    {
+      "name": "missing exit blocked",
+      "passed": true
+    },
+    {
+      "name": "real runtime available",
+      "passed": true
+    },
+    {
+      "name": "real 1 loaded",
+      "passed": true
+    },
+    {
+      "name": "real 1 entry blocked",
+      "passed": true
+    },
+    {
+      "name": "real 1 no production action",
+      "passed": true
+    },
+    {
+      "name": "real 2 loaded",
+      "passed": true
+    },
+    {
+      "name": "real 2 entry blocked",
+      "passed": true
+    },
+    {
+      "name": "real 2 no production action",
+      "passed": true
+    },
+    {
+      "name": "real 3 loaded",
+      "passed": true
+    },
+    {
+      "name": "real 3 entry blocked",
+      "passed": true
+    },
+    {
+      "name": "real 3 no production action",
+      "passed": true
+    }
+  ],
+  "controlledFixtures": [
+    {
+      "label": "listing-agent",
+      "exchanges": [
+        {
+          "operator": "Start Stage 2 review",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show Stage 1 notes",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nStage 1: call=COMPLETED INT=CONFIRMED_SENT CCC=CONFIRMED_SENT card=CONFIRMED_SENT notes=CONFIRMED_RECORDED\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Verify entry",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_REVIEW_REQUIRED\nInstruction: Review contact facts and resolve missing required information.\nEntry verified. Contact Made prerequisites satisfied.\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show contact facts",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_REVIEW_REQUIRED\nInstruction: Review contact facts and resolve missing required information.\n- contactName: Alice Agent [RECORDED]\n- contactPhone: [phone] [RECORDED]\n- contactEmail: [email] [RECORDED]\n- callOutcome: COMPLETED [RECORDED]\n- attemptCount: 1 [RECORDED]\n- roofAge: 10 years [RECORDED]\n- hvacAge: 6 years [RECORDED]\n- occupancy: occupied [RECORDED]\n- monthlyRent: 1400 [NOT_APPLICABLE]\n- leaseTerms: one year [NOT_APPLICABLE]\n- utilityResponsibility: utilities on [RECORDED]\n- listingFeedback: price feedback [RECORDED]\n- otherProperties: asked [DEFERRED_COURSE_ALLOWED]\n- askingPrice: (empty) [RECORDED]\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "What is missing?",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_REVIEW_REQUIRED\nInstruction: Review contact facts and resolve missing required information.\nMissing required: none\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Mark roof unknown",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_RESOLVED\nInstruction: Contact facts are resolved. Proceed to deal type evaluation.\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Mark HVAC not provided",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_RESOLVED\nInstruction: Contact facts are resolved. Proceed to deal type evaluation.\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show CCC status",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_RESOLVED\nInstruction: Contact facts are resolved. Proceed to deal type evaluation.\nCCC: confirmed\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Confirm CCC",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_REVIEW_REQUIRED\nInstruction: Review contact facts and resolve missing required information.\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show contact card status",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_REVIEW_REQUIRED\nInstruction: Review contact facts and resolve missing required information.\nContact card: confirmed\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Confirm contact card",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_REVIEW_REQUIRED\nInstruction: Review contact facts and resolve missing required information.\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Utilities on",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_RESOLVED\nInstruction: Contact facts are resolved. Proceed to deal type evaluation.\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Evaluate as turnkey",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: COMPS_OR_RENT_REVIEW_REQUIRED\nInstruction: Review rental comps and rent viability for this turnkey property.\nMissing: COMPS\\_REVIEW, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "I reviewed the rental comps",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: EVALUATION_COMPLETE\nInstruction: Evaluation complete. Prepare handoff to closer team.\nMissing: HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show F50",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: EVALUATION_COMPLETE\nInstruction: Evaluation complete. Prepare handoff to closer team.\nF50: Happy [day]! I understand your intent to sell outright, would you be completely opposed to taking half your price now and the rest in one lump sum in the near future?\nMissing: HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show F10",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: EVALUATION_COMPLETE\nInstruction: Evaluation complete. Prepare handoff to closer team.\nBlocked: F10_BLOCKED_WRONG_DEAL_TYPE: F10 is available only for renovation/older properties.\nMissing: HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Who does this go to?",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: EVALUATION_COMPLETE\nInstruction: Evaluation complete. Prepare handoff to closer team.\nHandoff destination: SETH_LOI\nMissing: HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Draft the handoff",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: HANDOFF_DRAFT_READY\nInstruction: Handoff draft is ready. Review and confirm submission.\n```\nSTAGE 2 HANDOFF PACKAGE\n\nTo: Seth (LOI)\nProperty: [property]\nContact path: LISTING_AGENT\nContact: Alice Agent | [phone] | [email]\nOccupancy: occupied\nRoof: unknown | HVAC: unknown\nRent: 1400 | Lease: one year\nUtilities: utilities on\nFeedback: price feedback\nDeal type: TURNKEY_OR_GOOD_CONDITION\nComps/rent: operator reviewed\nRehab: N/A\nF50: available | F10: N/A\nRequested action: Generate LOI/offer\n\n[SIMULATED — no production handoff occurred]\n```\nMissing: HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "I submitted the handoff",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: HANDOFF_SUBMITTED_CONFIRMED\nInstruction: Handoff submitted. Stage 2 work is complete. Confirm movement to Offer Ready.\nHandoff submitted (simulated).\nMissing: none\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show GCJ",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: HANDOFF_SUBMITTED_CONFIRMED\nInstruction: Handoff submitted. Stage 2 work is complete. Confirm movement to Offer Ready.\nBlocked: GCJ_BLOCKED_NO_TRIGGER: No course-supported GCJ trigger is present for this transaction.\nMissing: none\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Is this ready for Offer Ready?",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: HANDOFF_SUBMITTED_CONFIRMED\nInstruction: Handoff submitted. Stage 2 work is complete. Confirm movement to Offer Ready.\nOffer Ready exit is eligible (simulated).\nMissing: none\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Simulate the next stage",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: HANDOFF_SUBMITTED_CONFIRMED\nInstruction: Handoff submitted. Stage 2 work is complete. Confirm movement to Offer Ready.\nOffer Ready exit is eligible (simulated).\nMissing: none\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show the Stage 2 notes",
+          "telegram": "```\nKAYLA STAGE 2 CONTACT MADE REVIEW\n\nProperty: [property]\nContact path: LISTING_AGENT\nPrimary contact: Alice Agent\nCompleted contact evidence: yes\nCCC/contact card: confirmed\nStage 1 facts reviewed: no\nOccupancy: occupied\nRoof: unknown [UNKNOWN_NOT_PROVIDED]\nHVAC: unknown [UNKNOWN_NOT_PROVIDED]\nRent: 1400\nLease: one year\nUtilities: utilities on\nFeedback: price feedback\nMotivation: (not recorded)\nTimeline: (not recorded)\nAsking/net price: (not recorded)\nCondition: (not recorded)\nRepairs: (not recorded)\nPhotos: (not recorded)\nComps/rent evidence: operator reviewed\nDeal classification: TURNKEY_OR_GOOD_CONDITION\nF50 eligibility: available\nF10 eligibility: not available\nHandoff destination: SETH_LOI\nHandoff status: submitted\nGCJ status: not available\nUnresolved facts: none\nAlternate outcome status: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nOffer Ready eligibility: not eligible\nOperator notes: (none)\nNext course step: Handoff submitted. Stage 2 work is complete. Confirm movement to Offer Ready.\nCanonical rule references: S2_ENTRY_001, S2_DATA_001, S2_CCC_001, S2_PPC_001, S2_EVAL_001, S2_F50_001, S2_HANDOFF_001, S2_EXIT_001, S2_GCJ_001, S2_TIMING\n```"
+        },
+        {
+          "operator": "What comes next?",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: HANDOFF_SUBMITTED_CONFIRMED\nInstruction: Handoff submitted. Stage 2 work is complete. Confirm movement to Offer Ready.\nMissing: none\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        }
+      ],
+      "session": {
+        "state": "HANDOFF_SUBMITTED_CONFIRMED",
+        "contactPath": "LISTING_AGENT",
+        "dealType": "TURNKEY_OR_GOOD_CONDITION",
+        "handoffDestination": "SETH_LOI",
+        "exitEligible": false,
+        "counters": {
+          "sends": 0,
+          "calls": 0,
+          "ghlWrites": 0,
+          "stageMovements": 0
+        }
+      }
+    },
+    {
+      "label": "direct-seller",
+      "exchanges": [
+        {
+          "operator": "Start Stage 2 review",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Verify entry",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: CONTACT_FACTS_REVIEW_REQUIRED\nInstruction: Review contact facts and resolve missing required information.\nEntry verified. Contact Made prerequisites satisfied.\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show contact facts",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: CONTACT_FACTS_REVIEW_REQUIRED\nInstruction: Review contact facts and resolve missing required information.\n- contactName: Sam Seller [RECORDED]\n- contactPhone: [phone] [RECORDED]\n- contactEmail: [email] [RECORDED]\n- callOutcome: COMPLETED [RECORDED]\n- attemptCount: 1 [RECORDED]\n- roofAge: 10 years [RECORDED]\n- hvacAge: 6 years [RECORDED]\n- occupancy: vacant [RECORDED]\n- monthlyRent: 1400 [NOT_APPLICABLE]\n- leaseTerms: one year [NOT_APPLICABLE]\n- utilityResponsibility: utilities on [RECORDED]\n- listingFeedback: price feedback [RECORDED]\n- otherProperties: asked [DEFERRED_COURSE_ALLOWED]\n- askingPrice: 250000 [RECORDED]\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "What is missing?",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: CONTACT_FACTS_REVIEW_REQUIRED\nInstruction: Review contact facts and resolve missing required information.\nMissing required: none\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Evaluate as renovation",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: REHAB_EVIDENCE_REQUIRED\nInstruction: Record rehab estimate and market rent for this renovation property.\nMissing: REHAB\\_EVIDENCE, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "I added the rehab information",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: EVALUATION_COMPLETE\nInstruction: Evaluation complete. Prepare handoff to closer team.\nMissing: HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show F10",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: EVALUATION_COMPLETE\nInstruction: Evaluation complete. Prepare handoff to closer team.\nF10: Happy [day]! I understand your intent to sell outright, would you be completely opposed to taking 10% of your price now and the rest in one lump sum in just 24 months?\nMissing: HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show F50",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: EVALUATION_COMPLETE\nInstruction: Evaluation complete. Prepare handoff to closer team.\nBlocked: F50_BLOCKED_WRONG_DEAL_TYPE: F50 is available only for turnkey/good condition properties.\nMissing: HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Draft the handoff",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: HANDOFF_DRAFT_READY\nInstruction: Handoff draft is ready. Review and confirm submission.\n```\nSTAGE 2 HANDOFF PACKAGE\n\nTo: Seth (LOI)\nProperty: [property]\nContact path: DIRECT_SELLER\nContact: Sam Seller | [phone] | [email]\nOccupancy: vacant\nRoof: 10 years | HVAC: 6 years\nRent: 1400 | Lease: one year\nUtilities: utilities on\nFeedback: price feedback\nDeal type: RENOVATION_OR_OLDER\nComps/rent: N/A\nRehab: operator recorded\nF50: N/A | F10: available\nRequested action: Generate LOI/offer\n\n[SIMULATED — no production handoff occurred]\n```\nMissing: HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "I submitted the handoff",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: HANDOFF_SUBMITTED_CONFIRMED\nInstruction: Handoff submitted. Stage 2 work is complete. Confirm movement to Offer Ready.\nHandoff submitted (simulated).\nMissing: none\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Simulate the next stage",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: DIRECT_SELLER\nCurrent state: HANDOFF_SUBMITTED_CONFIRMED\nInstruction: Handoff submitted. Stage 2 work is complete. Confirm movement to Offer Ready.\nOffer Ready exit is eligible (simulated).\nMissing: none\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show the Stage 2 notes",
+          "telegram": "```\nKAYLA STAGE 2 CONTACT MADE REVIEW\n\nProperty: [property]\nContact path: DIRECT_SELLER\nPrimary contact: Sam Seller\nCompleted contact evidence: yes\nCCC/contact card: confirmed\nStage 1 facts reviewed: no\nOccupancy: vacant\nRoof: 10 years [RECORDED]\nHVAC: 6 years [RECORDED]\nRent: 1400\nLease: one year\nUtilities: utilities on\nFeedback: price feedback\nMotivation: (not recorded)\nTimeline: (not recorded)\nAsking/net price: 250000\nCondition: (not recorded)\nRepairs: (not recorded)\nPhotos: (not recorded)\nComps/rent evidence: (not recorded)\nDeal classification: RENOVATION_OR_OLDER\nF50 eligibility: not available\nF10 eligibility: available\nHandoff destination: SETH_LOI\nHandoff status: submitted\nGCJ status: not available\nUnresolved facts: none\nAlternate outcome status: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nOffer Ready eligibility: not eligible\nOperator notes: (none)\nNext course step: Handoff submitted. Stage 2 work is complete. Confirm movement to Offer Ready.\nCanonical rule references: S2_ENTRY_001, S2_DATA_001, S2_CCC_001, S2_PPC_001, S2_EVAL_001, S2_F50_001, S2_HANDOFF_001, S2_EXIT_001, S2_GCJ_001, S2_TIMING\n```"
+        }
+      ],
+      "session": {
+        "state": "HANDOFF_SUBMITTED_CONFIRMED",
+        "contactPath": "DIRECT_SELLER",
+        "dealType": "RENOVATION_OR_OLDER",
+        "handoffDestination": "SETH_LOI",
+        "exitEligible": false,
+        "counters": {
+          "sends": 0,
+          "calls": 0,
+          "ghlWrites": 0,
+          "stageMovements": 0
+        }
+      }
+    },
+    {
+      "label": "missing-info",
+      "exchanges": [
+        {
+          "operator": "Start Stage 2 review",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Verify entry",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_REVIEW_REQUIRED\nInstruction: Review contact facts and resolve missing required information.\nEntry verified. Contact Made prerequisites satisfied.\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Show contact facts",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_REVIEW_REQUIRED\nInstruction: Review contact facts and resolve missing required information.\n- contactName: Alice Agent [RECORDED]\n- contactPhone: [phone] [RECORDED]\n- contactEmail: [email] [RECORDED]\n- callOutcome: COMPLETED [RECORDED]\n- attemptCount: 1 [RECORDED]\n- roofAge: 10 years [RECORDED]\n- hvacAge: 6 years [RECORDED]\n- occupancy: occupied [RECORDED]\n- monthlyRent: 1400 [NOT_APPLICABLE]\n- leaseTerms: one year [NOT_APPLICABLE]\n- utilityResponsibility: utilities on [RECORDED]\n- listingFeedback: price feedback [RECORDED]\n- otherProperties: asked [DEFERRED_COURSE_ALLOWED]\n- askingPrice: (empty) [RECORDED]\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "What is missing?",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: CONTACT_FACTS_REVIEW_REQUIRED\nInstruction: Review contact facts and resolve missing required information.\nMissing required: none\nMissing: DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Evaluate as turnkey",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: COMPS_OR_RENT_REVIEW_REQUIRED\nInstruction: Review rental comps and rent viability for this turnkey property.\nMissing: COMPS\\_REVIEW, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "I recorded notes",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: COMPS_OR_RENT_REVIEW_REQUIRED\nInstruction: Review rental comps and rent viability for this turnkey property.\nIncomplete. Missing: COMPS_REVIEW, HANDOFF_SUBMISSION\nMissing: COMPS\\_REVIEW, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        },
+        {
+          "operator": "Simulate the next stage",
+          "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: LISTING_AGENT\nCurrent state: COMPS_OR_RENT_REVIEW_REQUIRED\nInstruction: Review rental comps and rent viability for this turnkey property.\nNot eligible: EXIT_BLOCKED: COMPS_REVIEW, HANDOFF_SUBMISSION\nMissing: COMPS\\_REVIEW, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+        }
+      ],
+      "session": {
+        "state": "COMPS_OR_RENT_REVIEW_REQUIRED",
+        "contactPath": "LISTING_AGENT",
+        "dealType": "TURNKEY_OR_GOOD_CONDITION",
+        "handoffDestination": "SETH_LOI",
+        "exitEligible": false,
+        "counters": {
+          "sends": 0,
+          "calls": 0,
+          "ghlWrites": 0,
+          "stageMovements": 0
+        }
+      }
+    }
+  ],
+  "realReadOnly": {
+    "auth": {
+      "ok": true,
+      "status": "AUTH_READY"
+    },
+    "records": [
+      {
+        "record": {
+          "opportunityId": "x6wH...6lTZ",
+          "propertyAddress": "7117 Manker St, Indianapolis IN 46227",
+          "stageName": "Lead Entered",
+          "contactId": "LcqernTqlVOxoMBnSroZ"
+        },
+        "exchanges": [
+          {
+            "operator": "Start Stage 2 review",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Verify entry",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nEntry blocked: ENTRY_BLOCKED_RESEARCH_REQUIRED — Contact path is not established.\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show contact facts",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "What is missing?",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing required: none\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "What comes next?",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          }
+        ],
+        "session": {
+          "state": "STAGE2_ENTRY_REVIEW_REQUIRED",
+          "counters": {
+            "sends": 0,
+            "calls": 0,
+            "ghlWrites": 0,
+            "stageMovements": 0
+          }
+        }
+      },
+      {
+        "record": {
+          "opportunityId": "Y9s3...FtJU",
+          "propertyAddress": "1542 S Alabama St, Indianapolis IN 46225",
+          "stageName": "Lead Entered",
+          "contactId": "H2B2QyA3JmG0XxzjB2pg"
+        },
+        "exchanges": [
+          {
+            "operator": "Start Stage 2 review",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Verify entry",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nEntry blocked: ENTRY_BLOCKED_RESEARCH_REQUIRED — Contact path is not established.\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show contact facts",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "What is missing?",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing required: none\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "What comes next?",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          }
+        ],
+        "session": {
+          "state": "STAGE2_ENTRY_REVIEW_REQUIRED",
+          "counters": {
+            "sends": 0,
+            "calls": 0,
+            "ghlWrites": 0,
+            "stageMovements": 0
+          }
+        }
+      },
+      {
+        "record": {
+          "opportunityId": "GosQ...B690",
+          "propertyAddress": "418 N Centennial St, Indianapolis IN 46222",
+          "stageName": "Lead Entered",
+          "contactId": "MmU3jmQqkul67E6DgDFY"
+        },
+        "exchanges": [
+          {
+            "operator": "Start Stage 2 review",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Verify entry",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nEntry blocked: ENTRY_BLOCKED_RESEARCH_REQUIRED — Contact path is not established.\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "Show contact facts",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "What is missing?",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing required: none\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          },
+          {
+            "operator": "What comes next?",
+            "telegram": "*Kayla Stage 2 Operator Console*\nProperty: [property]\nContact path: RESEARCH_REQUIRED\nCurrent state: STAGE2_ENTRY_REVIEW_REQUIRED\nInstruction: Review Stage 1 call facts and confirm Contact Made entry.\nMissing: CCC\\_CONFIRMATION, CONTACT\\_CARD\\_CONFIRMATION, DEAL\\_TYPE\\_EVALUATION, HANDOFF\\_SUBMISSION\nBlocked: S2_ALT_OUTCOME_BLOCKED_COURSE_UNKNOWN\nProduction sends: 0 | Calls: 0 | GHL writes: 0 | Stage movements: 0"
+          }
+        ],
+        "session": {
+          "state": "STAGE2_ENTRY_REVIEW_REQUIRED",
+          "counters": {
+            "sends": 0,
+            "calls": 0,
+            "ghlWrites": 0,
+            "stageMovements": 0
+          }
+        }
+      }
+    ]
+  },
+  "productionSafety": {
+    "smsSends": 0,
+    "calls": 0,
+    "productionWrites": 0,
+    "notesCreated": 0,
+    "stageMovements": 0,
+    "workflowModifications": 0,
+    "localSessionCounters": [
+      {
+        "sends": 0,
+        "calls": 0,
+        "ghlWrites": 0,
+        "stageMovements": 0
+      },
+      {
+        "sends": 0,
+        "calls": 0,
+        "ghlWrites": 0,
+        "stageMovements": 0
+      },
+      {
+        "sends": 0,
+        "calls": 0,
+        "ghlWrites": 0,
+        "stageMovements": 0
+      },
+      {
+        "sends": 0,
+        "calls": 0,
+        "ghlWrites": 0,
+        "stageMovements": 0
+      },
+      {
+        "sends": 0,
+        "calls": 0,
+        "ghlWrites": 0,
+        "stageMovements": 0
+      },
+      {
+        "sends": 0,
+        "calls": 0,
+        "ghlWrites": 0,
+        "stageMovements": 0
+      }
+    ]
+  }
+}
