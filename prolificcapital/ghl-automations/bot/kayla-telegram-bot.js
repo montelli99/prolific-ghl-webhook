@@ -317,7 +317,21 @@ async function handleNaturalLanguage(chatId, userId, text, ks, msg) {
 
   if (/pause|stop.*outreach/.test(t) && ownerAuth.isAdmin(userId)) { killSwitch.writeKillSwitch('PAUSED'); await sendMessage(chatId, 'Operations PAUSED.'); return; }
 
-  await sendMessage(chatId, ['I didn\'t understand that. Try:', '', '/outreach — Load leads and begin Stage 1', '/status — Check pipeline status', '/help — See all commands', '', 'Or type naturally: "Show me leads", "Start Stage 1", "Show INT", etc.'].join('\n'));
+  const ksNow = killSwitch.readKillSwitch();
+  const activePlan = canary.loadActiveCanaryPlan(chatId);
+  const lines = [];
+  if (activePlan && killSwitch.canSend(ksNow.state)) {
+    lines.push('I have an active canary plan ready. Would you like me to execute it, or do you want to do something else?');
+  } else if (ksNow.state === 'PAUSED') {
+    lines.push('I\'m currently paused. Would you like me to resume in dry-run mode so we can rehearse, or would you prefer to check the pipeline status first?');
+  } else if (ksNow.state === 'DRY_RUN_ONLY') {
+    lines.push('I\'m in dry-run mode. Want me to load the latest leads and walk through a rehearsal, or check on something specific?');
+  } else if (ksNow.state === 'CANARY_ALLOWED') {
+    lines.push('Canary mode is active. Want me to generate a fresh 3-lead canary plan for your review, or check the pipeline status?');
+  } else {
+    lines.push('What would you like me to help with? I can load leads, check pipeline status, run a dry-run rehearsal, or walk through any stage.');
+  }
+  await sendMessage(chatId, lines.join('\n'));
 }
 
 async function poll() {

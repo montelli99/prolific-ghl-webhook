@@ -81,6 +81,7 @@ function setKillSwitch(state, ctx = {}, options = {}) {
 }
 
 function normalizeOpportunity(input) {
+  if (input.contactRoleText !== undefined && input.currentStageId && input.opportunityId) return input;
   const opp = input.opportunity || input;
   const contact = input.contact || {};
   return {
