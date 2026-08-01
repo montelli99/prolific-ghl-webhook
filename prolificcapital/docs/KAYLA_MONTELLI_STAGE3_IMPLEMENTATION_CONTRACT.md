@@ -70,9 +70,9 @@
 | Type | Formula/Rule | Requirements |
 |---|---|---|
 | Cash | ARV × 0.70 − Repairs − Wholesale Fee | Deep discount |
-| 50% Stack | 50% down, seller holds 50% | 65%+ equity, free and clear |
+| 50% Stack | 50% down, seller holds 50% | Min 50% equity (hard floor), preferred 65%+ (seller profitability), free and clear |
 | 10% Down | 10% down, seller carries balance | Free and clear |
-| Subject-To | Take over existing debt | Low equity, 72+ months |
+| Subject-To | Take over existing debt | Low equity + pain point, typically 72 months max (negotiable) |
 
 F50/F10 are creative probes, not formal offer types.
 
@@ -97,10 +97,10 @@ F50/F10 are creative probes, not formal offer types.
 **Classification:** `COURSE_EXPLICIT`
 
 - Cash: ARV × 0.70 − Repairs − Wholesale Fee = Max Offer
-- 50% Stack: 50% down, 65%+ equity, free and clear
+- 50% Stack: 50% down, min 50% equity (hard floor), preferred 65%+ (seller profitability), free and clear
 - 10% Down: 10% down, free and clear
-- SubTo: Low equity, 72+ months
-- 1% Rule: Monthly rent ≈ 1% of purchase price
+- SubTo: Low equity + pain point, typically 72 months max (negotiable)
+- 1% Rule: Screening guidance — we like to see monthly rent ≈ 1% of purchase price. Not mandatory.
 
 **Implementation:** Software may display formulas. Software must not auto-generate offers without closer approval.
 

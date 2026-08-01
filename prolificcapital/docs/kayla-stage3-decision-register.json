@@ -53,7 +53,7 @@
         "airei-course-notes/03-STEP3-Pt1-Deal-Structure-Cash-Stack-SubTo.txt:1-158",
         "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:228-258"
       ],
-      "answer": "Four course-backed offer types: (1) Cash: ARV×0.70−Repairs−Fee, deep discount. (2) 50% Stack: 50% down, seller holds 50%, 65%+ equity, free and clear. (3) 10% Down: 10% down, seller carries balance, free and clear. (4) Subject-To: take over existing debt, low equity, 72+ months. F50/F10 are creative financing probes, not formal offer types.",
+      "answer": "Four course-backed offer types: (1) Cash: ARV×0.70−Repairs−Fee, deep discount. (2) 50% Stack: 50% down, seller holds 50%, minimum 50% equity (hard floor), preferred 65%+ equity (seller profitability), free and clear. (3) 10% Down: 10% down, seller carries balance, free and clear. (4) Subject-To: take over existing debt, low equity AND pain point required, typically 72 months max (negotiable). F50/F10 are creative financing probes, not formal offer types.",
       "normalizedRule": "Four offer types: Cash, 50% Stack, 10% Down, Subject-To. F50/F10 are creative probes.",
       "authorityClassification": "COURSE_EXPLICIT",
       "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER", "PPC_SELLER"],
@@ -87,8 +87,8 @@
         "airei-course-notes/03-STEP3-Pt1-Deal-Structure-Cash-Stack-SubTo.txt:48-113",
         "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:228-258"
       ],
-      "answer": "Cash: ARV × 0.70 − Repairs − Wholesale Fee = Max Offer. 50% Stack: 50% down at close, seller holds 50%, minimum 65% equity, free and clear required. 10% Down: 10% (or 0-15%) down, seller carries balance, down payment must cover equity, free and clear required. SubTo: take over existing debt, low equity, 72+ months payoff. 1% rent rule: monthly rent should be approximately 1% of purchase price. These are taught as mandatory evaluation rules.",
-      "normalizedRule": "Cash: ARV×0.70−Repairs−Fee. Stack: 50% down, 65%+ equity, free/clear. 10% Down: 10% down, free/clear. SubTo: low equity, 72+ months.",
+      "answer": "Cash: ARV × 0.70 − Repairs − Wholesale Fee = Max Offer. 50% Stack: 50% down at close, seller holds 50%, minimum 50% equity (hard floor), preferred 65%+ equity (seller profitability), free and clear required. 10% Down: 10% (or 0-15%) down, seller carries balance, down payment must cover equity, free and clear required. SubTo: take over existing debt, low equity AND pain point required, typically 72 months max (negotiable). 1% rent rule: screening guidance — we like to see rent approximately 1% of purchase price. Not mandatory.",
+      "normalizedRule": "Cash: ARV×0.70−Repairs−Fee. Stack: 50% down, min 50% equity (pref 65%+), free/clear. 10% Down: 10% down, free/clear. SubTo: low equity + pain point, 72mo max (negotiable). 1% rule: screening guidance.",
       "authorityClassification": "COURSE_EXPLICIT",
       "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER", "PPC_SELLER"],
       "blocksImplementation": false,

@@ -43,9 +43,9 @@
 **Rule IDs:** S3-TYPE-001, S3-CALC-001
 
 **Assertions:**
-1. 50% Stack formula displayed: 50% down, 65%+ equity, free and clear.
+1. 50% Stack formula displayed: 50% down, min 50% equity (hard floor), preferred 65%+ (seller profitability), free and clear.
 2. 10% Down formula displayed: 10% down, free and clear.
-3. SubTo formula displayed: low equity, 72+ months.
+3. SubTo formula displayed: low equity + pain point, typically 72 months max (negotiable).
 4. Equity and mortgage status required for seller finance types.
 
 ---
