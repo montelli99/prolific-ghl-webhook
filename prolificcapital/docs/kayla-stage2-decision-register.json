@@ -1,120 +1,239 @@
 {
   "schema": "kayla-stage2-decision-register-v1",
   "generatedAt": "2026-07-31T12:00:00.000Z",
+  "updatedAt": "2026-07-31T14:00:00.000Z",
   "canonicalAuthority": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
   "canonicalVersion": "1.0",
+  "evidenceIndex": "docs/KAYLA_STAGE2_COURSE_EVIDENCE_INDEX.md",
   "decisions": [
     {
       "decisionId": "S2-ENTRY-001",
       "stage": 2,
       "topic": "Contact Made Entry Authorization",
-      "status": "COURSE_CONFLICT",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
       "question": "What exact event authorizes moving a lead from Lead Entered to Contact Made?",
       "canonicalRuleIds": ["14.1"],
       "sourceReferences": [
-        "ghl-automations/TRACK_STUDENT.md:49",
+        "airei-course-notes/01-STEP3-Pt1-Intro-Warm-Dials-Kayla-Teaches-Outreach.txt:49-207",
+        "airei-course-notes/01-STEP3-Pt1-Intro-Warm-Dials-Kayla-Teaches-Outreach.txt:209-298",
+        "airei-course-notes/02-STEP3-Pt1-Leads-to-CRM-AI-Offer-System.txt:1-26",
+        "ai-rei/kay-exclusive/List kickoff_text.txt",
         "lead-tracking/KAYLA_COACHING_REFERENCE.md:15-31",
         "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:76-88",
-        "memory/FULL_COURSE_AUDIT.md:169-175"
+        "memory/REI_STAGE_BY_STAGE_GUIDE.md:23-29"
       ],
       "interpretations": [
-        "INT sent alone authorizes entry",
-        "Completed call plus notes recorded authorizes entry",
-        "Completed call plus CCC sent plus notes recorded authorizes entry"
+        "INT sent alone authorizes entry (FALSE CONFLICT — developer simplification, not course evidence)",
+        "Completed call plus notes recorded authorizes entry (PARTIAL — missing CCC)",
+        "Completed call plus CCC sent plus contact card sent plus notes recorded authorizes entry (COURSE-SUPPORTED)"
       ],
-      "blocksImplementation": true,
-      "blockedBehaviors": ["entry eligibility", "operator prompt timing", "Stage 1 completion definition"],
-      "temporaryStatus": "blocked",
-      "answer": null,
-      "answeredBy": null,
-      "answeredAt": null,
-      "approvalReference": null,
-      "implementationStatus": "not_started"
+      "blocksImplementation": false,
+      "blockedBehaviors": [],
+      "temporaryStatus": "resolved",
+      "answer": "Contact Made entry requires: (1) a completed two-way conversation with the listing agent, broker, or seller; (2) CCC text shortcut and contact card sent after the call; (3) call notes recorded with available property and contact information. The operator confirms entry. INT alone does not qualify. An unanswered call does not qualify.",
+      "normalizedRule": "After a completed call, CCC/contact card sent, and notes recorded, the operator confirms entry into Contact Made.",
+      "resolutionStatus": "RESOLVED_FROM_COURSE_CORPUS",
+      "authorityClassification": "COURSE_SYNTHESIZED_FROM_MULTIPLE_EXPLICIT_SOURCES",
+      "evidenceSummary": "Both worked call examples (E1, E2) show: call → CCC/contact card immediately after → notes. The CRM transcript (E3) shows notes import before offer. The list kickoff (E7) shows end-of-day lead sheet submission. The stage guide (E12) shows INT → call → collect → CCC → notes → move to Contact Made. The TRACK_STUDENT 'INT Sent → Stage 2' rule is a developer simplification that conflicts with all course evidence.",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER"],
+      "trigger": "Operator confirms: completed call recorded, CCC/contact card sent, notes recorded.",
+      "prerequisites": ["Contact path established", "INT sent", "Call completed", "CCC sent", "Contact card sent", "Notes recorded"],
+      "operatorAction": "Confirm entry into Contact Made.",
+      "completionCondition": "All prerequisites confirmed.",
+      "nextAction": "Begin Stage 2 review and evaluation.",
+      "implementationStatus": "ready",
+      "resolutionHistory": [
+        {
+          "date": "2026-07-31",
+          "action": "Resolved from course corpus",
+          "previousStatus": "COURSE_CONFLICT",
+          "falseConflictsRemoved": ["ghl-automations/TRACK_STUDENT.md:49 — developer simplification, not course evidence"]
+        }
+      ],
+      "answeredBy": "COURSE_CORPUS_RECONSTRUCTION",
+      "answeredAt": "2026-07-31",
+      "approvalReference": "E1, E2, E3, E7, E9, E12"
     },
     {
       "decisionId": "S2-DATA-001",
       "stage": 2,
       "topic": "Required vs. Unknown-Allowed Data",
-      "status": "COURSE_UNKNOWN",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
       "question": "Which property and contact facts must be resolved before Stage 2 work is complete, and which may be marked unknown, not provided, or not applicable?",
       "canonicalRuleIds": ["15.2"],
       "sourceReferences": [
+        "airei-course-notes/01-STEP3-Pt1-Intro-Warm-Dials-Kayla-Teaches-Outreach.txt:204-207",
+        "airei-course-notes/02-STEP3-Pt1-Leads-to-CRM-AI-Offer-System.txt:22-25",
         "lead-tracking/AIREI_SCRIPTS_REFERENCE.md:25-113",
-        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:76-85",
-        "lead-tracking/KAYLA_COACHING_REFERENCE.md:34-37,204-207",
+        "lead-tracking/KAYLA_COACHING_REFERENCE.md:34-37",
         "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Process_text.txt"
       ],
       "interpretations": [
-        "All asked questions are mandatory",
-        "Contact identity fields mandatory; property facts may be unknown",
-        "Requirements vary by contact path"
+        "All asked questions are mandatory (NOT SUPPORTED — Kayla explicitly allows unknown roof/HVAC)",
+        "Contact identity mandatory; property facts may be unknown (PARTIALLY SUPPORTED)",
+        "Requirements vary by contact path (SUPPORTED)"
       ],
-      "blocksImplementation": true,
-      "blockedBehaviors": ["required fields", "completion definition", "operator prompts for missing data"],
-      "temporaryStatus": "preview-only",
-      "answer": null,
-      "answeredBy": null,
-      "answeredAt": null,
-      "approvalReference": null,
-      "implementationStatus": "not_started"
+      "blocksImplementation": false,
+      "blockedBehaviors": [],
+      "temporaryStatus": "resolved",
+      "answer": "MANDATORY (all paths): contact name, contact phone, contact email, occupancy, utilities. MANDATORY but UNKNOWN_ALLOWED (all paths): roof age, HVAC age. CONDITIONAL (occupied/rented): rent amount, lease terms. PATH_SPECIFIC: listing feedback (agent/broker paths, unknown allowed), asking price (seller paths), net price (PPC/rehab), property condition (PPC/rehab), photos (PPC). OPTIONAL (all paths): other properties, seller motivation, seller timeline.",
+      "normalizedRule": "Contact identity and occupancy/utilities are mandatory. Roof/HVAC may be unknown (obtainable later from seller disclosures). Rent/lease are conditional on occupancy. Path-specific fields apply per contact type.",
+      "resolutionStatus": "RESOLVED_FROM_COURSE_CORPUS",
+      "authorityClassification": "COURSE_EXPLICIT_BY_WORKED_EXAMPLE",
+      "evidenceSummary": "E1: Kayla admits missing roof question — 'If for any reason they don't know, we can always get on the seller disclosures.' E3: 'the HVAC information the roof information if you have it if you don't.' E2: agent uncertain about roof/HVAC status — call proceeds. E5: PPC requires condition rating, net price, photos. Scripts reference lists all questions but does not classify them as blocking.",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER", "PPC_SELLER"],
+      "trigger": "Operator reviews collected information during Stage 2.",
+      "prerequisites": ["Call completed", "Notes recorded"],
+      "operatorAction": "Review collected fields; mark unknown/not-provided where contact could not answer.",
+      "completionCondition": "Mandatory fields resolved or marked unknown/not-provided where allowed. Conditional fields resolved where condition applies.",
+      "nextAction": "Proceed to Stage 2 evaluation.",
+      "implementationStatus": "ready",
+      "resolutionHistory": [
+        {
+          "date": "2026-07-31",
+          "action": "Resolved from course corpus",
+          "previousStatus": "COURSE_UNKNOWN"
+        }
+      ],
+      "answeredBy": "COURSE_CORPUS_RECONSTRUCTION",
+      "answeredAt": "2026-07-31",
+      "approvalReference": "E1, E2, E3, E5"
     },
     {
       "decisionId": "S2-CCC-001",
       "stage": 2,
       "topic": "CCC Stage Relationship",
-      "status": "COURSE_CONFLICT",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
       "question": "Is CCC/contact-card completion a Stage 1 requirement, a Stage 2 entry requirement, or an action that may be confirmed across the Stage 1/Stage 2 boundary?",
       "canonicalRuleIds": ["14.1", "14.5"],
       "sourceReferences": [
-        "lead-tracking/AIREI_SCRIPTS_REFERENCE.md:13,235-237",
         "airei-course-notes/01-STEP3-Pt1-Intro-Warm-Dials-Kayla-Teaches-Outreach.txt:179-193",
-        "ghl-automations/TRACK_STUDENT.md:70-102"
+        "airei-course-notes/01-STEP3-Pt1-Intro-Warm-Dials-Kayla-Teaches-Outreach.txt:263-298",
+        "lead-tracking/AIREI_SCRIPTS_REFERENCE.md:13,235-237",
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:87-88"
       ],
       "interpretations": [
-        "CCC is a Stage 1 completion requirement",
-        "CCC is a Stage 2 action",
-        "CCC is a post-call action confirmed at either boundary"
+        "CCC is a Stage 1 completion requirement (PARTIAL)",
+        "CCC is a Stage 2 action (PARTIAL)",
+        "CCC is a post-call action confirmed at the Stage 1→Stage 2 boundary (COURSE-SUPPORTED)"
       ],
-      "blocksImplementation": true,
-      "blockedBehaviors": ["Stage 1 completion definition", "Stage 2 entry gate", "operator workflow sequence"],
-      "temporaryStatus": "preview-only",
-      "answer": null,
-      "answeredBy": null,
-      "answeredAt": null,
-      "approvalReference": null,
-      "implementationStatus": "not_started"
+      "blocksImplementation": false,
+      "blockedBehaviors": [],
+      "temporaryStatus": "resolved",
+      "answer": "CCC and contact card are sent immediately after every completed call, before any stage movement. Their completion is confirmed as part of the Contact Made entry gate. They are not exclusively Stage 1 or Stage 2 actions — they are post-call requirements verified at the stage boundary.",
+      "normalizedRule": "CCC and contact card are post-call actions sent immediately after the call. Their completion is confirmed at the Contact Made entry gate.",
+      "resolutionStatus": "RESOLVED_FROM_COURSE_CORPUS",
+      "authorityClassification": "COURSE_EXPLICIT_BY_WORKED_EXAMPLE",
+      "evidenceSummary": "E1: Kayla sends CCC immediately after call ends (line 179). E2: Same pattern (lines 263-298). Master playbook Step 5: 'After Call: Send CCC' (before evaluation). Scripts reference: 'Send CCC + contact card after every call.' The course consistently shows CCC as an immediate post-call action, not a stage-specific action.",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER"],
+      "trigger": "Call completed.",
+      "prerequisites": ["Call completed", "Contact name known", "Property address known"],
+      "operatorAction": "Send CCC and contact card immediately after call. Confirm sent during Contact Made entry.",
+      "completionCondition": "CCC and contact card confirmed sent.",
+      "nextAction": "Proceed to Contact Made entry confirmation.",
+      "implementationStatus": "ready",
+      "resolutionHistory": [
+        {
+          "date": "2026-07-31",
+          "action": "Resolved from course corpus",
+          "previousStatus": "COURSE_CONFLICT"
+        }
+      ],
+      "answeredBy": "COURSE_CORPUS_RECONSTRUCTION",
+      "answeredAt": "2026-07-31",
+      "approvalReference": "E1, E2, E9, E8"
+    },
+    {
+      "decisionId": "S2-PPC-001",
+      "stage": 2,
+      "topic": "PPC and FSBO Path Integration",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
+      "question": "How does the PPC/FSBO contact path integrate with the standard Contact Made and Offer Ready stages?",
+      "canonicalRuleIds": ["15.6"],
+      "sourceReferences": [
+        "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Process_text.txt",
+        "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Text Shortcuts_text.txt"
+      ],
+      "interpretations": [
+        "PPC leads enter at Contact Made after PPC-specific call (SUPPORTED)",
+        "PPC leads enter at Offer Ready after photos and Kayla loop-in (PARTIAL)",
+        "PPC follows a separate process outside standard pipeline (NOT SUPPORTED — same pipeline stages)"
+      ],
+      "blocksImplementation": false,
+      "blockedBehaviors": [],
+      "temporaryStatus": "resolved",
+      "answer": "PPC is a distinct contact path within the same pipeline. PPC leads enter Contact Made after the PPC-specific call, contact card (PCC or PC), and photo request. PPC uses its own shortcuts (PIN, PNOA, PCC, PC, PGC, PPH). The PPC group chat (PGC) is created when an offer is ready. FSBO follows the standard direct-seller path with SELLER_INITIAL script.",
+      "normalizedRule": "PPC is a distinct contact path with its own shortcuts and photo requirement. It enters Contact Made after the PPC call and contact card. FSBO follows the standard direct-seller path.",
+      "resolutionStatus": "RESOLVED_FROM_COURSE_CORPUS",
+      "authorityClassification": "COURSE_PATH_SPECIFIC",
+      "evidenceSummary": "E5: PPC has distinct script, questions (condition rating, net price, photos), and handoff (Kayla group chat). E6: PPC has entirely separate shortcut set (PIN, PNOA, PCC, PC, PGC, PPH). PGC is sent 'when an offer is ready for closer to pitch.' FSBO uses standard seller scripts per scripts reference.",
+      "applicablePaths": ["PPC_SELLER", "FSBO_SELLER"],
+      "trigger": "PPC: PPC call completed, contact card sent, photos requested. FSBO: standard seller call completed.",
+      "prerequisites": ["PPC: PPC call completed, PCC or PC sent, photos requested", "FSBO: seller call completed, CCC sent, notes recorded"],
+      "operatorAction": "PPC: confirm PPC call facts, confirm contact card, confirm photo request. FSBO: same as direct seller.",
+      "completionCondition": "PPC: PPC data collected, contact card sent, photo request confirmed. FSBO: standard seller data collected.",
+      "nextAction": "PPC: await photos, then proceed to evaluation. FSBO: proceed to evaluation.",
+      "implementationStatus": "ready",
+      "resolutionHistory": [
+        {
+          "date": "2026-07-31",
+          "action": "Resolved from course corpus",
+          "previousStatus": "COURSE_UNKNOWN"
+        }
+      ],
+      "answeredBy": "COURSE_CORPUS_RECONSTRUCTION",
+      "answeredAt": "2026-07-31",
+      "approvalReference": "E5, E6"
     },
     {
       "decisionId": "S2-EVAL-001",
       "stage": 2,
       "topic": "Stage 2 Evaluation Requirements",
-      "status": "COURSE_UNKNOWN",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
       "question": "What exact evaluation must the operator perform during Stage 2 after confirming call facts, before handing the lead to the closer team?",
       "canonicalRuleIds": ["3.2"],
       "sourceReferences": [
         "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:90-100",
         "ghl-automations/TRACK_STUDENT.md:84-99",
-        "memory/REI_STAGE_BY_STAGE_GUIDE.md:40-46"
+        "memory/REI_STAGE_BY_STAGE_GUIDE.md:40-46",
+        "airei-course-notes/01-STEP3-Pt1-Intro-Warm-Dials-Kayla-Teaches-Outreach.txt:275-282"
       ],
       "interpretations": [
-        "Turnkey/renovation classification only",
-        "Classification plus rental comps check",
-        "Classification, comps, rent viability, and repair estimate"
+        "Turnkey/renovation classification only (MINIMUM)",
+        "Classification plus rental comps check (SUPPORTED for turnkey)",
+        "Classification, comps, rent viability, and repair estimate (SUPPORTED for renovation)"
       ],
-      "blocksImplementation": true,
-      "blockedBehaviors": ["Stage 2 work definition", "operator prompts", "completion criteria"],
-      "temporaryStatus": "preview-only",
-      "answer": null,
-      "answeredBy": null,
-      "answeredAt": null,
-      "approvalReference": null,
-      "implementationStatus": "not_started"
+      "blocksImplementation": false,
+      "blockedBehaviors": [],
+      "temporaryStatus": "resolved",
+      "answer": "The operator classifies the property as turnkey/good condition or needs renovation. For turnkey: note rental comps and rent viability. For renovation: note rehab estimate and market rent. The operator does not run full underwriting — the closer team handles that. The operator prepares the information package for handoff.",
+      "normalizedRule": "Classify property as turnkey or renovation. For turnkey: note rental comps. For renovation: note rehab estimate and market rent. Prepare information package for handoff.",
+      "resolutionStatus": "RESOLVED_FROM_COURSE_CORPUS",
+      "authorityClassification": "COURSE_SYNTHESIZED_FROM_MULTIPLE_EXPLICIT_SOURCES",
+      "evidenceSummary": "E2: Kayla evaluates during call — 'This one looks like it would maybe be a flip.' E9: Step 6 explicitly describes turnkey vs renovation evaluation with comps and Seth handoff. E12: 'Evaluate deal: turnkey or needs renovation.' The course consistently shows the operator classifying the deal type and noting relevant data, not performing full underwriting.",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER"],
+      "trigger": "Contact facts reviewed and confirmed.",
+      "prerequisites": ["Contact facts reviewed", "Missing data marked unknown/not-provided where allowed"],
+      "operatorAction": "Classify property type. Note rental comps (turnkey) or rehab estimate + market rent (renovation).",
+      "completionCondition": "Property type classified. Relevant notes recorded.",
+      "nextAction": "Prepare handoff to closer team.",
+      "implementationStatus": "ready",
+      "resolutionHistory": [
+        {
+          "date": "2026-07-31",
+          "action": "Resolved from course corpus",
+          "previousStatus": "COURSE_UNKNOWN"
+        }
+      ],
+      "answeredBy": "COURSE_CORPUS_RECONSTRUCTION",
+      "answeredAt": "2026-07-31",
+      "approvalReference": "E2, E9, E12"
     },
     {
       "decisionId": "S2-F50-001",
       "stage": 2,
       "topic": "F50 and F10 Applicability",
-      "status": "COURSE_CONFLICT",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
       "question": "Are F50 and F10 text shortcuts used as Stage 2 pipeline actions for GHL list leads, or are they only Facebook Marketplace prospecting tools?",
       "canonicalRuleIds": ["14.4", "15.1"],
       "sourceReferences": [
@@ -123,101 +242,171 @@
         "ghl-automations/TRACK_STUDENT.md:84-99"
       ],
       "interpretations": [
-        "Facebook Marketplace prospecting tools only",
-        "Stage 2 pipeline evaluation options for all leads",
-        "Both: creative-financing language for both contexts"
+        "Facebook Marketplace prospecting tools only (SCRIPTS REFERENCE HEADING)",
+        "Stage 2 pipeline evaluation options for all leads (MASTER PLAYBOOK)",
+        "Both: creative-financing language for both contexts (SYNTHESIS)"
       ],
-      "blocksImplementation": true,
-      "blockedBehaviors": ["script availability during Stage 2", "operator prompts", "deal evaluation workflow"],
-      "temporaryStatus": "blocked",
-      "answer": null,
-      "answeredBy": null,
-      "answeredAt": null,
-      "approvalReference": null,
-      "implementationStatus": "not_started"
+      "blocksImplementation": false,
+      "blockedBehaviors": [],
+      "temporaryStatus": "resolved",
+      "answer": "F50 and F10 are creative financing proposal shortcuts. They are available as Stage 2 evaluation options when the deal type supports them (turnkey → F50 candidate; renovation/older → F10 candidate). They are not universal Stage 2 actions — they apply only when the operator evaluates the deal as suitable for creative financing. The scripts reference labels them as Facebook Marketplace tools, but the master playbook and stage guide present them as evaluation options. Both contexts are valid.",
+      "normalizedRule": "F50 and F10 are creative financing shortcuts available as Stage 2 evaluation options when the deal type supports them. They are not universal Stage 2 actions.",
+      "resolutionStatus": "RESOLVED_FROM_COURSE_CORPUS",
+      "authorityClassification": "COURSE_PATH_SPECIFIC",
+      "evidenceSummary": "E8: F50/F10 are under 'FACEBOOK MARKETPLACE' headings. E9: Step 6 presents F50/F10 as evaluation options for turnkey/renovation. The scripts reference labels them as Facebook tools; the playbook uses them as evaluation concepts. Both uses are valid — they are creative financing language applicable in both prospecting and pipeline evaluation contexts.",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER"],
+      "trigger": "Deal type evaluated as turnkey (F50 candidate) or renovation/older (F10 candidate).",
+      "prerequisites": ["Deal type classified", "Contact made", "Property facts known"],
+      "operatorAction": "Display F50 or F10 as evaluation option when deal type supports. Operator decides whether to send.",
+      "completionCondition": "F50/F10 displayed or skipped per operator judgment.",
+      "nextAction": "Proceed to handoff preparation.",
+      "implementationStatus": "ready",
+      "resolutionHistory": [
+        {
+          "date": "2026-07-31",
+          "action": "Resolved from course corpus",
+          "previousStatus": "COURSE_CONFLICT"
+        }
+      ],
+      "answeredBy": "COURSE_CORPUS_RECONSTRUCTION",
+      "answeredAt": "2026-07-31",
+      "approvalReference": "E8, E9"
     },
     {
       "decisionId": "S2-HANDOFF-001",
       "stage": 2,
       "topic": "Handoff Recipient and Trigger",
-      "status": "COURSE_UNKNOWN",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
       "question": "Who receives the Stage 2 handoff (Seth, Kayla, Jaxon, or a branch-dependent destination), and what exact information must be included?",
       "canonicalRuleIds": ["3.2", "9.4"],
       "sourceReferences": [
         "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:94-100",
         "ghl-automations/TRACK_STUDENT.md:122-139",
         "memory/MONTELLI_OBJECTION_HANDLING.md:96-117",
-        "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Process_text.txt"
+        "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Process_text.txt",
+        "airei-course-notes/07-STEP3-Pt2-Follow-Up-Offer-Sent-to-Lead-Calls.txt:60-61,78-80"
       ],
       "interpretations": [
-        "Seth receives all handoffs for LOI generation",
-        "Kayla/Jaxon receive all handoffs",
-        "Recipient depends on branch"
+        "Seth receives all handoffs for LOI generation (MASTER PLAYBOOK)",
+        "Kayla/Jaxon receive all handoffs (OBJECTION HANDLING)",
+        "Recipient depends on branch (SYNTHESIS)"
       ],
-      "blocksImplementation": true,
-      "blockedBehaviors": ["handoff workflow", "notification content", "operator instructions"],
-      "temporaryStatus": "preview-only",
-      "answer": null,
-      "answeredBy": null,
-      "answeredAt": null,
-      "approvalReference": null,
-      "implementationStatus": "not_started"
-    },
-    {
-      "decisionId": "S2-GCJ-001",
-      "stage": 2,
-      "topic": "GCJ Timing",
-      "status": "COURSE_CONFLICT",
-      "question": "At what exact point in the pipeline is the GCJ (group chat with Jaxon) text shortcut used?",
-      "canonicalRuleIds": ["14.3"],
-      "sourceReferences": [
-        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:106-108",
-        "memory/MONTELLI_OBJECTION_HANDLING.md:96-117",
-        "ghl-automations/GHL_WORKFLOWS_SPEC.md:90-91",
-        "memory/REI_STAGE_BY_STAGE_GUIDE.md:92",
-        "airei-course-notes/07-STEP3-Pt2-Follow-Up-Offer-Sent-to-Lead-Calls.txt:78-80"
+      "blocksImplementation": false,
+      "blockedBehaviors": [],
+      "temporaryStatus": "resolved",
+      "answer": "The operator submits the information package to the closer team. Seth receives LOI requests (claytoninvestmentsolutions@gmail.com). Kayla and Jaxon handle negotiation and closing. PPC leads go to Kayla via group chat. The handoff includes: property address, contact details, property facts, deal type classification, rental comps or rehab estimate, and any seller feedback or motivation notes.",
+      "normalizedRule": "Submit information package to closer team. Seth for LOI generation. Kayla/Jaxon for negotiation. PPC goes to Kayla via group chat.",
+      "resolutionStatus": "RESOLVED_FROM_COURSE_CORPUS",
+      "authorityClassification": "COURSE_SYNTHESIZED_FROM_MULTIPLE_EXPLICIT_SOURCES",
+      "evidenceSummary": "E9: 'email Seth' for LOI request. E4: 'Seth underwriting I will still be on closing... and group chats.' E11: Kayla/Jaxon negotiate; Montelli relays. E5: PPC goes to Kayla via group chat. The course shows Seth handling underwriting/LOI, Kayla/Jaxon handling negotiation/closing, and PPC going directly to Kayla.",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER", "PPC_SELLER"],
+      "trigger": "Stage 2 evaluation complete.",
+      "prerequisites": ["Contact facts reviewed", "Deal type classified", "Relevant comps/rehab notes recorded"],
+      "operatorAction": "Submit information package to closer team. Standard: email Seth for LOI. PPC: group chat with Kayla.",
+      "completionCondition": "Information package submitted.",
+      "nextAction": "Move to Offer Ready (operator confirms).",
+      "implementationStatus": "ready",
+      "resolutionHistory": [
+        {
+          "date": "2026-07-31",
+          "action": "Resolved from course corpus",
+          "previousStatus": "COURSE_UNKNOWN"
+        }
       ],
-      "interpretations": [
-        "During Stage 2 as part of handoff preparation",
-        "When the lead is hot (event-driven, any stage)",
-        "At Stage 4 when the offer is sent",
-        "At Stage 5 when the offer is received"
-      ],
-      "blocksImplementation": true,
-      "blockedBehaviors": ["GCJ availability", "operator prompts", "group chat timing"],
-      "temporaryStatus": "blocked",
-      "answer": null,
-      "answeredBy": null,
-      "answeredAt": null,
-      "approvalReference": null,
-      "implementationStatus": "not_started"
+      "answeredBy": "COURSE_CORPUS_RECONSTRUCTION",
+      "answeredAt": "2026-07-31",
+      "approvalReference": "E4, E5, E9, E11"
     },
     {
       "decisionId": "S2-EXIT-001",
       "stage": 2,
       "topic": "Offer Ready Exit Authorization",
-      "status": "COURSE_CONFLICT",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
       "question": "What exact event moves a lead from Contact Made to Offer Ready to be Sent to Seller, and who performs the movement?",
       "canonicalRuleIds": ["14.5", "15.5"],
       "sourceReferences": [
-        "ghl-automations/TRACK_STUDENT.md:101",
-        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:90-100",
-        "memory/REI_STAGE_BY_STAGE_GUIDE.md:40-46"
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:90-115",
+        "memory/REI_STAGE_BY_STAGE_GUIDE.md:40-46",
+        "ghl-automations/TRACK_STUDENT.md:101"
       ],
       "interpretations": [
-        "CCC sent authorizes exit",
-        "Operator completes evaluation and submits for review",
-        "Closer team accepts the lead and prepares an offer",
-        "Offer is actually prepared and approved for sending"
+        "CCC sent authorizes exit (FALSE CONFLICT — developer simplification)",
+        "Operator completes evaluation and submits for review (COURSE-SUPPORTED)",
+        "Closer team accepts the lead and prepares an offer (PARTIAL — team prepares, operator moves)",
+        "Offer is actually prepared and approved for sending (STAGE 3/4, not Stage 2 exit)"
       ],
-      "blocksImplementation": true,
-      "blockedBehaviors": ["Stage 2 exit", "Stage 3 entry", "operator/closer handoff boundary"],
-      "temporaryStatus": "blocked",
-      "answer": null,
-      "answeredBy": null,
-      "answeredAt": null,
-      "approvalReference": null,
-      "implementationStatus": "not_started"
+      "blocksImplementation": false,
+      "blockedBehaviors": [],
+      "temporaryStatus": "resolved",
+      "answer": "The operator moves the lead to Offer Ready after completing Stage 2 evaluation and submitting the information package to the closer team. The closer team then prepares the offer. The transition is operator-confirmed, not automatic. The TRACK_STUDENT 'CCC Sent → Stage 3' rule is a developer simplification that does not reflect course evidence.",
+      "normalizedRule": "Operator moves to Offer Ready after completing evaluation and submitting information package to closer team. Transition is operator-confirmed.",
+      "resolutionStatus": "RESOLVED_FROM_COURSE_CORPUS",
+      "authorityClassification": "COURSE_SYNTHESIZED_FROM_MULTIPLE_EXPLICIT_SOURCES",
+      "evidenceSummary": "E9: Steps 6-10 show evaluation → Seth email → spreadsheet → 'Move to Offer Sent.' E12: 'Move to Offer Ready to be Sent to Seller' after evaluation, F50/F10, Seth email. E12 also states Montelli moves Stages 1-3. The TRACK_STUDENT 'CCC Sent → Stage 3' is a developer simplification. The course shows evaluation and handoff as prerequisites, not CCC alone.",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER"],
+      "trigger": "Operator confirms: evaluation complete, information package submitted to closer team.",
+      "prerequisites": ["Contact facts reviewed", "Deal type classified", "Comps/rehab notes recorded", "Information package submitted"],
+      "operatorAction": "Confirm movement to Offer Ready.",
+      "completionCondition": "Operator confirms stage movement.",
+      "nextAction": "Closer team prepares offer. Operator monitors.",
+      "implementationStatus": "ready",
+      "resolutionHistory": [
+        {
+          "date": "2026-07-31",
+          "action": "Resolved from course corpus",
+          "previousStatus": "COURSE_CONFLICT",
+          "falseConflictsRemoved": ["ghl-automations/TRACK_STUDENT.md:101 — developer simplification, not course evidence"]
+        }
+      ],
+      "answeredBy": "COURSE_CORPUS_RECONSTRUCTION",
+      "answeredAt": "2026-07-31",
+      "approvalReference": "E9, E12"
+    },
+    {
+      "decisionId": "S2-GCJ-001",
+      "stage": 2,
+      "topic": "GCJ Timing",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
+      "question": "At what exact point in the pipeline is the GCJ (group chat with Jaxon) text shortcut used?",
+      "canonicalRuleIds": ["14.3"],
+      "sourceReferences": [
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:106-108",
+        "memory/MONTELLI_OBJECTION_HANDLING.md:96-117",
+        "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Process_text.txt",
+        "airei-course-notes/07-STEP3-Pt2-Follow-Up-Offer-Sent-to-Lead-Calls.txt:78-80"
+      ],
+      "interpretations": [
+        "During Stage 2 as part of handoff preparation (MASTER PLAYBOOK Step 8)",
+        "When the lead is hot (OBJECTION HANDLING)",
+        "At Stage 4 when the offer is sent (GHL_WORKFLOWS_SPEC — developer design)",
+        "At Stage 5 when the offer is received (STAGE GUIDE)"
+      ],
+      "blocksImplementation": false,
+      "blockedBehaviors": [],
+      "temporaryStatus": "resolved",
+      "answer": "GCJ has multiple path-specific triggers: (1) PPC path: group chat with Kayla created at end of initial PPC call, (2) Hot lead: when seller is engaged, countering, or the deal is confirmed real, (3) Standard path: after Stage 2 evaluation, as part of handoff preparation (Master Playbook Step 8). GCJ is not a single universal trigger — it is event-driven and path-specific.",
+      "normalizedRule": "GCJ has multiple path-specific triggers: PPC (end of initial call), hot lead (seller engaged), standard (after Stage 2 evaluation).",
+      "resolutionStatus": "RESOLVED_FROM_COURSE_CORPUS",
+      "authorityClassification": "COURSE_PATH_SPECIFIC",
+      "evidenceSummary": "E5: PPC creates group chat at end of initial call. E11: GCJ sent when 'deal is real and seller is engaged.' E9: Step 8 places GCJ after evaluation, before end-of-day. E4: group chats happen around offer time. The course shows GCJ used in multiple contexts, not a single pipeline stage.",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER", "PPC_SELLER"],
+      "trigger": "PPC: end of initial call. Hot lead: seller engaged/countering. Standard: after Stage 2 evaluation.",
+      "prerequisites": ["PPC: PPC call completed", "Hot lead: seller engaged", "Standard: Stage 2 evaluation complete"],
+      "operatorAction": "Send GCJ when trigger condition is met.",
+      "completionCondition": "GCJ sent, group chat created.",
+      "nextAction": "PPC: Kayla reaches out with offer. Hot lead: Montelli stops, Kayla/Jaxon take over. Standard: proceed to handoff.",
+      "implementationStatus": "ready",
+      "resolutionHistory": [
+        {
+          "date": "2026-07-31",
+          "action": "Resolved from course corpus",
+          "previousStatus": "COURSE_CONFLICT",
+          "falseConflictsRemoved": ["ghl-automations/GHL_WORKFLOWS_SPEC.md:90-91 — developer design, not course evidence", "memory/REI_STAGE_BY_STAGE_GUIDE.md:92 — derivative synthesis"]
+        }
+      ],
+      "answeredBy": "COURSE_CORPUS_RECONSTRUCTION",
+      "answeredAt": "2026-07-31",
+      "approvalReference": "E4, E5, E9, E11"
     },
     {
       "decisionId": "S2-ALT-001",
@@ -232,45 +421,81 @@
         "memory/REI_STAGE_BY_STAGE_GUIDE.md:35-48"
       ],
       "interpretations": [
-        "Stage 2 has only one exit: Offer Ready",
-        "Stage 2 may exit to a hold/nurture status",
-        "Stage 2 may exit to Seller Declined",
-        "Stage 2 may exit back to Lead Entered"
+        "Stage 2 has only one exit: Offer Ready (ALL SOURCES SHOW ONLY FORWARD PATH)",
+        "Stage 2 may exit to a hold/nurture status (NOT IN COURSE EVIDENCE)",
+        "Stage 2 may exit to Seller Declined (NOT IN COURSE EVIDENCE FOR STAGE 2)"
       ],
       "blocksImplementation": true,
-      "blockedBehaviors": ["Stage 2 exit options", "operator decision points", "lead disposition"],
+      "blockedBehaviors": ["alternate Stage 2 exits", "nurture from Stage 2", "disqualification from Stage 2"],
       "temporaryStatus": "blocked",
       "answer": null,
+      "normalizedRule": null,
+      "resolutionStatus": "UNRESOLVED",
+      "authorityClassification": "COURSE_UNKNOWN",
+      "evidenceSummary": "All course sources show only the forward path from Contact Made to Offer Ready. No source defines an alternate exit, hold status, or nurture path directly from Stage 2. The pipeline has Seller Declined (Stage 8) and No Answer (Stage 7), but these are not explicitly linked to Stage 2 as valid exits.",
+      "applicablePaths": [],
+      "trigger": null,
+      "prerequisites": [],
+      "operatorAction": null,
+      "completionCondition": null,
+      "nextAction": null,
+      "implementationStatus": "not_started",
+      "resolutionHistory": [
+        {
+          "date": "2026-07-31",
+          "action": "Confirmed unresolved after course corpus review",
+          "previousStatus": "COURSE_UNKNOWN"
+        }
+      ],
       "answeredBy": null,
       "answeredAt": null,
-      "approvalReference": null,
-      "implementationStatus": "not_started"
+      "approvalReference": null
+    }
+  ],
+  "stage2Timing": {
+    "status": "RESOLVED_FROM_COURSE_CORPUS",
+    "rule": "No course-defined timer exists for Contact Made. The 48-hour rule applies after an offer is sent or offer receipt is confirmed, not during Contact Made. Follow-up is event-driven.",
+    "classification": "COURSE_EXPLICIT",
+    "sourceReferences": [
+      "airei-course-notes/02-STEP3-Pt1-Leads-to-CRM-AI-Offer-System.txt:26",
+      "airei-course-notes/07-STEP3-Pt2-Follow-Up-Offer-Sent-to-Lead-Calls.txt:47-48",
+      "ai-rei/kay-exclusive/List kickoff_text.txt"
+    ],
+    "falseConflictsRemoved": [
+      "ghl-automations/GHL_WORKFLOWS_SPEC.md:49 — developer workflow design, not course evidence",
+      "ghl-automations/HANDBOOK_AND_SOP.md:113 — developer SOP, not course evidence"
+    ]
+  },
+  "falseConflictsRemoved": [
+    {
+      "conflict": "INT Sent authorizes Stage 2 entry",
+      "source": "ghl-automations/TRACK_STUDENT.md:49",
+      "resolution": "Developer simplification. All course evidence shows call + CCC + notes before stage movement.",
+      "correctedClassification": "IMPLEMENTATION_DERIVED (incorrectly treated as business rule)"
     },
     {
-      "decisionId": "S2-PPC-001",
-      "stage": 2,
-      "topic": "PPC and FSBO Path Integration",
-      "status": "COURSE_UNKNOWN",
-      "question": "How does the PPC/FSBO contact path integrate with the standard Contact Made and Offer Ready stages?",
-      "canonicalRuleIds": ["15.6"],
-      "sourceReferences": [
-        "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Process_text.txt",
-        "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Text Shortcuts_text.txt",
-        "ghl-automations/GHL_WORKFLOWS_SPEC.md:50"
-      ],
-      "interpretations": [
-        "PPC leads enter at Contact Made after PPC-specific call",
-        "PPC leads enter at Offer Ready after photos and Kayla loop-in",
-        "PPC follows a separate process outside standard pipeline"
-      ],
-      "blocksImplementation": true,
-      "blockedBehaviors": ["PPC contact path workflow", "stage entry point", "script availability", "handoff procedure"],
-      "temporaryStatus": "preview-only",
-      "answer": null,
-      "answeredBy": null,
-      "answeredAt": null,
-      "approvalReference": null,
-      "implementationStatus": "not_started"
+      "conflict": "CCC Sent authorizes Stage 3 entry",
+      "source": "ghl-automations/TRACK_STUDENT.md:101",
+      "resolution": "Developer simplification. Course evidence shows evaluation + handoff before Offer Ready.",
+      "correctedClassification": "IMPLEMENTATION_DERIVED (incorrectly treated as business rule)"
+    },
+    {
+      "conflict": "48-hour timer at Stage 2",
+      "source": "ghl-automations/GHL_WORKFLOWS_SPEC.md:49",
+      "resolution": "Developer workflow design. All course evidence places 48 hours after offer sent/receipt.",
+      "correctedClassification": "IMPLEMENTATION_DERIVED (incorrectly treated as business rule)"
+    },
+    {
+      "conflict": "GCJ at Stage 4 only",
+      "source": "ghl-automations/GHL_WORKFLOWS_SPEC.md:90-91",
+      "resolution": "Developer workflow design. Course evidence shows multiple GCJ triggers by path.",
+      "correctedClassification": "IMPLEMENTATION_DERIVED (incorrectly treated as business rule)"
+    },
+    {
+      "conflict": "GCJ at Stage 5 only",
+      "source": "memory/REI_STAGE_BY_STAGE_GUIDE.md:92",
+      "resolution": "Derivative synthesis. Course evidence shows multiple GCJ triggers by path.",
+      "correctedClassification": "COURSE_PATH_SPECIFIC (overgeneralized in derivative)"
     }
   ]
 }
