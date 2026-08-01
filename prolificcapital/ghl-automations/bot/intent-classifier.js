@@ -207,6 +207,53 @@ function deterministicFallback(message, context) {
     return { intent: 'RESUME_DRY_RUN', confidence: 1.0, entities: {}, referencedItems: [], requiresClarification: false, clarificationQuestion: null, reason: 'Deterministic resume', handler: 'resume' };
   }
 
+  if (/what\s+(should|do|need|must|can)\s+(i|we)\s+(work\s+on|do|handle|start\s+with|focus\s+on|tackle|address)\s*(first|today|now|next)?/i.test(t) ||
+      /what\s+(needs|requires)\s+(attention|work|action)/i.test(t) ||
+      /where\s+(should|do)\s+(i|we)\s+(start|begin)/i.test(t) ||
+      /what\s+(are\s+we|am\s+i)\s+(working\s+on|doing)/i.test(t) ||
+      /show\s+(today'?s?|the|my|our)\s+(work|tasks|priority|priorities)/i.test(t) ||
+      /what\s+(do\s+we|do\s+i)\s+have\s+today/i.test(t) ||
+      /what'?s?\s+(the\s+)?(priority|next|due|outstanding)/i.test(t)) {
+    return { intent: 'SHOW_WORK', confidence: 1.0, entities: {}, referencedItems: [], requiresClarification: false, clarificationQuestion: null, reason: 'Deterministic work priority request', handler: 'showWork' };
+  }
+
+  if (/^(why|explain|how\s+come|what\s+made\s+you)/i.test(t) ||
+      /why\s+(that|this|those|these|did\s+you)/i.test(t)) {
+    return { intent: 'STATUS_REQUEST', confidence: 1.0, entities: {}, referencedItems: [], requiresClarification: false, clarificationQuestion: null, reason: 'Deterministic explanation request', handler: 'status' };
+  }
+
+  if (/continue\s+where\s+(we|i)\s+left\s+off/i.test(t) ||
+      /(resume|restore|go\s+back\s+to)\s+(my|the|our|that)\s+(session|lead|work)/i.test(t) ||
+      /pick\s+up\s+where\s+(we|i)\s+left/i.test(t)) {
+    return { intent: 'SHOW_WORK', confidence: 1.0, entities: {}, referencedItems: [], requiresClarification: false, clarificationQuestion: null, reason: 'Deterministic session restore request', handler: 'showWork' };
+  }
+
+  if (/what\s+have\s+you\s+learned/i.test(t) ||
+      /what\s+(keeps?\s+)?(going\s+)?wrong/i.test(t) ||
+      /show\s+(suggested|your)\s+improvements/i.test(t)) {
+    return { intent: 'HELP_REQUEST', confidence: 1.0, entities: {}, referencedItems: [], requiresClarification: false, clarificationQuestion: null, reason: 'Deterministic learning review request', handler: 'help' };
+  }
+
+  if (/remember\s+(that|this)\s+(.*channel|.*console|.*pipeline)/i.test(t) ||
+      /(this|the)\s+(channel|topic)\s+is\s+(always\s+)?(the|my)\s+(pipeline|console)/i.test(t)) {
+    return { intent: 'CORRECTION', confidence: 1.0, entities: {}, referencedItems: [], requiresClarification: false, clarificationQuestion: null, reason: 'Deterministic channel preference correction', handler: 'correction' };
+  }
+
+  if (/^(no|that'?s?\s+wrong|incorrect|not\s+right|that\s+is\s+(the|a|an))/i.test(t) ||
+      /(that|this|it)\s+is\s+(the|a|an)\s+(agent|owner|seller|broker|listing)/i.test(t)) {
+    return { intent: 'CORRECTION', confidence: 1.0, entities: {}, referencedItems: [], requiresClarification: false, clarificationQuestion: null, reason: 'Deterministic correction', handler: 'correction' };
+  }
+
+  if (/(today|we|office|business)\s+(is|are)\s+(closed|off|shut|not\s+open)/i.test(t) ||
+      /(sabbath|holiday|weekend|day\s+off|taking\s+off)/i.test(t) ||
+      /(agent|bot|system)\s+(appears|seems|looks)\s+to\s+have/i.test(t) ||
+      /(done|did)\s+(some|a\s+few)\s+(things|stuff|work)/i.test(t) ||
+      /(on\s+the\s+)?back\s*end/i.test(t) ||
+      /(just|wanted\s+to)\s+(let\s+you\s+know|tell\s+you|mention|say|update\s+you)/i.test(t) ||
+      /(checking\s+in|touching\s+base|fyi|heads?\s*up)/i.test(t)) {
+    return { intent: 'CASUAL_CONVERSATION', confidence: 1.0, entities: {}, referencedItems: [], requiresClarification: false, clarificationQuestion: null, reason: 'Deterministic casual status update', handler: 'casual' };
+  }
+
   return null;
 }
 

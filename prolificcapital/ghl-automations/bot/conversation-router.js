@@ -167,7 +167,7 @@ function buildConversationalReply(intent, context) {
     case 'ACKNOWLEDGMENT':
       return null;
     case 'CASUAL_CONVERSATION':
-      return "I'm here in the Pipeline channel. Are you trying to review today's leads, continue a lead already in progress, or check system status?";
+      return 'Noted. I\'m here when you need me.';
     case 'HELP_REQUEST':
       return [
         '*Available Commands*',
