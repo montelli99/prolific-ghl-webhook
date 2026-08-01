@@ -8,6 +8,8 @@ const crypto = require('crypto');
 const killSwitch = require('./kill-switch');
 const canary = require('./canary-executor');
 const ownerAuth = require('./owner-auth');
+const convRouter = require('./conversation-router');
+const convState = require('./conversation-state');
 const { handleKaylaOutreachCommand, parseStage1Intent, handleStage1Command, canaryPreviewForIntent, formatCanaryPreview } = require('../modules/kayla-telegram-outreach');
 const { handleStage2Command } = require('../modules/kayla-stage2-telegram');
 const { handleStage3Command } = require('../modules/kayla-stage3-telegram');
@@ -118,24 +120,64 @@ async function handleUpdate(update) {
     return;
   }
 
-  const ks = killSwitch.readKillSwitch();
-  const paused = killSwitch.isPaused(ks.state);
-
   if (text.startsWith('/')) {
-    await handleCommand(chatId, userId, text, ks, msg);
+    await handleCommand(chatId, userId, text, msg);
     return;
   }
 
-  if (paused && !ownerAuth.isAdmin(userId)) {
-    await sendMessage(chatId, 'Bot is PAUSED. Only admins can interact while paused.');
+  const result = await convRouter.routeMessage(msg, {
+    sendMessage: (t) => sendMessage(chatId, t),
+    handleNaturalLanguage: (t) => handleNaturalLanguage(chatId, userId, t, msg),
+  });
+
+  if (result.action === 'IGNORE') {
+    log('info', 'MESSAGE_IGNORED', { reason: result.reason, userId: crypto.createHash('sha256').update(userId).digest('hex').slice(0, 8) });
     return;
   }
 
-  await handleNaturalLanguage(chatId, userId, text, ks, msg);
+  if (result.action === 'SAFETY_PAUSE') {
+    log('info', 'SAFETY_PAUSE', { userId: crypto.createHash('sha256').update(userId).digest('hex').slice(0, 8) });
+    await sendMessage(chatId, result.reply);
+    return;
+  }
+
+  if (result.action === 'CLARIFY') {
+    await sendMessage(chatId, result.reply);
+    return;
+  }
+
+  if (result.action === 'APPROVE_CANARY') {
+    await handleCanaryApproval(chatId, userId, result);
+    return;
+  }
+
+  if (result.action === 'APPROVAL_BLOCKED') {
+    await sendMessage(chatId, result.reply);
+    return;
+  }
+
+  if (result.action === 'INTENT' && result.intent) {
+    const reply = convRouter.buildConversationalReply(result.intent, { userId, chatId });
+    if (reply) await sendMessage(chatId, reply);
+
+    if (result.intent.intent === 'SHOW_LEADS' || result.intent.intent === 'SHOW_WORK' ||
+        result.intent.intent === 'START_STAGE1' || result.intent.intent === 'START_STAGE2' ||
+        result.intent.intent === 'START_STAGE3' || result.intent.intent === 'STAGE_GUIDANCE' ||
+        result.intent.intent === 'SHOW_SCRIPT' || result.intent.intent === 'CALL_OUTCOME' ||
+        result.intent.intent === 'RECORD_INFORMATION' || result.intent.intent === 'SHOW_NOTES' ||
+        result.intent.intent === 'CONTACT_PATH_SELECTION' || result.intent.intent === 'PLAN_REVIEW' ||
+        result.intent.intent === 'PLAN_SELECTION') {
+      await handleNaturalLanguage(chatId, userId, text, msg);
+    }
+    return;
+  }
+
+  await handleNaturalLanguage(chatId, userId, text, msg);
 }
 
-async function handleCommand(chatId, userId, text, ks, msg) {
+async function handleCommand(chatId, userId, text, msg) {
   const cmd = text.split(' ')[0].toLowerCase().split('@')[0];
+  const ks = killSwitch.readKillSwitch();
 
   if (cmd === '/start') {
     await sendMessage(chatId, [
@@ -189,7 +231,6 @@ async function handleCommand(chatId, userId, text, ks, msg) {
   }
 
   if (cmd === '/status') {
-    const ks = killSwitch.readKillSwitch();
     const od = ownerAuth.ownerDigest();
     await sendMessage(chatId, [
       '*Pipeline Status*',
@@ -250,20 +291,41 @@ async function handleCommand(chatId, userId, text, ks, msg) {
   if (cmd === '/cancel') { await sendMessage(chatId, 'Session canceled. Use /outreach to start a new session.'); return; }
 
   if (cmd === '/activity') {
-    const ks = killSwitch.readKillSwitch();
     await sendMessage(chatId, ['*Today\'s Activity*', `Canary sends: ${ks.liveSends || 0}`, `Production writes: ${ks.productionWrites || 0}`, `Stage movements: ${ks.stageMovements || 0}`, `Active sessions: ${activeSessions}`, `Mode: ${ks.state}`].join('\n'));
     return;
   }
 
-  if (cmd === '/outreach' || cmd === '/kayla') { await handleNaturalLanguage(chatId, userId, text.replace(/^\/(outreach|kayla)\s*/, ''), ks, msg); return; }
+  if (cmd === '/outreach' || cmd === '/kayla') { await handleNaturalLanguage(chatId, userId, text.replace(/^\/(outreach|kayla)\s*/, ''), msg); return; }
 
   await sendMessage(chatId, `Unknown command: ${cmd}. Use /help for available commands.`);
 }
 
-async function handleNaturalLanguage(chatId, userId, text, ks, msg) {
+async function handleCanaryApproval(chatId, userId, result) {
+  const plan = canary.loadCanaryPlan(result.planId);
+  if (!plan) { await sendMessage(chatId, 'Canary plan not found.'); return; }
+
+  const items = result.items;
+  if (!items.length) { await sendMessage(chatId, 'No items specified for sending.'); return; }
+
+  await sendMessage(chatId, `Executing canary items: ${items.join(', ')}...`);
+  for (const n of items) {
+    const r = await canary.executeCanaryItem(plan, n);
+    if (r.ok) { await sendMessage(chatId, `Item ${n}: SENT.`); }
+    else { await sendMessage(chatId, `Item ${n}: FAILED — ${r.error}`); }
+  }
+  const updated = canary.loadCanaryPlan(plan.planId);
+  if (updated && updated.state === 'COMPLETED') {
+    const reconciliation = canary.reconcileCanaryPlan(updated);
+    lastReconciledAt = new Date().toISOString();
+    await sendMessage(chatId, ['*Canary Complete*', `Sends: ${updated.completedItems}/${updated.totalItems}`, `Failed: ${updated.failedItems}`, `Reconciliation: ${reconciliation.verified.allPassed ? 'ALL_PASSED' : 'DISCREPANCIES_FOUND'}`, '', 'Bot returned to PAUSED.'].join('\n'));
+  }
+}
+
+async function handleNaturalLanguage(chatId, userId, text, msg) {
   const ctx = { chatId, telegramUserId: userId };
   const opts = {};
   const t = text.toLowerCase();
+  const ks = killSwitch.readKillSwitch();
 
   if (/show.*lead|load.*lead|first.contact|outreach/.test(t) && !/stage [234]|contact made|offer ready/.test(t)) {
     const result = handleKaylaOutreachCommand(ctx, text, opts);
@@ -302,9 +364,9 @@ async function handleNaturalLanguage(chatId, userId, text, ks, msg) {
     if (!numbers.length) { await sendMessage(chatId, 'Specify which items to send. Example: "send 1 and 3" or "send those three".'); return; }
     await sendMessage(chatId, `Executing canary items: ${numbers.join(', ')}...`);
     for (const n of numbers) {
-      const result = await canary.executeCanaryItem(plan, n);
-      if (result.ok) { await sendMessage(chatId, `Item ${n}: SENT. Provider ID: ${result.item.providerMessageId}`); }
-      else { await sendMessage(chatId, `Item ${n}: FAILED — ${result.error}`); }
+      const r = await canary.executeCanaryItem(plan, n);
+      if (r.ok) { await sendMessage(chatId, `Item ${n}: SENT.`); }
+      else { await sendMessage(chatId, `Item ${n}: FAILED — ${r.error}`); }
     }
     const updated = canary.loadCanaryPlan(plan.planId);
     if (updated && updated.state === 'COMPLETED') {
