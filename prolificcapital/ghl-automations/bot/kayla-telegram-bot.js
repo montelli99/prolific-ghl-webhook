@@ -10,6 +10,8 @@ const canary = require('./canary-executor');
 const ownerAuth = require('./owner-auth');
 const convRouter = require('./conversation-router');
 const convState = require('./conversation-state');
+const memCtx = require('../modules/pipeline-memory-context');
+const proactiveEvents = require('../modules/proactive-event-handler');
 const { handleKaylaOutreachCommand, parseStage1Intent, handleStage1Command, canaryPreviewForIntent, formatCanaryPreview } = require('../modules/kayla-telegram-outreach');
 const { handleStage2Command } = require('../modules/kayla-stage2-telegram');
 const { handleStage3Command } = require('../modules/kayla-stage3-telegram');
@@ -165,8 +167,64 @@ async function handleUpdate(update) {
     const reply = convRouter.buildConversationalReply(result.intent, { userId, chatId });
     if (reply) await sendMessage(chatId, reply);
 
-    if (result.intent.intent === 'SHOW_LEADS' || result.intent.intent === 'SHOW_WORK' ||
-        result.intent.intent === 'START_STAGE1' || result.intent.intent === 'START_STAGE2' ||
+    if (result.intent.intent === 'SHOW_WORK' || result.intent.intent === 'SHOW_LEADS') {
+      const ctx = memCtx.buildBoundedContext(chatId, userId, text);
+      const lines = ['*Pipeline Work Summary*', ''];
+      if (ctx.safety.killSwitch === 'PAUSED') lines.push('! Outreach is PAUSED');
+      if (ctx.conversation.activePlanId) lines.push(`- Canary plan: ${ctx.conversation.activePlanId}`);
+      if (ctx.conversation.currentStage) lines.push(`- Active: ${ctx.conversation.currentStage} (${ctx.conversation.currentSessionId || 'no session'})`);
+      if (ctx.conversation.pendingQuestion) lines.push(`* Awaiting: ${ctx.conversation.pendingQuestion}`);
+      if (ctx.recentHistory.journalEntries.length) lines.push(`- ${ctx.recentHistory.journalEntries.length} recent journal entries`);
+      const prefs = memCtx.getOwnerPreferences();
+      if (prefs.consoleChannel) lines.push(`- Console: ${prefs.consoleChannel}`);
+      lines.push('', `Kill switch: ${ctx.safety.killSwitch} | Sends: ${ctx.safety.liveSends} | Writes: ${ctx.safety.productionWrites} | Movements: ${ctx.safety.stageMovements}`);
+      await sendMessage(chatId, lines.join('\n'));
+      return;
+    }
+
+    if (result.intent.intent === 'CORRECTION') {
+      const existing = memCtx.getCorrections({ limit: 5 });
+      const similar = existing.filter(c => c.text && text && c.text.toLowerCase().includes(text.toLowerCase().slice(0, 20)));
+      if (similar.length > 0) {
+        await sendMessage(chatId, 'I already have a similar correction recorded. Noted again — no duplicate created.');
+      } else {
+        memCtx.recordCorrection(text, 'THIS_SESSION', chatId, userId);
+        await sendMessage(chatId, 'Correction noted for this session. Should I remember this for the whole Pipeline project, or just this lead?');
+      }
+      return;
+    }
+
+    if (result.intent.intent === 'HELP_REQUEST') {
+      const proposals = memCtx.getProposals({ status: 'PROPOSED' });
+      if (proposals.length > 0) {
+        const lines = ['*What I\'ve Learned*', ''];
+        proposals.slice(0, 5).forEach((p, i) => {
+          lines.push(`${i + 1}. ${p.evidence ? p.evidence.slice(0, 80) : 'Improvement proposal'}`);
+          if (p.proposedChange) lines.push(`   → ${p.proposedChange.slice(0, 80)}`);
+        });
+        lines.push('', 'Reply "approve 2" or "reject 3" to manage proposals.');
+        await sendMessage(chatId, lines.join('\n'));
+      } else {
+        await sendMessage(chatId, "I haven't identified any improvement proposals yet. I'll create them as I notice repeated friction or corrections.");
+      }
+      return;
+    }
+
+    if (result.intent.intent === 'STATUS_REQUEST') {
+      const ctx = memCtx.buildBoundedContext(chatId, userId, text);
+      const lines = ['*Why This Priority*', ''];
+      lines.push(`Kill switch: ${ctx.safety.killSwitch} (authority: live safety state)`);
+      if (ctx.conversation.currentStage) lines.push(`Active stage: ${ctx.conversation.currentStage} (authority: current session state)`);
+      if (ctx.conversation.pendingQuestion) lines.push(`Pending: ${ctx.conversation.pendingQuestion} (authority: conversation state)`);
+      if (ctx.activePlan) lines.push(`Canary plan: ${ctx.activePlan.planId} state=${ctx.activePlan.state} (authority: live operational)`);
+      const prefs = memCtx.getOwnerPreferences();
+      if (prefs.consoleChannel) lines.push(`Console: ${prefs.consoleChannel} (authority: owner preference)`);
+      lines.push('', 'Priority order: STOP/DNC > provider issues > inbound replies > active commitments > unfinished sessions > follow-ups > handoff-ready > untouched leads > monitoring');
+      await sendMessage(chatId, lines.join('\n'));
+      return;
+    }
+
+    if (result.intent.intent === 'START_STAGE1' || result.intent.intent === 'START_STAGE2' ||
         result.intent.intent === 'START_STAGE3' || result.intent.intent === 'STAGE_GUIDANCE' ||
         result.intent.intent === 'SHOW_SCRIPT' || result.intent.intent === 'CALL_OUTCOME' ||
         result.intent.intent === 'RECORD_INFORMATION' || result.intent.intent === 'SHOW_NOTES' ||
