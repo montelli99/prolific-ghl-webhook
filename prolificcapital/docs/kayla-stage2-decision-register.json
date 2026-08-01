@@ -1,0 +1,276 @@
+{
+  "schema": "kayla-stage2-decision-register-v1",
+  "generatedAt": "2026-07-31T12:00:00.000Z",
+  "canonicalAuthority": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+  "canonicalVersion": "1.0",
+  "decisions": [
+    {
+      "decisionId": "S2-ENTRY-001",
+      "stage": 2,
+      "topic": "Contact Made Entry Authorization",
+      "status": "COURSE_CONFLICT",
+      "question": "What exact event authorizes moving a lead from Lead Entered to Contact Made?",
+      "canonicalRuleIds": ["14.1"],
+      "sourceReferences": [
+        "ghl-automations/TRACK_STUDENT.md:49",
+        "lead-tracking/KAYLA_COACHING_REFERENCE.md:15-31",
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:76-88",
+        "memory/FULL_COURSE_AUDIT.md:169-175"
+      ],
+      "interpretations": [
+        "INT sent alone authorizes entry",
+        "Completed call plus notes recorded authorizes entry",
+        "Completed call plus CCC sent plus notes recorded authorizes entry"
+      ],
+      "blocksImplementation": true,
+      "blockedBehaviors": ["entry eligibility", "operator prompt timing", "Stage 1 completion definition"],
+      "temporaryStatus": "blocked",
+      "answer": null,
+      "answeredBy": null,
+      "answeredAt": null,
+      "approvalReference": null,
+      "implementationStatus": "not_started"
+    },
+    {
+      "decisionId": "S2-DATA-001",
+      "stage": 2,
+      "topic": "Required vs. Unknown-Allowed Data",
+      "status": "COURSE_UNKNOWN",
+      "question": "Which property and contact facts must be resolved before Stage 2 work is complete, and which may be marked unknown, not provided, or not applicable?",
+      "canonicalRuleIds": ["15.2"],
+      "sourceReferences": [
+        "lead-tracking/AIREI_SCRIPTS_REFERENCE.md:25-113",
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:76-85",
+        "lead-tracking/KAYLA_COACHING_REFERENCE.md:34-37,204-207",
+        "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Process_text.txt"
+      ],
+      "interpretations": [
+        "All asked questions are mandatory",
+        "Contact identity fields mandatory; property facts may be unknown",
+        "Requirements vary by contact path"
+      ],
+      "blocksImplementation": true,
+      "blockedBehaviors": ["required fields", "completion definition", "operator prompts for missing data"],
+      "temporaryStatus": "preview-only",
+      "answer": null,
+      "answeredBy": null,
+      "answeredAt": null,
+      "approvalReference": null,
+      "implementationStatus": "not_started"
+    },
+    {
+      "decisionId": "S2-CCC-001",
+      "stage": 2,
+      "topic": "CCC Stage Relationship",
+      "status": "COURSE_CONFLICT",
+      "question": "Is CCC/contact-card completion a Stage 1 requirement, a Stage 2 entry requirement, or an action that may be confirmed across the Stage 1/Stage 2 boundary?",
+      "canonicalRuleIds": ["14.1", "14.5"],
+      "sourceReferences": [
+        "lead-tracking/AIREI_SCRIPTS_REFERENCE.md:13,235-237",
+        "airei-course-notes/01-STEP3-Pt1-Intro-Warm-Dials-Kayla-Teaches-Outreach.txt:179-193",
+        "ghl-automations/TRACK_STUDENT.md:70-102"
+      ],
+      "interpretations": [
+        "CCC is a Stage 1 completion requirement",
+        "CCC is a Stage 2 action",
+        "CCC is a post-call action confirmed at either boundary"
+      ],
+      "blocksImplementation": true,
+      "blockedBehaviors": ["Stage 1 completion definition", "Stage 2 entry gate", "operator workflow sequence"],
+      "temporaryStatus": "preview-only",
+      "answer": null,
+      "answeredBy": null,
+      "answeredAt": null,
+      "approvalReference": null,
+      "implementationStatus": "not_started"
+    },
+    {
+      "decisionId": "S2-EVAL-001",
+      "stage": 2,
+      "topic": "Stage 2 Evaluation Requirements",
+      "status": "COURSE_UNKNOWN",
+      "question": "What exact evaluation must the operator perform during Stage 2 after confirming call facts, before handing the lead to the closer team?",
+      "canonicalRuleIds": ["3.2"],
+      "sourceReferences": [
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:90-100",
+        "ghl-automations/TRACK_STUDENT.md:84-99",
+        "memory/REI_STAGE_BY_STAGE_GUIDE.md:40-46"
+      ],
+      "interpretations": [
+        "Turnkey/renovation classification only",
+        "Classification plus rental comps check",
+        "Classification, comps, rent viability, and repair estimate"
+      ],
+      "blocksImplementation": true,
+      "blockedBehaviors": ["Stage 2 work definition", "operator prompts", "completion criteria"],
+      "temporaryStatus": "preview-only",
+      "answer": null,
+      "answeredBy": null,
+      "answeredAt": null,
+      "approvalReference": null,
+      "implementationStatus": "not_started"
+    },
+    {
+      "decisionId": "S2-F50-001",
+      "stage": 2,
+      "topic": "F50 and F10 Applicability",
+      "status": "COURSE_CONFLICT",
+      "question": "Are F50 and F10 text shortcuts used as Stage 2 pipeline actions for GHL list leads, or are they only Facebook Marketplace prospecting tools?",
+      "canonicalRuleIds": ["14.4", "15.1"],
+      "sourceReferences": [
+        "lead-tracking/AIREI_SCRIPTS_REFERENCE.md:18-19,204-219",
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:90-94",
+        "ghl-automations/TRACK_STUDENT.md:84-99"
+      ],
+      "interpretations": [
+        "Facebook Marketplace prospecting tools only",
+        "Stage 2 pipeline evaluation options for all leads",
+        "Both: creative-financing language for both contexts"
+      ],
+      "blocksImplementation": true,
+      "blockedBehaviors": ["script availability during Stage 2", "operator prompts", "deal evaluation workflow"],
+      "temporaryStatus": "blocked",
+      "answer": null,
+      "answeredBy": null,
+      "answeredAt": null,
+      "approvalReference": null,
+      "implementationStatus": "not_started"
+    },
+    {
+      "decisionId": "S2-HANDOFF-001",
+      "stage": 2,
+      "topic": "Handoff Recipient and Trigger",
+      "status": "COURSE_UNKNOWN",
+      "question": "Who receives the Stage 2 handoff (Seth, Kayla, Jaxon, or a branch-dependent destination), and what exact information must be included?",
+      "canonicalRuleIds": ["3.2", "9.4"],
+      "sourceReferences": [
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:94-100",
+        "ghl-automations/TRACK_STUDENT.md:122-139",
+        "memory/MONTELLI_OBJECTION_HANDLING.md:96-117",
+        "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Process_text.txt"
+      ],
+      "interpretations": [
+        "Seth receives all handoffs for LOI generation",
+        "Kayla/Jaxon receive all handoffs",
+        "Recipient depends on branch"
+      ],
+      "blocksImplementation": true,
+      "blockedBehaviors": ["handoff workflow", "notification content", "operator instructions"],
+      "temporaryStatus": "preview-only",
+      "answer": null,
+      "answeredBy": null,
+      "answeredAt": null,
+      "approvalReference": null,
+      "implementationStatus": "not_started"
+    },
+    {
+      "decisionId": "S2-GCJ-001",
+      "stage": 2,
+      "topic": "GCJ Timing",
+      "status": "COURSE_CONFLICT",
+      "question": "At what exact point in the pipeline is the GCJ (group chat with Jaxon) text shortcut used?",
+      "canonicalRuleIds": ["14.3"],
+      "sourceReferences": [
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:106-108",
+        "memory/MONTELLI_OBJECTION_HANDLING.md:96-117",
+        "ghl-automations/GHL_WORKFLOWS_SPEC.md:90-91",
+        "memory/REI_STAGE_BY_STAGE_GUIDE.md:92",
+        "airei-course-notes/07-STEP3-Pt2-Follow-Up-Offer-Sent-to-Lead-Calls.txt:78-80"
+      ],
+      "interpretations": [
+        "During Stage 2 as part of handoff preparation",
+        "When the lead is hot (event-driven, any stage)",
+        "At Stage 4 when the offer is sent",
+        "At Stage 5 when the offer is received"
+      ],
+      "blocksImplementation": true,
+      "blockedBehaviors": ["GCJ availability", "operator prompts", "group chat timing"],
+      "temporaryStatus": "blocked",
+      "answer": null,
+      "answeredBy": null,
+      "answeredAt": null,
+      "approvalReference": null,
+      "implementationStatus": "not_started"
+    },
+    {
+      "decisionId": "S2-EXIT-001",
+      "stage": 2,
+      "topic": "Offer Ready Exit Authorization",
+      "status": "COURSE_CONFLICT",
+      "question": "What exact event moves a lead from Contact Made to Offer Ready to be Sent to Seller, and who performs the movement?",
+      "canonicalRuleIds": ["14.5", "15.5"],
+      "sourceReferences": [
+        "ghl-automations/TRACK_STUDENT.md:101",
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:90-100",
+        "memory/REI_STAGE_BY_STAGE_GUIDE.md:40-46"
+      ],
+      "interpretations": [
+        "CCC sent authorizes exit",
+        "Operator completes evaluation and submits for review",
+        "Closer team accepts the lead and prepares an offer",
+        "Offer is actually prepared and approved for sending"
+      ],
+      "blocksImplementation": true,
+      "blockedBehaviors": ["Stage 2 exit", "Stage 3 entry", "operator/closer handoff boundary"],
+      "temporaryStatus": "blocked",
+      "answer": null,
+      "answeredBy": null,
+      "answeredAt": null,
+      "approvalReference": null,
+      "implementationStatus": "not_started"
+    },
+    {
+      "decisionId": "S2-ALT-001",
+      "stage": 2,
+      "topic": "Alternate Stage 2 Outcomes",
+      "status": "COURSE_UNKNOWN",
+      "question": "What are the valid outcomes from Stage 2 when the lead is not ready for Offer Ready?",
+      "canonicalRuleIds": ["15.4"],
+      "sourceReferences": [
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:90-100",
+        "ghl-automations/TRACK_STUDENT.md:70-102",
+        "memory/REI_STAGE_BY_STAGE_GUIDE.md:35-48"
+      ],
+      "interpretations": [
+        "Stage 2 has only one exit: Offer Ready",
+        "Stage 2 may exit to a hold/nurture status",
+        "Stage 2 may exit to Seller Declined",
+        "Stage 2 may exit back to Lead Entered"
+      ],
+      "blocksImplementation": true,
+      "blockedBehaviors": ["Stage 2 exit options", "operator decision points", "lead disposition"],
+      "temporaryStatus": "blocked",
+      "answer": null,
+      "answeredBy": null,
+      "answeredAt": null,
+      "approvalReference": null,
+      "implementationStatus": "not_started"
+    },
+    {
+      "decisionId": "S2-PPC-001",
+      "stage": 2,
+      "topic": "PPC and FSBO Path Integration",
+      "status": "COURSE_UNKNOWN",
+      "question": "How does the PPC/FSBO contact path integrate with the standard Contact Made and Offer Ready stages?",
+      "canonicalRuleIds": ["15.6"],
+      "sourceReferences": [
+        "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Process_text.txt",
+        "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Text Shortcuts_text.txt",
+        "ghl-automations/GHL_WORKFLOWS_SPEC.md:50"
+      ],
+      "interpretations": [
+        "PPC leads enter at Contact Made after PPC-specific call",
+        "PPC leads enter at Offer Ready after photos and Kayla loop-in",
+        "PPC follows a separate process outside standard pipeline"
+      ],
+      "blocksImplementation": true,
+      "blockedBehaviors": ["PPC contact path workflow", "stage entry point", "script availability", "handoff procedure"],
+      "temporaryStatus": "preview-only",
+      "answer": null,
+      "answeredBy": null,
+      "answeredAt": null,
+      "approvalReference": null,
+      "implementationStatus": "not_started"
+    }
+  ]
+}
