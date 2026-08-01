@@ -4,6 +4,17 @@
 
 ---
 
+## WHO MOVES WHAT — LOCKED
+
+| Who | Stages moved in GHL |
+|-----|--------------------|
+| **Montelli** | **2 stages only:** Contact Made, Offer Ready to be Sent to Seller |
+| Emily (AI) | Does the WORK — calls, texts, intel, emails, notes — but does NOT move stages |
+| Kayla/Jaxon | All other stages (11–19 closing work) |
+| Pipeline/GHL automation | Everything else — auto-advances as the deal moves |
+
+---
+
 ## STAGE 1 — LEAD ENTERED
 **GHL Stage ID:** `0651d634-1b58-4039-9908-03c4077c88cb`
 

@@ -236,3 +236,40 @@ Add to AGENTS.md startup checklist: ALWAYS read WORKFLOW_AUTO.md and memory/{tod
 ### Metadata
 - Reproducible: yes
 - Tags: compaction, memory-loss, startup-checklist
+
+## [ERR-20260619-006] lead_query_column_missing
+
+**Logged**: 2026-06-19T09:10:00Z
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Summary
+Teleprompter route silently returned no lead data. After 4 rounds of console.log debugging, found: SQL referenced ollow_up_date column that doesn't exist in leads table.
+
+### Error
+`
+error: column "follow_up_date" does not exist
+`
+
+### Context
+- Wrote SELECT address, ..., follow_up_date, psa_signed_date FROM leads
+- The leads table has ollow_up_48hr_due and ollow_up_48hr_done but NOT ollow_up_date
+- Error was caught by try/catch and logged with console.warn (suppressed by default log level)
+- Spent 4 turns adding console.logs before finding it
+
+### Suggested Fix
+1. NEVER guess column names. Use the actual schema: run \d leads in psql or query information_schema.columns.
+2. When debugging "no data returned" in try/catch, log with console.error (not console.warn).
+3. Add a schema validation script that compares SELECT clauses to actual column names.
+
+### Resolution
+- **Resolved**: 2026-06-19T09:10:00Z
+- **Commit/PR**: ed301aa
+- **Notes**: Removed ollow_up_date from SELECT. Added 	c_email, 	c_name, inspection_end_date, contract_draft_url. Auto-derives contract_deadline and ollow_up_date in JS if not present.
+
+### Metadata
+- Reproducible: yes
+- Related Files: divinitycrm/backend/src/routes/teleprompter.js
+- Tags: column-name, silent-failure, debugging-hell
+- See Also: LRN-20260619-007

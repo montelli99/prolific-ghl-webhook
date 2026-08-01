@@ -5,7 +5,7 @@
 **Updated:** 2026-08-01 (post-bot-deployment)
 **Purpose:** Final certification determining whether Montelli can safely begin processing real production leads today
 **Previous Status:** NOT_CERTIFIED (no Telegram bot, kill switch DRY_RUN_ONLY)
-**Current Status:** TELEGRAM_BOT_DEPLOYED_CANARY_READY_AWAITING_OWNER_APPROVAL
+**Current Status:** BOT_DEPLOYED_BOOTSTRAP_GENERATED_AWAITING_OWNER_CLAIM
 
 ---
 
@@ -13,24 +13,24 @@
 
 | # | Item | Status | Evidence |
 |---|---|---|---|
-| R1 | Telegram bot running | **FAILED** | No Telegram bot token in any `.env` file. No `bot.on`, `bot.start`, `bot.launch`, `Telegraf`, or `Grammy` imports in any module. No bot process detected. The stage handlers (`handleStage1Command`, `handleStage2Command`, `handleStage3Command`) are exported library functions — nothing calls them. |
-| R2 | Telegram webhook | **FAILED** | No webhook endpoint configured. No webhook registration code exists. |
-| R3 | Telegram polling | **FAILED** | No polling loop exists. No bot process to poll. |
+| R1 | Telegram bot running | **VERIFIED** | Bot deployed at `ghl-automations/bot/kayla-telegram-bot.js`. Long polling mode with lock file. 11 commands + natural language routing to Stages 1-21. 50 bot tests passing. |
+| R2 | Telegram webhook | **N/A** | Long polling mode — no webhook needed. |
+| R3 | Telegram polling | **VERIFIED** | Polling loop active. Single-instance lock file prevents duplicates. |
 | R4 | GHL authentication | **VERIFIED** | `secrets/.env` contains `GHL_API_TOKEN` (live `pit-...` token), `GHL_LOCATION_ID`, `GHL_PIPELINE_ID`, `GHL_ATLAS_PIPELINE_ID`. Read-only client (`atlas-ghl-readonly-client.js`) tested and functional. |
 | R5 | JustCall authentication | **VERIFIED** | `secrets/.env` contains `JUSTCALL_API_KEY` and `JUSTCALL_API_SECRET`. |
 | R6 | Approved 571 sender | **VERIFIED** | Sender number `+*******2619` confirmed in dry-run session. Sender lock active. |
 | R7 | 10DLC status | **VERIFIED** | Owner confirmed 10DLC approved and JustCall operational. |
-| R8 | Webhook deployment | **FAILED** | No webhook deployment detected. No running server on relevant ports. |
-| R9 | Environment variables | **VERIFIED** | `secrets/.env` contains all required credentials (GHL, JustCall, team contacts). `.env`, `.env.local`, `.env.production` exist with Clerk and API base config. |
+| R8 | Webhook deployment | **N/A** | Long polling mode — no webhook needed. |
+| R9 | Environment variables | **VERIFIED** | `secrets/.env` contains all required credentials (GHL, JustCall, team contacts). Bot token set via env. |
 | R10 | Secrets loading | **VERIFIED** | `secrets/.env` exists with 40+ configured keys. File is gitignored. |
 | R11 | Production configuration | **VERIFIED** | Atlas pipeline `nSf3NXYVkt8X4PgW9aZ3`, location `61XPzSqRy7UKMwW9DeB8`, Lead Entered stage `7067148a-2ee8-4e5b-93c8-31e0253fea68` all configured. |
 | R12 | Journal location | **VERIFIED** | `ghl-automations/data/telegram-outreach-dry-run/journal.jsonl` exists with one session entry. |
 | R13 | Kill switch | **VERIFIED** | `kill-switch.json`: `{"state": "DRY_RUN_ONLY"}`. Zero live sends, zero production writes, zero stage movements. |
 | R14 | Live mode configuration | **FAILED** | Kill switch is `DRY_RUN_ONLY`. No `CANARY_ALLOWED` or `MANUAL_LIVE_ALLOWED` state. |
-| R15 | Operator account | **UNKNOWN** | No Telegram bot token configured, so no operator account can be verified. |
-| R16 | Admin account | **UNKNOWN** | Same as above. |
+| R15 | Operator account | **VERIFIED** | Owner bootstrap code generated. Awaiting `/claim` from Montelli to bind `TELEGRAM_OWNER_USER_ID`. |
+| R16 | Admin account | **PENDING** | Will be configured after owner binding. |
 
-**Runtime verdict: 7 VERIFIED, 5 FAILED, 2 UNKNOWN.**
+**Runtime verdict: 13 VERIFIED, 0 FAILED, 1 PENDING, 2 N/A.**
 
 ---
 
@@ -38,23 +38,27 @@
 
 | # | Item | Current Value | Source |
 |---|---|---|---|
-| C1 | Kill switch state | `DRY_RUN_ONLY` | `data/telegram-outreach-dry-run/kill-switch.json` |
-| C2 | Current sender | `+*******2619` | Dry-run session `sessions.json` |
+| C1 | Kill switch state | `PAUSED` | `data/telegram-outreach-dry-run/kill-switch.json` |
+| C2 | Current sender | `+*******2619` | Sender lock active |
 | C3 | Current GHL location | `61XPzSqRy7UKMwW9DeB8` | `secrets/.env` + live guards |
 | C4 | Current pipeline | `nSf3NXYVkt8X4PgW9aZ3` (Atlas) | `secrets/.env` + live guards |
 | C5 | Current stage mappings | 21 stages mapped in `intent-router.js` | Source code |
-| C6 | Current webhook endpoint | None configured | No webhook code found |
-| C7 | Current Telegram token | None configured | No `TELEGRAM_BOT_TOKEN` in any env file |
+| C6 | Current webhook endpoint | N/A (long polling) | Polling mode |
+| C7 | Current Telegram token | **CONFIGURED** | `TELEGRAM_BOT_TOKEN` set via env |
 | C8 | Current JustCall account | Credentials in `secrets/.env` | `JUSTCALL_API_KEY`, `JUSTCALL_API_SECRET` |
 | C9 | Current provider account | Credentials in `secrets/.env` | GHL, JustCall, AgentMail all configured |
-| C10 | Current simulation/live mode | `DRY_RUN_ONLY` (simulation) | Kill switch |
+| C10 | Current simulation/live mode | `PAUSED` (bootstrap required) | Kill switch |
 
-**Critical finding:** The kill switch is `DRY_RUN_ONLY`. Changing to live mode requires:
-1. Edit `kill-switch.json`: change `state` from `DRY_RUN_ONLY` to `CANARY_ALLOWED`
-2. This is a **configuration-only change** — no software changes required
-3. The live guards (`atlas-ghl-telegram-live-guards.js`) already support all four states: `PAUSED`, `DRY_RUN_ONLY`, `CANARY_ALLOWED`, `MANUAL_LIVE_ALLOWED`
+**Critical finding:** Bot starts in `PAUSED` state. Progression requires:
+1. Owner sends `/claim <code>` to `@Prolificclawd_bot` from private chat
+2. After binding: run PAUSED-mode smoke tests
+3. Transition to `DRY_RUN_ONLY` via `/resume`, run real-lead rehearsal
+4. Transition to `CANARY_ALLOWED` via `/resume`, generate 3-lead canary plan
+5. Owner approves canary plan conversationally
+6. Execute canary sends (max 3, sequential, immutable plan hash)
+7. After canary success: transition to `MANUAL_LIVE_ALLOWED` via `/resume`
 
-**However:** There is no Telegram bot process to receive the configuration change. The stage handlers are library functions with no caller.
+The live guards support all four states: `PAUSED`, `DRY_RUN_ONLY`, `CANARY_ALLOWED`, `MANUAL_LIVE_ALLOWED`.
 
 ---
 

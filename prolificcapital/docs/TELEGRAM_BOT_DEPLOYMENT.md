@@ -1,7 +1,8 @@
 # TELEGRAM BOT DEPLOYMENT
 
-**Version:** 1.0
+**Version:** 2.0
 **Created:** 2026-08-01
+**Updated:** 2026-08-01 (owner bootstrap added)
 **Bot:** Kayla Pipeline Operator Bot
 **Entry Point:** `ghl-automations/bot/kayla-telegram-bot.js`
 
@@ -13,10 +14,31 @@
 |---|---|
 | Service name | `kayla-pipeline-bot` |
 | Entry point | `ghl-automations/bot/kayla-telegram-bot.js` |
+| Service wrapper | `ghl-automations/bot/start-bot.bat` |
 | Working directory | `ghl-automations/` |
 | Runtime | Node.js 22+ |
-| Mode | Long polling (single instance) |
+| Mode | Long polling (single instance, lock file prevents duplicates) |
 | Deployment location | Local operator machine or managed server |
+
+---
+
+## OWNER BOOTSTRAP
+
+On first startup with no `TELEGRAM_OWNER_USER_ID` set and no existing owner config, the bot enters bootstrap mode:
+
+1. Bot generates a one-time 32-character hex claim code (15-minute expiry)
+2. Code is displayed in the service console/log only — never in Telegram
+3. Montelli opens `@Prolificclawd_bot` in a **private chat** and sends: `/claim <code>`
+4. Bot validates: private chat, not forwarded, not edited, not a bot account
+5. Bot writes owner config to `data/owner-config.json` with integrity digest
+6. Bot invalidates the bootstrap code permanently
+7. Bot confirms binding without printing sensitive data
+
+**After binding:**
+- Owner config persists across restarts
+- `/claim` is permanently disabled
+- Rebinding requires deleting `data/owner-config.json` and restarting
+- Integrity digest prevents manual tampering
 
 ---
 
@@ -24,16 +46,15 @@
 
 | Variable | Required | Source | Notes |
 |---|---|---|---|
-| `TELEGRAM_BOT_TOKEN` | **YES** | Secure env or Windows user env | Bot token from @BotFather. Currently hardcoded in 5 source files — must be moved to env. |
-| `TELEGRAM_OWNER_USER_ID` | **YES** | Secure env | Telegram user ID of the owner (Montelli). Only this user can enable canary mode. |
-| `TELEGRAM_ADMIN_USER_IDS` | Optional | Secure env | Comma-separated additional admin user IDs. |
-| `TELEGRAM_ALLOWED_CHAT_IDS` | Optional | Secure env | Comma-separated chat IDs. If set, only these chats can interact. |
-| `TELEGRAM_MODE` | Optional | Secure env | `polling` (default) or `webhook`. |
-| `JUSTCALL_API_KEY` | **YES** | `secrets/.env` | Already configured. |
-| `JUSTCALL_API_SECRET` | **YES** | `secrets/.env` | Already configured. |
-| `JUSTCALL_FROM_NUMBER` | **YES** | `secrets/.env` | Sender ending 2619. |
-| `GHL_API_TOKEN` | **YES** | `secrets/.env` | Already configured. |
-| `DEPLOY_REVISION` | Optional | Env or git | Git commit hash for health reporting. |
+| `TELEGRAM_BOT_TOKEN` | **YES** | Secure env | Bot token from @BotFather |
+| `TELEGRAM_OWNER_USER_ID` | Optional | Secure env | Pre-configured owner ID (alternative to bootstrap) |
+| `TELEGRAM_ADMIN_USER_IDS` | Optional | Secure env | Comma-separated additional admin user IDs |
+| `TELEGRAM_ALLOWED_CHAT_IDS` | Optional | Secure env | Comma-separated chat IDs |
+| `TELEGRAM_MODE` | Optional | Secure env | `polling` (default) |
+| `JUSTCALL_API_KEY` | **YES** | `secrets/.env` | Already configured |
+| `JUSTCALL_API_SECRET` | **YES** | `secrets/.env` | Already configured |
+| `GHL_API_TOKEN` | **YES** | `secrets/.env` | Already configured |
+| `DEPLOY_REVISION` | Optional | Env or git | Git commit hash |
 
 ---
 

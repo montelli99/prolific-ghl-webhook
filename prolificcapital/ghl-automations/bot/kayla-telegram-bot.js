@@ -7,6 +7,7 @@ const crypto = require('crypto');
 
 const killSwitch = require('./kill-switch');
 const canary = require('./canary-executor');
+const ownerAuth = require('./owner-auth');
 const { handleKaylaOutreachCommand, parseStage1Intent, handleStage1Command, canaryPreviewForIntent, formatCanaryPreview } = require('../modules/kayla-telegram-outreach');
 const { handleStage2Command } = require('../modules/kayla-stage2-telegram');
 const { handleStage3Command } = require('../modules/kayla-stage3-telegram');
@@ -21,8 +22,6 @@ fs.mkdirSync(LOG_DIR, { recursive: true });
 fs.mkdirSync(SESSION_DIR, { recursive: true });
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const OWNER_ID = process.env.TELEGRAM_OWNER_USER_ID;
-const ADMIN_IDS = (process.env.TELEGRAM_ADMIN_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
 const ALLOWED_CHAT_IDS = (process.env.TELEGRAM_ALLOWED_CHAT_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
 const MODE = process.env.TELEGRAM_MODE || 'polling';
 const DEPLOY_REVISION = process.env.DEPLOY_REVISION || 'dev';
@@ -33,23 +32,15 @@ let running = true;
 let activeSessions = 0;
 let pendingCanaryPlans = 0;
 let lastReconciledAt = null;
+let bootstrapRequired = false;
+let bootstrapCode = null;
 
 function log(level, msg, data = {}) {
   const entry = { ts: new Date().toISOString(), level, msg, ...data };
   const line = JSON.stringify(entry);
   if (level === 'error') console.error(line);
   else console.log(line);
-  try {
-    fs.appendFileSync(path.join(LOG_DIR, 'bot.log'), line + '\n');
-  } catch (_) {}
-}
-
-function redactSecrets(obj) {
-  const r = { ...obj };
-  for (const k of Object.keys(r)) {
-    if (/token|key|secret|password|auth/i.test(k)) r[k] = '***REDACTED***';
-  }
-  return r;
+  try { fs.appendFileSync(path.join(LOG_DIR, 'bot.log'), line + '\n'); } catch (_) {}
 }
 
 function acquireLock() {
@@ -57,44 +48,25 @@ function acquireLock() {
     if (fs.existsSync(LOCK_FILE)) {
       const existing = JSON.parse(fs.readFileSync(LOCK_FILE, 'utf8'));
       const age = Date.now() - new Date(existing.started).getTime();
-      if (age < 5 * 60 * 1000) {
-        log('error', 'LOCK_ACQUIRE_FAILED', { existing, age });
-        return false;
-      }
+      if (age < 5 * 60 * 1000) { log('error', 'LOCK_ACQUIRE_FAILED', { existing, age }); return false; }
       log('warn', 'STALE_LOCK_CLEARED', { existing, age });
     }
     fs.writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, started: new Date().toISOString(), mode: MODE }));
     return true;
-  } catch (e) {
-    log('error', 'LOCK_ERROR', { error: e.message });
-    return false;
-  }
+  } catch (e) { log('error', 'LOCK_ERROR', { error: e.message }); return false; }
 }
 
-function releaseLock() {
-  try { fs.unlinkSync(LOCK_FILE); } catch (_) {}
-}
+function releaseLock() { try { fs.unlinkSync(LOCK_FILE); } catch (_) {} }
 
 function telegramApi(method, body = {}) {
   return new Promise((resolve, reject) => {
     const data = JSON.stringify(body);
     const req = https.request({
-      hostname: 'api.telegram.org',
-      path: `/bot${TOKEN}/${method}`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) },
-      timeout: 30000,
-    }, (res) => {
-      let buf = '';
-      res.on('data', c => buf += c);
-      res.on('end', () => {
-        try { resolve(JSON.parse(buf)); } catch (e) { reject(e); }
-      });
-    });
-    req.on('error', reject);
-    req.on('timeout', () => { req.destroy(); reject(new Error('TIMEOUT')); });
-    req.write(data);
-    req.end();
+      hostname: 'api.telegram.org', path: `/bot${TOKEN}/${method}`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) }, timeout: 30000,
+    }, (res) => { let buf = ''; res.on('data', c => buf += c); res.on('end', () => { try { resolve(JSON.parse(buf)); } catch (e) { reject(e); } }); });
+    req.on('error', reject); req.on('timeout', () => { req.destroy(); reject(new Error('TIMEOUT')); });
+    req.write(data); req.end();
   });
 }
 
@@ -102,28 +74,20 @@ function sendMessage(chatId, text, extra = {}) {
   return telegramApi('sendMessage', { chat_id: chatId, text, parse_mode: 'Markdown', disable_web_page_preview: true, ...extra });
 }
 
-function isAuthorized(userId, chatId) {
+function isAuthorizedChat(chatId) {
   if (ALLOWED_CHAT_IDS.length && !ALLOWED_CHAT_IDS.includes(String(chatId))) return false;
   return true;
 }
 
-function isAdmin(userId) {
-  if (String(userId) === OWNER_ID) return true;
-  if (ADMIN_IDS.includes(String(userId))) return true;
-  return false;
-}
-
-function isOwner(userId) {
-  return String(userId) === OWNER_ID;
-}
-
 function healthReport() {
   const ks = killSwitch.readKillSwitch();
+  const od = ownerAuth.ownerDigest();
   return [
     '*Kayla Pipeline Bot Health*',
     `Process: running since ${START_TIME}`,
     `Revision: ${DEPLOY_REVISION}`,
     `Mode: ${MODE}`,
+    `Owner: ${od ? 'bound (' + od + ')' : (bootstrapRequired ? 'bootstrap required' : 'env-configured')}`,
     `Kill switch: ${ks.state}`,
     `Active sessions: ${activeSessions}`,
     `Pending canary plans: ${pendingCanaryPlans}`,
@@ -144,29 +108,41 @@ async function handleUpdate(update) {
   const userId = String(msg.from.id);
   const text = String(msg.text || '').trim();
 
-  if (!isAuthorized(userId, chatId)) {
-    log('warn', 'UNAUTHORIZED_USER', { userId, chatId });
+  if (!isAuthorizedChat(chatId)) { log('warn', 'UNAUTHORIZED_CHAT', { chatId }); return; }
+
+  if (bootstrapRequired && !text.startsWith('/claim')) {
+    await sendMessage(chatId, 'Bot requires owner bootstrap. An administrator must provide the one-time claim code.');
     return;
   }
 
   const ks = killSwitch.readKillSwitch();
-  const isPaused = killSwitch.isPaused(ks.state);
+  const paused = killSwitch.isPaused(ks.state);
 
   if (text.startsWith('/')) {
-    await handleCommand(chatId, userId, text, ks);
+    await handleCommand(chatId, userId, text, ks, msg);
     return;
   }
 
-  if (isPaused && !isAdmin(userId)) {
+  if (paused && !ownerAuth.isAdmin(userId)) {
     await sendMessage(chatId, 'Bot is PAUSED. Only admins can interact while paused.');
     return;
   }
 
-  await handleNaturalLanguage(chatId, userId, text, ks);
+  await handleNaturalLanguage(chatId, userId, text, ks, msg);
 }
 
-async function handleCommand(chatId, userId, text, ks) {
-  const cmd = text.split(' ')[0].toLowerCase().replace('@', '').split('@')[0];
+async function handleCommand(chatId, userId, text, ks, msg) {
+  const cmd = text.split(' ')[0].toLowerCase().split('@')[0];
+
+  if (cmd === '/claim') {
+    await handleClaim(chatId, userId, text, msg);
+    return;
+  }
+
+  if (bootstrapRequired) {
+    await sendMessage(chatId, 'Bot requires owner bootstrap. Use /claim <code> with the one-time code from the service console.');
+    return;
+  }
 
   if (cmd === '/start') {
     await sendMessage(chatId, [
@@ -211,21 +187,20 @@ async function handleCommand(chatId, userId, text, ks) {
       '"Start Stage 1 for number 1"',
       '"Show INT" / "I sent INT"',
       '"No answer" / "I called again"',
-      '"Show the agent script"',
-      '"Show the questions"',
+      '"Show the agent script" / "Show the questions"',
       '"Show CCC" / "Show the notes"',
-      '"Start Stage 2 review"',
-      '"What information is missing?"',
-      '"Draft the handoff"',
-      '"What comes next?"',
+      '"Start Stage 2 review" / "What information is missing?"',
+      '"Draft the handoff" / "What comes next?"',
     ].join('\n'));
     return;
   }
 
   if (cmd === '/status') {
     const ks = killSwitch.readKillSwitch();
+    const od = ownerAuth.ownerDigest();
     await sendMessage(chatId, [
       '*Pipeline Status*',
+      `Owner: ${od ? 'bound (' + od + ')' : 'not bound'}`,
       `Kill switch: ${ks.state}`,
       `Canary sends today: ${ks.liveSends || 0}`,
       `Production writes: ${ks.productionWrites || 0}`,
@@ -238,47 +213,31 @@ async function handleCommand(chatId, userId, text, ks) {
     return;
   }
 
-  if (cmd === '/health') {
-    await sendMessage(chatId, healthReport());
-    return;
-  }
+  if (cmd === '/health') { await sendMessage(chatId, healthReport()); return; }
 
   if (cmd === '/pause') {
-    if (!isAdmin(userId)) {
-      await sendMessage(chatId, 'Only admins can pause operations.');
-      return;
-    }
+    if (!ownerAuth.isAdmin(userId)) { await sendMessage(chatId, 'Only admins can pause operations.'); return; }
     killSwitch.writeKillSwitch('PAUSED');
-    log('info', 'KILL_SWITCH_PAUSED', { userId });
+    log('info', 'KILL_SWITCH_PAUSED', { userId: crypto.createHash('sha256').update(userId).digest('hex').slice(0, 8) });
     await sendMessage(chatId, 'Operations PAUSED. No sends, no writes, no stage movements.');
     return;
   }
 
   if (cmd === '/resume') {
-    if (!isAdmin(userId)) {
-      await sendMessage(chatId, 'Only admins can resume operations.');
-      return;
-    }
+    if (!ownerAuth.isAdmin(userId)) { await sendMessage(chatId, 'Only admins can resume operations.'); return; }
     killSwitch.writeKillSwitch('DRY_RUN_ONLY');
-    log('info', 'KILL_SWITCH_DRY_RUN', { userId });
+    log('info', 'KILL_SWITCH_DRY_RUN', { userId: crypto.createHash('sha256').update(userId).digest('hex').slice(0, 8) });
     await sendMessage(chatId, 'Resumed in DRY_RUN_ONLY mode. Simulations allowed. No live sends.');
     return;
   }
 
   if (cmd === '/canary') {
-    if (!isOwner(userId)) {
-      await sendMessage(chatId, 'Only the owner can enable canary mode.');
-      return;
-    }
-    if (ks.state !== 'DRY_RUN_ONLY') {
-      await sendMessage(chatId, `Cannot enable canary from ${ks.state}. Must be in DRY_RUN_ONLY first. Use /resume then /canary.`);
-      return;
-    }
+    if (!ownerAuth.isOwner(userId)) { await sendMessage(chatId, 'Only the owner can enable canary mode.'); return; }
+    if (ks.state !== 'DRY_RUN_ONLY') { await sendMessage(chatId, `Cannot enable canary from ${ks.state}. Must be in DRY_RUN_ONLY first.`); return; }
     killSwitch.writeKillSwitch('CANARY_ALLOWED');
-    log('info', 'KILL_SWITCH_CANARY', { userId });
+    log('info', 'KILL_SWITCH_CANARY', { userId: crypto.createHash('sha256').update(userId).digest('hex').slice(0, 8) });
     await sendMessage(chatId, [
-      '*CANARY_ALLOWED*',
-      '',
+      '*CANARY_ALLOWED*', '',
       'Live sends are now permitted with restrictions:',
       '- Maximum 3 sends total',
       '- One message per contact',
@@ -295,68 +254,73 @@ async function handleCommand(chatId, userId, text, ks) {
     return;
   }
 
-  if (cmd === '/cancel') {
-    await sendMessage(chatId, 'Session canceled. Use /outreach to start a new session.');
-    return;
-  }
+  if (cmd === '/cancel') { await sendMessage(chatId, 'Session canceled. Use /outreach to start a new session.'); return; }
 
   if (cmd === '/activity') {
     const ks = killSwitch.readKillSwitch();
-    await sendMessage(chatId, [
-      '*Today\'s Activity*',
-      `Canary sends: ${ks.liveSends || 0}`,
-      `Production writes: ${ks.productionWrites || 0}`,
-      `Stage movements: ${ks.stageMovements || 0}`,
-      `Active sessions: ${activeSessions}`,
-      `Mode: ${ks.state}`,
-    ].join('\n'));
+    await sendMessage(chatId, ['*Today\'s Activity*', `Canary sends: ${ks.liveSends || 0}`, `Production writes: ${ks.productionWrites || 0}`, `Stage movements: ${ks.stageMovements || 0}`, `Active sessions: ${activeSessions}`, `Mode: ${ks.state}`].join('\n'));
     return;
   }
 
-  if (cmd === '/outreach' || cmd === '/kayla') {
-    await handleNaturalLanguage(chatId, userId, text.replace(/^\/(outreach|kayla)\s*/, ''), ks);
-    return;
-  }
+  if (cmd === '/outreach' || cmd === '/kayla') { await handleNaturalLanguage(chatId, userId, text.replace(/^\/(outreach|kayla)\s*/, ''), ks, msg); return; }
 
   await sendMessage(chatId, `Unknown command: ${cmd}. Use /help for available commands.`);
 }
 
-async function handleNaturalLanguage(chatId, userId, text, ks) {
+async function handleClaim(chatId, userId, text, msg) {
+  if (!bootstrapRequired) { await sendMessage(chatId, 'Owner is already bound. /claim is not available.'); return; }
+
+  const validation = ownerAuth.validateOwnerRequest(msg);
+  if (!validation.ok) { await sendMessage(chatId, `Cannot claim: ${validation.reason}. Owner must claim from a direct private chat.`); return; }
+
+  const parts = text.split(/\s+/);
+  if (parts.length < 2) { await sendMessage(chatId, 'Usage: /claim <one-time-code>'); return; }
+  const code = parts[1];
+
+  const stored = ownerAuth.readBootstrapCode();
+  if (!stored) { await sendMessage(chatId, 'No bootstrap code is active. An administrator must generate one first.'); return; }
+  if (stored.used) { await sendMessage(chatId, 'This bootstrap code has already been used.'); return; }
+  if (new Date(stored.expiresAt) < new Date()) { await sendMessage(chatId, 'Bootstrap code has expired. An administrator must generate a new one.'); return; }
+  if (code !== stored.code) { await sendMessage(chatId, 'Invalid bootstrap code.'); return; }
+
+  const config = ownerAuth.writeOwnerConfig(validation.userId, validation.chatId, validation.username);
+  ownerAuth.invalidateBootstrapCode();
+  bootstrapRequired = false;
+  bootstrapCode = null;
+
+  log('info', 'OWNER_BOUND', { ownerDigest: ownerAuth.ownerDigest(), chatDigest: crypto.createHash('sha256').update(config.chatId).digest('hex').slice(0, 8) });
+  await sendMessage(chatId, [
+    '*Owner Bound Successfully*',
+    '',
+    'You are now recognized as the pipeline owner.',
+    'Use /help to see available commands.',
+    'The bot is currently PAUSED. Use /resume to begin dry-run mode.',
+  ].join('\n'));
+}
+
+async function handleNaturalLanguage(chatId, userId, text, ks, msg) {
   const ctx = { chatId, telegramUserId: userId };
   const opts = {};
-
   const t = text.toLowerCase();
 
   if (/show.*lead|load.*lead|first.contact|outreach/.test(t) && !/stage [234]|contact made|offer ready/.test(t)) {
     const result = handleKaylaOutreachCommand(ctx, text, opts);
-    if (result && result.reply) {
-      await sendMessage(chatId, result.reply);
-      return;
-    }
+    if (result && result.reply) { await sendMessage(chatId, result.reply); return; }
   }
 
   if (/stage 1|start.*stage 1|stage one|lead entered/.test(t) || /show.*int|sent.*int|no answer|called.*again|agent script|seller script|show.*questions|show.*ccc|sent.*ccc|sent.*contact card|show.*notes|recorded.*notes|what.*next|stage.*conflict/.test(t)) {
     const result = handleStage1Command(ctx, text, opts);
-    if (result && result.reply) {
-      await sendMessage(chatId, result.reply);
-      return;
-    }
+    if (result && result.reply) { await sendMessage(chatId, result.reply); return; }
   }
 
   if (/stage 2|contact made|start.*stage 2|verify.*entry|show.*facts|missing.*info|evaluate.*deal|turnkey|renovation|comps.*review|rehab.*evidence|draft.*handoff|submit.*handoff|show.*f50|show.*f10|show.*gcj|offer ready|simulate.*offer ready/.test(t)) {
     const result = handleStage2Command(ctx, text, opts);
-    if (result && result.reply) {
-      await sendMessage(chatId, result.reply);
-      return;
-    }
+    if (result && result.reply) { await sendMessage(chatId, result.reply); return; }
   }
 
   if (/stage 3|offer ready|start.*stage 3|underwriting|offer.*type|select.*cash|select.*stack|select.*subto|review.*calculations|review.*loi|generate.*offer|approve.*offer|confirm.*delivery|simulate.*offer sent/.test(t)) {
     const result = handleStage3Command(ctx, text, opts);
-    if (result && result.reply) {
-      await sendMessage(chatId, result.reply);
-      return;
-    }
+    if (result && result.reply) { await sendMessage(chatId, result.reply); return; }
   }
 
   if (/stage [4-9]|stage 1[0-9]|stage 2[0-1]|offer sent|offer received|gain.*feedback|no.*answer.*feedback|seller.*declined|active.*negotiation|terms.*agreed|contract.*sent|contract.*received|title.*work|inspection|appraisal|jv.*sent|jv.*signed|wire.*setup|closing.*day|funds.*distributed|closed.*archived|stay.*warm/.test(t)) {
@@ -364,131 +328,87 @@ async function handleNaturalLanguage(chatId, userId, text, ks) {
     const stageNum = stageMatch ? parseInt(stageMatch[1]) : null;
     if (stageNum && stageNum >= 4 && stageNum <= 21) {
       const result = handleStageCommand(ctx, text, stageNum, opts);
-      if (result && result.reply) {
-        await sendMessage(chatId, result.reply);
-        return;
-      }
+      if (result && result.reply) { await sendMessage(chatId, result.reply); return; }
     }
   }
 
   if (/send.*those|send.*\d|proceed.*these|yes.*send|approve.*send/.test(t) && killSwitch.canSend(ks.state)) {
+    if (!ownerAuth.isOwner(userId)) { await sendMessage(chatId, 'Only the owner can approve canary sends.'); return; }
     const plan = canary.loadActiveCanaryPlan(chatId);
-    if (!plan) {
-      await sendMessage(chatId, 'No active canary plan. Use /outreach to create one first.');
-      return;
-    }
-    if (!isOwner(userId)) {
-      await sendMessage(chatId, 'Only the owner can approve canary sends.');
-      return;
-    }
+    if (!plan) { await sendMessage(chatId, 'No active canary plan. Use /outreach to create one first.'); return; }
     const numbers = (text.match(/\d+/g) || []).map(Number).filter(n => n >= 1 && n <= plan.totalItems);
-    if (!numbers.length) {
-      await sendMessage(chatId, 'Specify which items to send. Example: "send 1 and 3" or "send those three".');
-      return;
-    }
+    if (!numbers.length) { await sendMessage(chatId, 'Specify which items to send. Example: "send 1 and 3" or "send those three".'); return; }
     await sendMessage(chatId, `Executing canary items: ${numbers.join(', ')}...`);
     for (const n of numbers) {
       const result = await canary.executeCanaryItem(plan, n);
-      if (result.ok) {
-        await sendMessage(chatId, `Item ${n}: SENT. Provider ID: ${result.item.providerMessageId}`);
-      } else {
-        await sendMessage(chatId, `Item ${n}: FAILED — ${result.error}`);
-      }
+      if (result.ok) { await sendMessage(chatId, `Item ${n}: SENT. Provider ID: ${result.item.providerMessageId}`); }
+      else { await sendMessage(chatId, `Item ${n}: FAILED — ${result.error}`); }
     }
     const updated = canary.loadCanaryPlan(plan.planId);
     if (updated && updated.state === 'COMPLETED') {
       const reconciliation = canary.reconcileCanaryPlan(updated);
       lastReconciledAt = new Date().toISOString();
-      await sendMessage(chatId, [
-        '*Canary Complete*',
-        `Sends: ${updated.completedItems}/${updated.totalItems}`,
-        `Failed: ${updated.failedItems}`,
-        `Reconciliation: ${reconciliation.verified.allPassed ? 'ALL_PASSED' : 'DISCREPANCIES_FOUND'}`,
-        '',
-        'Bot returned to PAUSED.',
-      ].join('\n'));
+      await sendMessage(chatId, ['*Canary Complete*', `Sends: ${updated.completedItems}/${updated.totalItems}`, `Failed: ${updated.failedItems}`, `Reconciliation: ${reconciliation.verified.allPassed ? 'ALL_PASSED' : 'DISCREPANCIES_FOUND'}`, '', 'Bot returned to PAUSED.'].join('\n'));
     }
     return;
   }
 
-  if (/pause|stop.*outreach/.test(t) && isAdmin(userId)) {
-    killSwitch.writeKillSwitch('PAUSED');
-    await sendMessage(chatId, 'Operations PAUSED.');
-    return;
-  }
+  if (/pause|stop.*outreach/.test(t) && ownerAuth.isAdmin(userId)) { killSwitch.writeKillSwitch('PAUSED'); await sendMessage(chatId, 'Operations PAUSED.'); return; }
 
-  await sendMessage(chatId, [
-    'I didn\'t understand that. Try:',
-    '',
-    '/outreach — Load leads and begin Stage 1',
-    '/status — Check pipeline status',
-    '/help — See all commands',
-    '',
-    'Or type naturally: "Show me leads", "Start Stage 1", "Show INT", etc.',
-  ].join('\n'));
+  await sendMessage(chatId, ['I didn\'t understand that. Try:', '', '/outreach — Load leads and begin Stage 1', '/status — Check pipeline status', '/help — See all commands', '', 'Or type naturally: "Show me leads", "Start Stage 1", "Show INT", etc.'].join('\n'));
 }
 
 async function poll() {
   if (!running) return;
   try {
     const result = await telegramApi('getUpdates', { offset, timeout: 30, allowed_updates: ['message'] });
-    if (!result.ok) {
-      log('error', 'POLL_ERROR', { error: result.description });
-      return;
-    }
+    if (!result.ok) { log('error', 'POLL_ERROR', { error: result.description }); return; }
     for (const update of result.result) {
       offset = Math.max(offset, update.update_id + 1);
       await handleUpdate(update).catch(e => log('error', 'UPDATE_ERROR', { error: e.message }));
     }
-  } catch (e) {
-    log('error', 'POLL_EXCEPTION', { error: e.message });
-  }
+  } catch (e) { log('error', 'POLL_EXCEPTION', { error: e.message }); }
 }
 
 async function main() {
-  if (!TOKEN) {
-    log('error', 'MISSING_TOKEN', { msg: 'TELEGRAM_BOT_TOKEN not set' });
-    process.exit(1);
-  }
-
-  if (!acquireLock()) {
-    log('error', 'DUPLICATE_INSTANCE');
-    process.exit(1);
-  }
+  if (!TOKEN) { log('error', 'MISSING_TOKEN'); process.exit(1); }
+  if (!acquireLock()) { log('error', 'DUPLICATE_INSTANCE'); process.exit(1); }
 
   log('info', 'BOT_STARTING', { mode: MODE, revision: DEPLOY_REVISION });
 
   const identity = await telegramApi('getMe');
-  if (!identity.ok) {
-    log('error', 'INVALID_TOKEN', { error: identity.description });
-    releaseLock();
-    process.exit(1);
-  }
+  if (!identity.ok) { log('error', 'INVALID_TOKEN', { error: identity.description }); releaseLock(); process.exit(1); }
   log('info', 'BOT_IDENTITY', { id: identity.result.id, username: identity.result.username });
+
+  bootstrapRequired = ownerAuth.isBootstrapRequired();
+  if (bootstrapRequired) {
+    bootstrapCode = ownerAuth.generateBootstrapCode();
+    log('info', 'BOOTSTRAP_REQUIRED', { codeExpiresAt: bootstrapCode.expiresAt });
+    console.log(`\n=== OWNER BOOTSTRAP REQUIRED ===`);
+    console.log(`One-time claim code: ${bootstrapCode.code}`);
+    console.log(`Expires: ${bootstrapCode.expiresAt}`);
+    console.log(`Send "/claim ${bootstrapCode.code}" to @${identity.result.username} from a private chat.`);
+    console.log(`================================\n`);
+  } else {
+    const od = ownerAuth.ownerDigest();
+    log('info', 'OWNER_CONFIGURED', { ownerDigest: od });
+  }
 
   const ks = killSwitch.readKillSwitch();
   if (ks.state !== 'PAUSED') {
     log('warn', 'BOT_NOT_PAUSED_AT_START', { state: ks.state });
     killSwitch.writeKillSwitch('PAUSED');
-    log('info', 'FORCED_PAUSED');
   }
 
-  log('info', 'BOT_READY', { state: 'PAUSED', mode: MODE });
+  log('info', 'BOT_READY', { state: 'PAUSED', bootstrapRequired });
 
   process.on('SIGINT', () => { running = false; log('info', 'SIGINT_RECEIVED'); });
   process.on('SIGTERM', () => { running = false; log('info', 'SIGTERM_RECEIVED'); });
 
-  while (running) {
-    await poll();
-    await new Promise(r => setTimeout(r, 100));
-  }
+  while (running) { await poll(); await new Promise(r => setTimeout(r, 100)); }
 
   releaseLock();
   log('info', 'BOT_STOPPED');
 }
 
-main().catch(e => {
-  log('error', 'FATAL', { error: e.message, stack: e.stack });
-  releaseLock();
-  process.exit(1);
-});
+main().catch(e => { log('error', 'FATAL', { error: e.message, stack: e.stack }); releaseLock(); process.exit(1); });
