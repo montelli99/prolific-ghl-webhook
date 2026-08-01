@@ -127,112 +127,29 @@ async function handleUpdate(update) {
     return;
   }
 
-  const result = await convRouter.routeMessage(msg, {
-    sendMessage: (t) => sendMessage(chatId, t),
-    handleNaturalLanguage: (t) => handleNaturalLanguage(chatId, userId, t, msg),
-  });
-
-  if (result.action === 'IGNORE') {
-    log('info', 'MESSAGE_IGNORED', { reason: result.reason, userId: crypto.createHash('sha256').update(userId).digest('hex').slice(0, 8) });
-    return;
-  }
-
-  if (result.action === 'SAFETY_PAUSE') {
+  if (convRouter.isSafetyCommand(text)) {
+    killSwitch.writeKillSwitch('PAUSED');
+    convState.expireState(chatId, userId);
     log('info', 'SAFETY_PAUSE', { userId: crypto.createHash('sha256').update(userId).digest('hex').slice(0, 8) });
-    await sendMessage(chatId, result.reply);
+    await sendMessage(chatId, 'Operations PAUSED. All pending actions canceled.');
     return;
   }
 
-  if (result.action === 'CLARIFY') {
-    await sendMessage(chatId, result.reply);
-    return;
-  }
-
-  if (result.action === 'APPROVE_CANARY') {
-    await handleCanaryApproval(chatId, userId, result);
-    return;
-  }
-
-  if (result.action === 'APPROVAL_BLOCKED') {
-    await sendMessage(chatId, result.reply);
-    return;
-  }
-
-  if (result.action === 'ACKNOWLEDGMENT') {
+  if (convRouter.isAcknowledgment(text)) {
     log('info', 'ACKNOWLEDGMENT', { userId: crypto.createHash('sha256').update(userId).digest('hex').slice(0, 8) });
     return;
   }
 
-  if (result.action === 'INTENT' && result.intent) {
-    const reply = convRouter.buildConversationalReply(result.intent, { userId, chatId });
-    if (reply) await sendMessage(chatId, reply);
-
-    if (result.intent.intent === 'SHOW_WORK' || result.intent.intent === 'SHOW_LEADS') {
-      const ctx = memCtx.buildBoundedContext(chatId, userId, text);
-      const lines = ['*Pipeline Work Summary*', ''];
-      if (ctx.safety.killSwitch === 'PAUSED') lines.push('! Outreach is PAUSED');
-      if (ctx.conversation.activePlanId) lines.push(`- Canary plan: ${ctx.conversation.activePlanId}`);
-      if (ctx.conversation.currentStage) lines.push(`- Active: ${ctx.conversation.currentStage} (${ctx.conversation.currentSessionId || 'no session'})`);
-      if (ctx.conversation.pendingQuestion) lines.push(`* Awaiting: ${ctx.conversation.pendingQuestion}`);
-      if (ctx.recentHistory.journalEntries.length) lines.push(`- ${ctx.recentHistory.journalEntries.length} recent journal entries`);
-      const prefs = memCtx.getOwnerPreferences();
-      if (prefs.consoleChannel) lines.push(`- Console: ${prefs.consoleChannel}`);
-      lines.push('', `Kill switch: ${ctx.safety.killSwitch} | Sends: ${ctx.safety.liveSends} | Writes: ${ctx.safety.productionWrites} | Movements: ${ctx.safety.stageMovements}`);
-      await sendMessage(chatId, lines.join('\n'));
-      return;
-    }
-
-    if (result.intent.intent === 'CORRECTION') {
-      const existing = memCtx.getCorrections({ limit: 5 });
-      const similar = existing.filter(c => c.text && text && c.text.toLowerCase().includes(text.toLowerCase().slice(0, 20)));
-      if (similar.length > 0) {
-        await sendMessage(chatId, 'I already have a similar correction recorded. Noted again — no duplicate created.');
-      } else {
-        memCtx.recordCorrection(text, 'THIS_SESSION', chatId, userId);
-        await sendMessage(chatId, 'Correction noted for this session. Should I remember this for the whole Pipeline project, or just this lead?');
+  if (convRouter.isExplicitApproval(text)) {
+    const plan = canary.loadActiveCanaryPlan(chatId);
+    if (plan && convRouter.validateApproval(msg, plan).ok) {
+      const numbers = convRouter.extractNumbers(text);
+      const items = numbers.length ? numbers : plan.items.filter(i => i.status === 'PENDING').map(i => i.number);
+      if (items.length) {
+        await handleCanaryApproval(chatId, userId, { planId: plan.planId, items });
+        return;
       }
-      return;
     }
-
-    if (result.intent.intent === 'HELP_REQUEST') {
-      const proposals = memCtx.getProposals({ status: 'PROPOSED' });
-      if (proposals.length > 0) {
-        const lines = ['*What I\'ve Learned*', ''];
-        proposals.slice(0, 5).forEach((p, i) => {
-          lines.push(`${i + 1}. ${p.evidence ? p.evidence.slice(0, 80) : 'Improvement proposal'}`);
-          if (p.proposedChange) lines.push(`   → ${p.proposedChange.slice(0, 80)}`);
-        });
-        lines.push('', 'Reply "approve 2" or "reject 3" to manage proposals.');
-        await sendMessage(chatId, lines.join('\n'));
-      } else {
-        await sendMessage(chatId, "I haven't identified any improvement proposals yet. I'll create them as I notice repeated friction or corrections.");
-      }
-      return;
-    }
-
-    if (result.intent.intent === 'STATUS_REQUEST') {
-      const ctx = memCtx.buildBoundedContext(chatId, userId, text);
-      const lines = ['*Why This Priority*', ''];
-      lines.push(`Kill switch: ${ctx.safety.killSwitch} (authority: live safety state)`);
-      if (ctx.conversation.currentStage) lines.push(`Active stage: ${ctx.conversation.currentStage} (authority: current session state)`);
-      if (ctx.conversation.pendingQuestion) lines.push(`Pending: ${ctx.conversation.pendingQuestion} (authority: conversation state)`);
-      if (ctx.activePlan) lines.push(`Canary plan: ${ctx.activePlan.planId} state=${ctx.activePlan.state} (authority: live operational)`);
-      const prefs = memCtx.getOwnerPreferences();
-      if (prefs.consoleChannel) lines.push(`Console: ${prefs.consoleChannel} (authority: owner preference)`);
-      lines.push('', 'Priority order: STOP/DNC > provider issues > inbound replies > active commitments > unfinished sessions > follow-ups > handoff-ready > untouched leads > monitoring');
-      await sendMessage(chatId, lines.join('\n'));
-      return;
-    }
-
-    if (result.intent.intent === 'START_STAGE1' || result.intent.intent === 'START_STAGE2' ||
-        result.intent.intent === 'START_STAGE3' || result.intent.intent === 'STAGE_GUIDANCE' ||
-        result.intent.intent === 'SHOW_SCRIPT' || result.intent.intent === 'CALL_OUTCOME' ||
-        result.intent.intent === 'RECORD_INFORMATION' || result.intent.intent === 'SHOW_NOTES' ||
-        result.intent.intent === 'CONTACT_PATH_SELECTION' || result.intent.intent === 'PLAN_REVIEW' ||
-        result.intent.intent === 'PLAN_SELECTION') {
-      await handleNaturalLanguage(chatId, userId, text, msg);
-    }
-    return;
   }
 
   await handleNaturalLanguage(chatId, userId, text, msg);
