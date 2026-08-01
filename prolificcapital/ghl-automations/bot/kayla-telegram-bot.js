@@ -27,13 +27,14 @@ const MODE = process.env.TELEGRAM_MODE || 'polling';
 const DEPLOY_REVISION = process.env.DEPLOY_REVISION || 'dev';
 const START_TIME = new Date().toISOString();
 
+const PIPELINE_CHAT_ID = ownerAuth.PIPELINE_CHAT_ID;
+const PIPELINE_TOPIC_ID = ownerAuth.PIPELINE_TOPIC_ID;
+
 let offset = 0;
 let running = true;
 let activeSessions = 0;
 let pendingCanaryPlans = 0;
 let lastReconciledAt = null;
-let bootstrapRequired = false;
-let bootstrapCode = null;
 
 function log(level, msg, data = {}) {
   const entry = { ts: new Date().toISOString(), level, msg, ...data };
@@ -71,11 +72,13 @@ function telegramApi(method, body = {}) {
 }
 
 function sendMessage(chatId, text, extra = {}) {
-  return telegramApi('sendMessage', { chat_id: chatId, text, parse_mode: 'Markdown', disable_web_page_preview: true, ...extra });
+  const target = { chat_id: PIPELINE_CHAT_ID, message_thread_id: PIPELINE_TOPIC_ID, ...extra };
+  return telegramApi('sendMessage', { ...target, text, parse_mode: 'Markdown', disable_web_page_preview: true });
 }
 
-function isAuthorizedChat(chatId) {
+function isAuthorizedChat(chatId, messageThreadId) {
   if (ALLOWED_CHAT_IDS.length && !ALLOWED_CHAT_IDS.includes(String(chatId))) return false;
+  if (!ownerAuth.isPipelineChannel(chatId, messageThreadId)) return false;
   return true;
 }
 
@@ -87,7 +90,8 @@ function healthReport() {
     `Process: running since ${START_TIME}`,
     `Revision: ${DEPLOY_REVISION}`,
     `Mode: ${MODE}`,
-    `Owner: ${od ? 'bound (' + od + ')' : (bootstrapRequired ? 'bootstrap required' : 'env-configured')}`,
+    `Owner: ${od ? 'bound (' + od + ')' : 'not bound'}`,
+    `Pipeline channel: ${PIPELINE_CHAT_ID} topic ${PIPELINE_TOPIC_ID}`,
     `Kill switch: ${ks.state}`,
     `Active sessions: ${activeSessions}`,
     `Pending canary plans: ${pendingCanaryPlans}`,
@@ -107,11 +111,10 @@ async function handleUpdate(update) {
   const chatId = String(msg.chat.id);
   const userId = String(msg.from.id);
   const text = String(msg.text || '').trim();
+  const messageThreadId = msg.message_thread_id;
 
-  if (!isAuthorizedChat(chatId)) { log('warn', 'UNAUTHORIZED_CHAT', { chatId }); return; }
-
-  if (bootstrapRequired && !text.startsWith('/claim')) {
-    await sendMessage(chatId, 'Bot requires owner bootstrap. An administrator must provide the one-time claim code.');
+  if (!isAuthorizedChat(chatId, messageThreadId)) {
+    log('warn', 'UNAUTHORIZED_CHAT', { chatId, messageThreadId });
     return;
   }
 
@@ -133,16 +136,6 @@ async function handleUpdate(update) {
 
 async function handleCommand(chatId, userId, text, ks, msg) {
   const cmd = text.split(' ')[0].toLowerCase().split('@')[0];
-
-  if (cmd === '/claim') {
-    await handleClaim(chatId, userId, text, msg);
-    return;
-  }
-
-  if (bootstrapRequired) {
-    await sendMessage(chatId, 'Bot requires owner bootstrap. Use /claim <code> with the one-time code from the service console.');
-    return;
-  }
 
   if (cmd === '/start') {
     await sendMessage(chatId, [
@@ -267,37 +260,6 @@ async function handleCommand(chatId, userId, text, ks, msg) {
   await sendMessage(chatId, `Unknown command: ${cmd}. Use /help for available commands.`);
 }
 
-async function handleClaim(chatId, userId, text, msg) {
-  if (!bootstrapRequired) { await sendMessage(chatId, 'Owner is already bound. /claim is not available.'); return; }
-
-  const validation = ownerAuth.validateOwnerRequest(msg);
-  if (!validation.ok) { await sendMessage(chatId, `Cannot claim: ${validation.reason}. Owner must claim from a direct private chat.`); return; }
-
-  const parts = text.split(/\s+/);
-  if (parts.length < 2) { await sendMessage(chatId, 'Usage: /claim <one-time-code>'); return; }
-  const code = parts[1];
-
-  const stored = ownerAuth.readBootstrapCode();
-  if (!stored) { await sendMessage(chatId, 'No bootstrap code is active. An administrator must generate one first.'); return; }
-  if (stored.used) { await sendMessage(chatId, 'This bootstrap code has already been used.'); return; }
-  if (new Date(stored.expiresAt) < new Date()) { await sendMessage(chatId, 'Bootstrap code has expired. An administrator must generate a new one.'); return; }
-  if (code !== stored.code) { await sendMessage(chatId, 'Invalid bootstrap code.'); return; }
-
-  const config = ownerAuth.writeOwnerConfig(validation.userId, validation.chatId, validation.username);
-  ownerAuth.invalidateBootstrapCode();
-  bootstrapRequired = false;
-  bootstrapCode = null;
-
-  log('info', 'OWNER_BOUND', { ownerDigest: ownerAuth.ownerDigest(), chatDigest: crypto.createHash('sha256').update(config.chatId).digest('hex').slice(0, 8) });
-  await sendMessage(chatId, [
-    '*Owner Bound Successfully*',
-    '',
-    'You are now recognized as the pipeline owner.',
-    'Use /help to see available commands.',
-    'The bot is currently PAUSED. Use /resume to begin dry-run mode.',
-  ].join('\n'));
-}
-
 async function handleNaturalLanguage(chatId, userId, text, ks, msg) {
   const ctx = { chatId, telegramUserId: userId };
   const opts = {};
@@ -380,18 +342,11 @@ async function main() {
   if (!identity.ok) { log('error', 'INVALID_TOKEN', { error: identity.description }); releaseLock(); process.exit(1); }
   log('info', 'BOT_IDENTITY', { id: identity.result.id, username: identity.result.username });
 
-  bootstrapRequired = ownerAuth.isBootstrapRequired();
-  if (bootstrapRequired) {
-    bootstrapCode = ownerAuth.generateBootstrapCode();
-    log('info', 'BOOTSTRAP_REQUIRED', { codeExpiresAt: bootstrapCode.expiresAt });
-    console.log(`\n=== OWNER BOOTSTRAP REQUIRED ===`);
-    console.log(`One-time claim code: ${bootstrapCode.code}`);
-    console.log(`Expires: ${bootstrapCode.expiresAt}`);
-    console.log(`Send "/claim ${bootstrapCode.code}" to @${identity.result.username} from a private chat.`);
-    console.log(`================================\n`);
-  } else {
-    const od = ownerAuth.ownerDigest();
+  const od = ownerAuth.ownerDigest();
+  if (od) {
     log('info', 'OWNER_CONFIGURED', { ownerDigest: od });
+  } else {
+    log('warn', 'OWNER_NOT_CONFIGURED', { msg: 'Owner not bound. Sensitive operations will be restricted.' });
   }
 
   const ks = killSwitch.readKillSwitch();
@@ -400,7 +355,7 @@ async function main() {
     killSwitch.writeKillSwitch('PAUSED');
   }
 
-  log('info', 'BOT_READY', { state: 'PAUSED', bootstrapRequired });
+  log('info', 'BOT_READY', { state: 'PAUSED', pipelineChannel: `${PIPELINE_CHAT_ID}:${PIPELINE_TOPIC_ID}` });
 
   process.on('SIGINT', () => { running = false; log('info', 'SIGINT_RECEIVED'); });
   process.on('SIGTERM', () => { running = false; log('info', 'SIGTERM_RECEIVED'); });

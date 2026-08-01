@@ -1,8 +1,8 @@
 # TELEGRAM BOT DEPLOYMENT
 
-**Version:** 2.0
+**Version:** 2.1
 **Created:** 2026-08-01
-**Updated:** 2026-08-01 (owner bootstrap added)
+**Updated:** 2026-08-01 (Pipeline channel binding recovered)
 **Bot:** Kayla Pipeline Operator Bot
 **Entry Point:** `ghl-automations/bot/kayla-telegram-bot.js`
 
@@ -22,23 +22,32 @@
 
 ---
 
-## OWNER BOOTSTRAP
+## OPERATOR CONSOLE
 
-On first startup with no `TELEGRAM_OWNER_USER_ID` set and no existing owner config, the bot enters bootstrap mode:
+The Pipeline Telegram channel is the operator console. All bot communication stays in the existing Pipeline channel.
 
-1. Bot generates a one-time 32-character hex claim code (15-minute expiry)
-2. Code is displayed in the service console/log only — never in Telegram
-3. Montelli opens `@Prolificclawd_bot` in a **private chat** and sends: `/claim <code>`
-4. Bot validates: private chat, not forwarded, not edited, not a bot account
-5. Bot writes owner config to `data/owner-config.json` with integrity digest
-6. Bot invalidates the bootstrap code permanently
-7. Bot confirms binding without printing sensitive data
+| Field | Value |
+|---|---|
+| Pipeline chat | Ai Rei supergroup (`-1003975794600`) |
+| Pipeline topic | Pipeline (`389`) |
+| Bot | `@Prolificclawd_bot` (ID: 8524789360, administrator) |
+| Owner | `ProlificInvestments` (ID: 718718959, creator) |
 
-**After binding:**
-- Owner config persists across restarts
-- `/claim` is permanently disabled
-- Rebinding requires deleting `data/owner-config.json` and restarting
-- Integrity digest prevents manual tampering
+The bot only accepts messages from the Pipeline topic (chat `-1003975794600`, topic `389`). Messages from other chats, topics, or private DMs are silently ignored.
+
+Sensitive actions (canary enable, live send approval) require the owner user ID (`718718959`) inside the Pipeline channel. Other channel members cannot approve live sends.
+
+---
+
+## OWNER BINDING
+
+Owner identity is stored in `data/owner-config.json` with an integrity digest. The file was recovered from existing Telegram data:
+
+- **Owner user ID:** Recovered from pinned message `from.id` in Ai Rei supergroup
+- **Pipeline chat ID:** Recovered from `pipeline-review-bridge.ts`, `AI_REI_PIPELINE_TELEGRAM_REVIEW.md`, and live `getChat` API
+- **Pipeline topic ID:** Recovered from `pipeline-review-bridge.ts` and `.learnings/ERRORS.md`
+
+The `/claim` bootstrap flow is disabled in normal operation. Bootstrap support remains in `owner-auth.js` as an emergency recovery tool requiring local administrative activation.
 
 ---
 
@@ -47,7 +56,7 @@ On first startup with no `TELEGRAM_OWNER_USER_ID` set and no existing owner conf
 | Variable | Required | Source | Notes |
 |---|---|---|---|
 | `TELEGRAM_BOT_TOKEN` | **YES** | Secure env | Bot token from @BotFather |
-| `TELEGRAM_OWNER_USER_ID` | Optional | Secure env | Pre-configured owner ID (alternative to bootstrap) |
+| `TELEGRAM_OWNER_USER_ID` | Optional | Secure env | Pre-configured owner ID (alternative to owner-config.json) |
 | `TELEGRAM_ADMIN_USER_IDS` | Optional | Secure env | Comma-separated additional admin user IDs |
 | `TELEGRAM_ALLOWED_CHAT_IDS` | Optional | Secure env | Comma-separated chat IDs |
 | `TELEGRAM_MODE` | Optional | Secure env | `polling` (default) |

@@ -4,6 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+const PIPELINE_CHAT_ID = '-1003975794600';
+const PIPELINE_TOPIC_ID = 389;
+
 let _ownerConfigPath = path.resolve(__dirname, '..', 'data', 'owner-config.json');
 let _bootstrapCodePath = path.resolve(__dirname, '..', 'data', 'bootstrap-code.json');
 
@@ -108,6 +111,12 @@ function isAdmin(userId) {
   return adminIds.includes(String(userId));
 }
 
+function isPipelineChannel(chatId, messageThreadId) {
+  if (String(chatId) !== PIPELINE_CHAT_ID) return false;
+  if (messageThreadId != null && Number(messageThreadId) !== PIPELINE_TOPIC_ID) return false;
+  return true;
+}
+
 function isPrivateChat(chatType) {
   return chatType === 'private';
 }
@@ -139,6 +148,8 @@ function ownerDigest() {
 }
 
 module.exports = {
+  PIPELINE_CHAT_ID,
+  PIPELINE_TOPIC_ID,
   ownerConfigPath,
   bootstrapCodePath,
   setOwnerConfigPath,
@@ -153,6 +164,7 @@ module.exports = {
   getOwnerChatId,
   isOwner,
   isAdmin,
+  isPipelineChannel,
   isPrivateChat,
   isForwarded,
   isBotAccount,

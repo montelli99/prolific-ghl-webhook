@@ -5,7 +5,7 @@
 **Updated:** 2026-08-01 (post-bot-deployment)
 **Purpose:** Final certification determining whether Montelli can safely begin processing real production leads today
 **Previous Status:** NOT_CERTIFIED (no Telegram bot, kill switch DRY_RUN_ONLY)
-**Current Status:** BOT_DEPLOYED_BOOTSTRAP_GENERATED_AWAITING_OWNER_CLAIM
+**Current Status:** PIPELINE_TELEGRAM_BINDING_RECOVERED_BOT_RUNNING_PAUSED
 
 ---
 
@@ -13,7 +13,7 @@
 
 | # | Item | Status | Evidence |
 |---|---|---|---|
-| R1 | Telegram bot running | **VERIFIED** | Bot deployed at `ghl-automations/bot/kayla-telegram-bot.js`. Long polling mode with lock file. 11 commands + natural language routing to Stages 1-21. 50 bot tests passing. |
+| R1 | Telegram bot running | **VERIFIED** | Bot deployed at `ghl-automations/bot/kayla-telegram-bot.js`. Long polling mode with lock file. 11 commands + natural language routing to Stages 1-21. 50 bot tests passing. Pipeline channel binding recovered. |
 | R2 | Telegram webhook | **N/A** | Long polling mode — no webhook needed. |
 | R3 | Telegram polling | **VERIFIED** | Polling loop active. Single-instance lock file prevents duplicates. |
 | R4 | GHL authentication | **VERIFIED** | `secrets/.env` contains `GHL_API_TOKEN` (live `pit-...` token), `GHL_LOCATION_ID`, `GHL_PIPELINE_ID`, `GHL_ATLAS_PIPELINE_ID`. Read-only client (`atlas-ghl-readonly-client.js`) tested and functional. |
@@ -25,12 +25,12 @@
 | R10 | Secrets loading | **VERIFIED** | `secrets/.env` exists with 40+ configured keys. File is gitignored. |
 | R11 | Production configuration | **VERIFIED** | Atlas pipeline `nSf3NXYVkt8X4PgW9aZ3`, location `61XPzSqRy7UKMwW9DeB8`, Lead Entered stage `7067148a-2ee8-4e5b-93c8-31e0253fea68` all configured. |
 | R12 | Journal location | **VERIFIED** | `ghl-automations/data/telegram-outreach-dry-run/journal.jsonl` exists with one session entry. |
-| R13 | Kill switch | **VERIFIED** | `kill-switch.json`: `{"state": "DRY_RUN_ONLY"}`. Zero live sends, zero production writes, zero stage movements. |
-| R14 | Live mode configuration | **FAILED** | Kill switch is `DRY_RUN_ONLY`. No `CANARY_ALLOWED` or `MANUAL_LIVE_ALLOWED` state. |
-| R15 | Operator account | **VERIFIED** | Owner bootstrap code generated. Awaiting `/claim` from Montelli to bind `TELEGRAM_OWNER_USER_ID`. |
-| R16 | Admin account | **PENDING** | Will be configured after owner binding. |
+| R13 | Kill switch | **VERIFIED** | `kill-switch.json`: `{"state": "PAUSED"}`. Zero live sends, zero production writes, zero stage movements. |
+| R14 | Live mode configuration | **PENDING** | Kill switch is `PAUSED`. Progression: PAUSED → DRY_RUN_ONLY → CANARY_ALLOWED → MANUAL_LIVE_ALLOWED. |
+| R15 | Operator account | **VERIFIED** | Owner bound: `ProlificInvestments` (ID: 718718959). Recovered from pinned message in Ai Rei supergroup. Verified via live `getChatMember` API (status: creator). |
+| R16 | Admin account | **PENDING** | No additional admins configured. Owner is sole admin. |
 
-**Runtime verdict: 13 VERIFIED, 0 FAILED, 1 PENDING, 2 N/A.**
+**Runtime verdict: 14 VERIFIED, 0 FAILED, 2 PENDING, 2 N/A.**
 
 ---
 
