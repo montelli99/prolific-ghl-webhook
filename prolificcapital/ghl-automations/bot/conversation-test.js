@@ -345,9 +345,9 @@ test('47 no reply to bot when no reply_to_message', () => {
 });
 
 // CONVERSATIONAL REPLIES
-test('48 acknowledgment reply is brief', () => {
+test('48 acknowledgment reply is silent', () => {
   const reply = convRouter.buildConversationalReply({ intent: 'ACKNOWLEDGMENT' }, {});
-  assert.strictEqual(reply, 'Got it.');
+  assert.strictEqual(reply, null);
 });
 
 test('49 help reply contains commands', () => {

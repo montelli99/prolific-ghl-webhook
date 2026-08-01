@@ -233,7 +233,7 @@ async function classifyIntent(userMessage, context = {}) {
       entities: {},
       referencedItems: [],
       requiresClarification: true,
-      clarificationQuestion: "I couldn't confidently determine what you meant. Are you asking me to review the current leads, continue the open lead, or pause outreach?",
+      clarificationQuestion: "I'm not sure what you meant. Are you asking me to review the current leads, continue the open lead, or pause outreach?",
       reason: 'Classifier returned unparseable output',
       handler: 'unknown',
     };
@@ -246,7 +246,7 @@ async function classifyIntent(userMessage, context = {}) {
       entities: {},
       referencedItems: [],
       requiresClarification: true,
-      clarificationQuestion: "I couldn't reach the language model. Are you asking me to review the current leads, continue the open lead, or pause outreach? Slash commands are still available.",
+      clarificationQuestion: "I'm not sure what you meant. Are you asking me to review the current leads, continue the open lead, or pause outreach?",
       reason: `Classifier error: ${e.message}`,
       handler: 'unknown',
     };

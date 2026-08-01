@@ -31,6 +31,14 @@ function isSlashCommand(text) {
   return /^\//.test(text.trim());
 }
 
+function isAcknowledgment(text) {
+  const t = text.toLowerCase().replace(/[.,!?]+$/, '').trim();
+  return /^(visible|got\s*it|ok|okay|k|kk|cool|nice|thanks|thx|ty|done|great|perfect|awesome|sounds?\s*good|looks?\s*good|good\s*to\s*know|understood|roger|10-?4|will\s*do|on\s*it|noted|alright|all\s*right|fine|sweet|excellent|wonderful|fantastic|lovely|brilliant|superb?|yep|yeah|yup|yes|no|nope|nah|not\s*now|i\s*see|makes?\s*sense|that\s*works|works?\s*for\s*me)$/i.test(t) ||
+         /^(yes|yeah|yep|yup)[,.\s]+.*(see|got|understand|follow|works?)/i.test(t) ||
+         /^(i\s+)?(can\s+)?see\s+(it|you|that|this)/i.test(t) ||
+         /^(confirmed|acknowledged|received|copied|roger\s*that)$/i.test(t);
+}
+
 function isExplicitApproval(text) {
   const t = text.toLowerCase().trim();
   return /^(approve|send\s*(those|them|all|items?|it)|execute|go\s*ahead|proceed)/i.test(t) ||
@@ -76,6 +84,16 @@ function shouldProcessMessage(msg) {
   return { process: false, reason: 'UNRELATED_DISCUSSION' };
 }
 
+function resolveReplyContext(msg) {
+  if (!isReplyToBot(msg)) return null;
+  const replyTo = msg.reply_to_message;
+  return {
+    messageId: replyTo.message_id,
+    text: replyTo.text || '',
+    date: replyTo.date,
+  };
+}
+
 async function routeMessage(msg, handlers) {
   const chatId = String(msg.chat.id);
   const userId = String(msg.from.id);
@@ -83,6 +101,14 @@ async function routeMessage(msg, handlers) {
 
   const filter = shouldProcessMessage(msg);
   if (!filter.process) return { action: 'IGNORE', reason: filter.reason };
+
+  if (isReplyToBot(msg)) {
+    const replyCtx = resolveReplyContext(msg);
+    convState.touchState(chatId, userId);
+    if (replyCtx) {
+      convState.setLastBotMessage(chatId, userId, replyCtx.messageId, replyCtx.text);
+    }
+  }
 
   if (isSafetyCommand(text)) {
     killSwitch.writeKillSwitch('PAUSED');
@@ -92,6 +118,11 @@ async function routeMessage(msg, handlers) {
 
   if (isSlashCommand(text)) {
     return { action: 'SLASH_COMMAND', text };
+  }
+
+  if (isAcknowledgment(text)) {
+    convState.clearPendingQuestion(chatId, userId);
+    return { action: 'ACKNOWLEDGMENT' };
   }
 
   const ks = killSwitch.readKillSwitch();
@@ -134,7 +165,7 @@ function buildConversationalReply(intent, context) {
 
   switch (intent.intent) {
     case 'ACKNOWLEDGMENT':
-      return 'Got it.';
+      return null;
     case 'CASUAL_CONVERSATION':
       return "I'm here in the Pipeline channel. Are you trying to review today's leads, continue a lead already in progress, or check system status?";
     case 'HELP_REQUEST':
@@ -213,9 +244,11 @@ module.exports = {
   buildConversationalReply,
   isSafetyCommand,
   isSlashCommand,
+  isAcknowledgment,
   isExplicitApproval,
   validateApproval,
   extractNumbers,
   isBotMentioned,
   isReplyToBot,
+  resolveReplyContext,
 };

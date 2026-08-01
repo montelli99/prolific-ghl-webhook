@@ -156,6 +156,11 @@ async function handleUpdate(update) {
     return;
   }
 
+  if (result.action === 'ACKNOWLEDGMENT') {
+    log('info', 'ACKNOWLEDGMENT', { userId: crypto.createHash('sha256').update(userId).digest('hex').slice(0, 8) });
+    return;
+  }
+
   if (result.action === 'INTENT' && result.intent) {
     const reply = convRouter.buildConversationalReply(result.intent, { userId, chatId });
     if (reply) await sendMessage(chatId, reply);
