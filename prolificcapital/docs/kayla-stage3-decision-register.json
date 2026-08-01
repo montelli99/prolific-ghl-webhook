@@ -1,0 +1,187 @@
+{
+  "schema": "kayla-stage3-decision-register-v1",
+  "generatedAt": "2026-08-01T12:00:00.000Z",
+  "canonicalAuthority": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+  "canonicalVersion": "1.0",
+  "evidenceIndex": "docs/KAYLA_STAGE3_COURSE_EVIDENCE_INDEX.md",
+  "decisions": [
+    {
+      "decisionId": "S3-ENTRY-001",
+      "stage": 3,
+      "topic": "Offer Ready Entry Authorization",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
+      "question": "What authorizes entry into Offer Ready to be Sent to Seller?",
+      "sourceReferences": [
+        "airei-course-notes/01-STEP3-Pt1-Intro-Warm-Dials-Kayla-Teaches-Outreach.txt:1053-1107",
+        "airei-course-notes/02-STEP3-Pt1-Leads-to-CRM-AI-Offer-System.txt:1-65",
+        "memory/REI_STAGE_BY_STAGE_GUIDE.md:52-62",
+        "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md:398-446"
+      ],
+      "answer": "Stage 3 entry requires: Stage 2 evaluation complete, handoff information package submitted to closer team, operator confirms movement. The closer team (Seth, Kayla, Jaxon) then generates the offer. The operator does not generate offers.",
+      "normalizedRule": "Operator moves to Offer Ready after Stage 2 evaluation and handoff submission. Closer team generates the offer.",
+      "authorityClassification": "COURSE_SYNTHESIZED_FROM_MULTIPLE_EXPLICIT_SOURCES",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER", "PPC_SELLER"],
+      "blocksImplementation": false,
+      "implementationStatus": "ready"
+    },
+    {
+      "decisionId": "S3-RESP-001",
+      "stage": 3,
+      "topic": "Stage 3 Responsibility Matrix",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
+      "question": "Who collects information, evaluates the deal, calculates terms, drafts the offer, reviews, approves, delivers, and negotiates?",
+      "sourceReferences": [
+        "airei-course-notes/01-STEP3-Pt1-Intro-Warm-Dials-Kayla-Teaches-Outreach.txt:1053-1107",
+        "airei-course-notes/07-STEP3-Pt2-Follow-Up-Offer-Sent-to-Lead-Calls.txt:78-80",
+        "memory/MONTELLI_OBJECTION_HANDLING.md:20-32,123-133",
+        "memory/REI_STAGE_BY_STAGE_GUIDE.md:277-287"
+      ],
+      "answer": "Operator (Montelli): collects information, evaluates deal type, submits handoff. Seth: underwrites, generates LOI. Kayla/Jaxon: generate offers, negotiate, close. Operator never negotiates, never generates offers, never signs contracts.",
+      "normalizedRule": "Operator collects and submits. Seth underwrites and generates LOI. Kayla/Jaxon generate offers and negotiate.",
+      "authorityClassification": "COURSE_SYNTHESIZED_FROM_MULTIPLE_EXPLICIT_SOURCES",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER", "PPC_SELLER"],
+      "blocksImplementation": false,
+      "implementationStatus": "ready"
+    },
+    {
+      "decisionId": "S3-TYPE-001",
+      "stage": 3,
+      "topic": "Offer Types",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
+      "question": "What offer types does the course support?",
+      "sourceReferences": [
+        "airei-course-notes/03-STEP3-Pt1-Deal-Structure-Cash-Stack-SubTo.txt:1-158",
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:228-258"
+      ],
+      "answer": "Four course-backed offer types: (1) Cash: ARV×0.70−Repairs−Fee, deep discount. (2) 50% Stack: 50% down, seller holds 50%, 65%+ equity, free and clear. (3) 10% Down: 10% down, seller carries balance, free and clear. (4) Subject-To: take over existing debt, low equity, 72+ months. F50/F10 are creative financing probes, not formal offer types.",
+      "normalizedRule": "Four offer types: Cash, 50% Stack, 10% Down, Subject-To. F50/F10 are creative probes.",
+      "authorityClassification": "COURSE_EXPLICIT",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER", "PPC_SELLER"],
+      "blocksImplementation": false,
+      "implementationStatus": "ready"
+    },
+    {
+      "decisionId": "S3-DATA-001",
+      "stage": 3,
+      "topic": "Underwriting Data Requirements",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
+      "question": "What information is required to create an offer?",
+      "sourceReferences": [
+        "airei-course-notes/03-STEP3-Pt1-Deal-Structure-Cash-Stack-SubTo.txt:1-158",
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:228-258"
+      ],
+      "answer": "Required for all offers: ARV, asking/purchase price, repair estimate, market rent. Required for Stack/10% Down: equity percentage, mortgage balance (must be zero — free and clear). Required for SubTo: existing mortgage balance, interest rate, monthly payment. Team calculates: monthly payment, DSCR, cash flow, offer amount. Operator collects: property facts, contact info, deal type classification.",
+      "normalizedRule": "ARV, price, repairs, rent required for all. Equity and mortgage status required for seller finance. Team performs calculations.",
+      "authorityClassification": "COURSE_SYNTHESIZED_FROM_MULTIPLE_EXPLICIT_SOURCES",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER", "PPC_SELLER"],
+      "blocksImplementation": false,
+      "implementationStatus": "ready"
+    },
+    {
+      "decisionId": "S3-CALC-001",
+      "stage": 3,
+      "topic": "Offer Calculations",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
+      "question": "What exact calculations or decision rules does the course teach for offer amounts?",
+      "sourceReferences": [
+        "airei-course-notes/03-STEP3-Pt1-Deal-Structure-Cash-Stack-SubTo.txt:48-113",
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:228-258"
+      ],
+      "answer": "Cash: ARV × 0.70 − Repairs − Wholesale Fee = Max Offer. 50% Stack: 50% down at close, seller holds 50%, minimum 65% equity, free and clear required. 10% Down: 10% (or 0-15%) down, seller carries balance, down payment must cover equity, free and clear required. SubTo: take over existing debt, low equity, 72+ months payoff. 1% rent rule: monthly rent should be approximately 1% of purchase price. These are taught as mandatory evaluation rules.",
+      "normalizedRule": "Cash: ARV×0.70−Repairs−Fee. Stack: 50% down, 65%+ equity, free/clear. 10% Down: 10% down, free/clear. SubTo: low equity, 72+ months.",
+      "authorityClassification": "COURSE_EXPLICIT",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER", "PPC_SELLER"],
+      "blocksImplementation": false,
+      "implementationStatus": "ready"
+    },
+    {
+      "decisionId": "S3-LOI-001",
+      "stage": 3,
+      "topic": "LOI Role and Definition",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
+      "question": "What is the LOI, who creates it, and when is it used?",
+      "sourceReferences": [
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:94-100",
+        "lead-tracking/AIREI_SCRIPTS_REFERENCE.md:15",
+        "memory/REI_STAGE_BY_STAGE_GUIDE.md:277-287"
+      ],
+      "answer": "The LOI (Letter of Intent) is a non-binding deal outline generated by Seth after underwriting. It is not the operator's action. Seth receives the information package, runs underwriting, and sends back an approved LOI. The LOI is then sent to the seller. The LOI is not the purchase agreement — it precedes the formal contract.",
+      "normalizedRule": "LOI is generated by Seth after underwriting. It is a non-binding deal outline sent to the seller before the formal contract.",
+      "authorityClassification": "COURSE_EXPLICIT",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER"],
+      "blocksImplementation": false,
+      "implementationStatus": "ready"
+    },
+    {
+      "decisionId": "S3-F50-001",
+      "stage": 3,
+      "topic": "F50/F10 Position in Stage 3",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
+      "question": "What is the exact Stage 3 relationship of F50 and F10?",
+      "sourceReferences": [
+        "lead-tracking/AIREI_SCRIPTS_REFERENCE.md:18-19,204-219",
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:90-94"
+      ],
+      "answer": "F50 and F10 are creative financing conversation starters, not formal offer types. They are used during Stage 2 evaluation to probe seller openness to creative terms. They are not converted into LOIs or formal offers. A positive F50/F10 response triggers handoff to the closer team for formal offer preparation. They are not Stage 3 actions.",
+      "normalizedRule": "F50/F10 are creative probes used in Stage 2 evaluation. They are not formal offer types and are not Stage 3 actions.",
+      "authorityClassification": "COURSE_PATH_SPECIFIC",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER"],
+      "blocksImplementation": false,
+      "implementationStatus": "ready"
+    },
+    {
+      "decisionId": "S3-GCJ-001",
+      "stage": 3,
+      "topic": "GCJ Position in Stage 3",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
+      "question": "How does GCJ interact with Stage 3?",
+      "sourceReferences": [
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:106-108",
+        "memory/MONTELLI_OBJECTION_HANDLING.md:96-117",
+        "ai-rei/kay-exclusive/Pay Per Click (PPC)/PPC Process_text.txt"
+      ],
+      "answer": "GCJ has multiple path-specific triggers established in Stage 2. In Stage 3 context: GCJ may be sent when the offer is ready for presentation (standard path), when the lead is hot/engaged, or as part of PPC handoff. GCJ is not a universal Stage 3 action. The operator does not negotiate after GCJ — Kayla/Jaxon take over.",
+      "normalizedRule": "GCJ triggers are path-specific. In Stage 3: sent when offer is ready, lead is hot, or per PPC path. Operator steps back after GCJ.",
+      "authorityClassification": "COURSE_PATH_SPECIFIC",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER", "PPC_SELLER"],
+      "blocksImplementation": false,
+      "implementationStatus": "ready"
+    },
+    {
+      "decisionId": "S3-EXIT-001",
+      "stage": 3,
+      "topic": "Stage 3 Exit Authorization",
+      "status": "RESOLVED_FROM_COURSE_CORPUS",
+      "question": "What exact event moves a lead from Offer Ready to Offer Sent to Lead?",
+      "sourceReferences": [
+        "airei-course-notes/02-STEP3-Pt1-Leads-to-CRM-AI-Offer-System.txt:1-26",
+        "airei-course-notes/07-STEP3-Pt2-Follow-Up-Offer-Sent-to-Lead-Calls.txt:1-8",
+        "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md:398-446"
+      ],
+      "answer": "Stage 3 exits when the offer has been sent to the seller. The closer team generates the offer. The operator or closer team delivers it. The offer sent date is recorded. The 48-hour feedback clock starts. The transition is operator-confirmed or closer-confirmed.",
+      "normalizedRule": "Stage 3 exits when the offer is sent to the seller. Offer sent date recorded. 48-hour feedback clock starts.",
+      "authorityClassification": "COURSE_EXPLICIT",
+      "applicablePaths": ["LISTING_AGENT", "BROKER", "DIRECT_SELLER", "FSBO_SELLER", "PPC_SELLER"],
+      "blocksImplementation": false,
+      "implementationStatus": "ready"
+    },
+    {
+      "decisionId": "S3-ALT-001",
+      "stage": 3,
+      "topic": "Alternate Stage 3 Outcomes",
+      "status": "COURSE_UNKNOWN",
+      "question": "What happens when Stage 3 cannot progress to Offer Sent?",
+      "sourceReferences": [
+        "airei-course-notes/AIREI_MASTER_PLAYBOOK.md:90-100",
+        "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md:398-446"
+      ],
+      "answer": null,
+      "normalizedRule": null,
+      "authorityClassification": "COURSE_UNKNOWN",
+      "applicablePaths": [],
+      "blocksImplementation": true,
+      "blockedBehaviors": ["alternate Stage 3 exits", "offer rejection handling", "underwriting failure handling"],
+      "implementationStatus": "not_started"
+    }
+  ]
+}
