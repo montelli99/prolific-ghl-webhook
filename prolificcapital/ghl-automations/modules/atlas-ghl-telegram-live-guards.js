@@ -15,12 +15,14 @@ const TARGET = Object.freeze({
   ownerId: 'PGfXxlXCRXs3hXN3Gq7R',
 });
 
-const LIVE_KILL_SWITCH_STATES = Object.freeze(['PAUSED', 'DRY_RUN_ONLY', 'CANARY_ALLOWED', 'MANUAL_LIVE_ALLOWED']);
+const LIVE_KILL_SWITCH_STATES = Object.freeze(['PAUSED', 'DRY_RUN_ONLY', 'CANARY_ALLOWED']);
 const TELEGRAM_OUTREACH_SOURCE = 'TELEGRAM_ATLAS_OUTREACH';
 const STAGE_MOVEMENT_PENDING = 'STAGE_MOVEMENT_DISABLED_COURSE_CONFLICT_UNRESOLVED';
 const MAX_CANARY_COUNT = 3;
 const SAFE_ID = /^[A-Za-z0-9_-]{8,80}$/;
 const SYNTHETIC_ID = /^(opp|contact|sim|synthetic|test|fake|dry)[_-]|synthetic|fixture|example/i;
+
+const COMPLIANCE_STATES = Object.freeze(['CLEAR', 'BLOCKED', 'UNKNOWN']);
 
 function stableId(prefix, value) {
   return `${prefix}_${crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex').slice(0, 20)}`;
@@ -47,18 +49,27 @@ function tagText(record) {
 function evaluateGhlComplianceLocks(record) {
   const normalized = normalizeOpportunity(record);
   const tags = tagText(record);
-  const checks = {
-    dnc: Boolean(normalized.dnc || /\bdnc\b|do not call|do-not-contact/.test(tags)),
-    optOut: Boolean(/unsubscribe|opt[ -]?out|\bstop\b/.test(tags)),
-    wrongNumber: Boolean(normalized.wrongNumber || /wrong[ -]?number|bad[ -]?phone/.test(tags)),
-    pendingReply: Boolean(normalized.pendingReply || /pending[ -]?reply|awaiting[ -]?reply/.test(tags)),
-    activeHumanWork: Boolean(normalized.activeHumanWork || /human[ -]?owned|manual[ -]?review|active[ -]?human/.test(tags)),
-  };
+
+  const dncTag = /\bdnc\b|do not call|do-not-contact/.test(tags);
+  const optOutTag = /unsubscribe|opt[ -]?out|\bstop\b/.test(tags);
+  const wrongNumberTag = /wrong[ -]?number|bad[ -]?phone/.test(tags);
+  const pendingReplyTag = /pending[ -]?reply|awaiting[ -]?reply/.test(tags);
+  const activeHumanWorkTag = /human[ -]?owned|manual[ -]?review|active[ -]?human/.test(tags);
+
+  const dnc = normalized.dnc || dncTag ? 'BLOCKED' : 'UNKNOWN';
+  const optOut = optOutTag ? 'BLOCKED' : 'UNKNOWN';
+  const wrongNumber = normalized.wrongNumber || wrongNumberTag ? 'BLOCKED' : 'UNKNOWN';
+  const pendingReply = normalized.pendingReply || pendingReplyTag ? 'BLOCKED' : 'UNKNOWN';
+  const activeHumanWork = normalized.activeHumanWork || activeHumanWorkTag ? 'BLOCKED' : 'UNKNOWN';
+
+  const checks = { dnc, optOut, wrongNumber, pendingReply, activeHumanWork };
   const errors = [];
-  if (checks.dnc || checks.optOut) errors.push('CONTACT_COMPLIANCE_LOCK');
-  if (checks.wrongNumber) errors.push('WRONG_NUMBER_LOCK');
-  if (checks.pendingReply) errors.push('CONVERSATION_CONTEXT_LOCK');
-  if (checks.activeHumanWork) errors.push('TEAM_OWNERSHIP_LOCK');
+  if (checks.dnc !== 'CLEAR') errors.push('CONTACT_COMPLIANCE_LOCK');
+  if (checks.optOut !== 'CLEAR') errors.push('CONTACT_COMPLIANCE_LOCK');
+  if (checks.wrongNumber !== 'CLEAR') errors.push('WRONG_NUMBER_LOCK');
+  if (checks.pendingReply !== 'CLEAR') errors.push('CONVERSATION_CONTEXT_LOCK');
+  if (checks.activeHumanWork !== 'CLEAR') errors.push('TEAM_OWNERSHIP_LOCK');
+
   return { ok: errors.length === 0, errors, checks, maskedContact: maskContact(normalized.contactId) };
 }
 
@@ -72,10 +83,11 @@ function evaluateCanaryWindow({ now = new Date(), timeZone }) {
   try {
     const day = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone }).format(now);
     if (day === 'Sat' || day === 'Sun') return { ok: false, reason: 'WEEKEND_BLOCKS_CANARY', day };
-    const parts = new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone }).formatToParts(now);
+    const parts = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hourCycle: 'h23', timeZone }).formatToParts(now);
     const hour = localHour(parts);
-    if (hour < 10 || hour >= 18) return { ok: false, reason: 'OUTSIDE_LOCAL_CANARY_WINDOW', hour };
-    return { ok: true, reason: 'CANARY_WINDOW_OPEN', day, hour };
+    const minute = Number(parts.find(part => part.type === 'minute')?.value) || 0;
+    if (hour < 12 || (hour === 17 && minute > 59) || hour >= 18) return { ok: false, reason: 'OUTSIDE_LOCAL_CANARY_WINDOW', hour, minute };
+    return { ok: true, reason: 'CANARY_WINDOW_OPEN', day, hour, minute };
   } catch (error) {
     return { ok: false, reason: 'INVALID_TIMEZONE_BLOCKS_CANARY' };
   }
@@ -113,7 +125,7 @@ function evaluateGhlCanaryRecord(record, context = {}) {
   else if (!window.ok) errors.push(window.reason);
   const stageConflict = getCourseRule('STAGE1_EXIT_AFTER_INT');
   return {
-    schema: 'atlas-ghl-telegram-canary-guard-v1',
+    schema: 'atlas-ghl-telegram-canary-guard-v2',
     passed: errors.length === 0,
     blockedReasons: errors,
     opportunityIdValidation: { passed: identity.errors.every(error => !error.includes('OPPORTUNITY')), opportunityId: normalized.opportunityId },
@@ -123,11 +135,11 @@ function evaluateGhlCanaryRecord(record, context = {}) {
     stageValidation: { passed: stageOk, expected: TARGET.leadEnteredStageId, actual: normalized.currentStageId },
     distinctContactValidation: { passed: sameContactCount === 1, count: sameContactCount },
     distinctPropertyValidation: { passed: samePropertyCount === 1, count: samePropertyCount },
-    dncStatus: { passed: !compliance.checks.dnc, blocked: compliance.checks.dnc },
-    optOutStatus: { passed: !compliance.checks.optOut, blocked: compliance.checks.optOut },
-    wrongNumberStatus: { passed: !compliance.checks.wrongNumber, blocked: compliance.checks.wrongNumber },
-    pendingReplyStatus: { passed: !compliance.checks.pendingReply, blocked: compliance.checks.pendingReply },
-    activeHumanWorkStatus: { passed: !compliance.checks.activeHumanWork, blocked: compliance.checks.activeHumanWork },
+    dncStatus: { state: compliance.checks.dnc, passed: compliance.checks.dnc === 'CLEAR' },
+    optOutStatus: { state: compliance.checks.optOut, passed: compliance.checks.optOut === 'CLEAR' },
+    wrongNumberStatus: { state: compliance.checks.wrongNumber, passed: compliance.checks.wrongNumber === 'CLEAR' },
+    pendingReplyStatus: { state: compliance.checks.pendingReply, passed: compliance.checks.pendingReply === 'CLEAR' },
+    activeHumanWorkStatus: { state: compliance.checks.activeHumanWork, passed: compliance.checks.activeHumanWork === 'CLEAR' },
     propertyFingerprintStatus: { passed: propertyFingerprintOk },
     phoneRouteStatus: { passed: phoneOk },
     roleEvidence,
@@ -141,7 +153,7 @@ function evaluateGhlCanaryRecord(record, context = {}) {
     timezoneDerivation: timezone,
     timezoneStatus: { passed: timezone.ok, timeZone: timezone.timeZone || null, classification: 'TECHNICAL_SAFETY_POLICY' },
     weekdayStatus: { passed: window.ok || !/WEEKEND/.test(window.reason), day: window.day || null },
-    localTimeWindowStatus: { passed: window.ok, reason: window.reason, hour: window.hour ?? null },
+    localTimeWindowStatus: { passed: window.ok, reason: window.reason, hour: window.hour ?? null, minute: window.minute ?? null },
     kaylaEligibilityStatus: { passed: Boolean(eligibility.safe && eligibility.due), resultClass: eligibility.resultClass, reason: eligibility.reason },
     stageMovementCapability: { passed: false, status: STAGE_MOVEMENT_PENDING, classification: 'COURSE_CONFLICT', courseRule: stageConflict },
     workflowIsolationStatus: { passed: Boolean(context.workflowIsolationProven), status: context.workflowIsolationProven ? 'WEBHOOK_ISOLATION_READY' : 'WEBHOOK_ISOLATION_READY_NOT_AUTHORITY_FOR_STAGE_MOVEMENT' },
@@ -204,6 +216,7 @@ module.exports = {
   TELEGRAM_OUTREACH_SOURCE,
   STAGE_MOVEMENT_PENDING,
   MAX_CANARY_COUNT,
+  COMPLIANCE_STATES,
   hasRealGhlId,
   validateRealGhlIdentity,
   evaluateGhlComplianceLocks,

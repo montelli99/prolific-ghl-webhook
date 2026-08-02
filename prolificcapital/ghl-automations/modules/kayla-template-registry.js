@@ -39,9 +39,11 @@ function variablesFor(body) {
   return Array.from(vars).sort();
 }
 
+const OWNER_APPROVED_PIPELINE_INT_BODY = 'Happy [day], [Name]! Are you still accepting offers for [address]? My name is [your name], I\'m looking to purchase this as a rental for my portfolio.';
+
 function createTemplateRegistry(options = {}) {
   const spec = options.spec || loadKaylaCourseSpec(options);
-  return Object.entries(SHORTCUT_BODIES).map(([shortcutName, body]) => ({
+  const entries = Object.entries(SHORTCUT_BODIES).map(([shortcutName, body]) => ({
     ...(getProductionScript(shortcutName) || {}),
     shortcutName,
     audience: AUDIENCE_BY_SHORTCUT[shortcutName] || ['unknown'],
@@ -59,6 +61,27 @@ function createTemplateRegistry(options = {}) {
     manualReviewRequirement: 'Required before any live send; dry-run approval only in this phase.',
     courseRuleCitation: getProductionScript(shortcutName)?.sourceFile || spec.courseRules.map(rule => rule.citation)[0],
   }));
+
+  entries.push({
+    shortcutName: 'OWNER_APPROVED_PIPELINE_INT',
+    audience: ['agent', 'owner', 'broker'],
+    stage: 1,
+    actionType: 'TEXT',
+    body: OWNER_APPROVED_PIPELINE_INT_BODY,
+    variables: variablesFor(OWNER_APPROVED_PIPELINE_INT_BODY),
+    requiredContext: ['day', 'contactName', 'propertyAddress', 'senderName'],
+    source: 'docs/OWNER_OPERATIONAL_POLICY.md#int-template',
+    sourceLines: null,
+    status: 'OWNER_APPROVED',
+    allowedChannel: 'JustCall SMS production',
+    callBeforeAfterRule: 'CALL_AFTER_TEXT',
+    followUpInterval: null,
+    manualReviewRequirement: 'Explicit owner approval required before every production send.',
+    courseRuleCitation: 'docs/OWNER_OPERATIONAL_POLICY.md',
+    provenance: 'OWNER_POLICY — explicitly approved project variant derived from the owner\'s operating preference. Combines the \'Happy [day]\' greeting from the SELLER_INITIAL call script with the INT shortcut body. It is not Kayla\'s original SMS wording.',
+  });
+
+  return entries;
 }
 
 function getTemplate(shortcutName, options = {}) {

@@ -1,0 +1,245 @@
+{
+  "policyId": "OP-2026-08-02-v1",
+  "version": "1.0.0",
+  "effectiveTimestamp": "2026-08-02T16:00:00Z",
+  "ownerAuthority": "Montelli Scott (718718959)",
+  "projectScope": "Prolific Capital GHL Pipeline — Kayla/Montelli REI Operations",
+  "sourcePrecedence": [
+    "LAW_COMPLIANCE_PROVIDER_OPT_OUT",
+    "OWNER_OPERATIONAL_POLICY",
+    "KAYLA_CANONICAL_OPERATING_SYSTEM",
+    "VERIFIED_ORIGINAL_COURSE_TRANSCRIPTS_AND_SHORTCUTS",
+    "CURRENT_LIVE_GHL_JUSTCALL_STATE",
+    "ACCEPTED_IMPLEMENTATION_CONTRACTS",
+    "TECHNICAL_DEFAULTS",
+    "DERIVED_OR_HISTORICAL_DOCUMENTS"
+  ],
+  "rules": {
+    "OUTREACH_DAYS": {
+      "category": "OUTREACH_DAYS",
+      "rule": "No prospect outreach on Saturday or Sunday.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "classification": "Monday–Friday availability and Saturday/Sunday prohibition are OWNER_POLICY. No original course transcript explicitly defines prospect SMS days. Existing weekend-block implementation is TECHNICAL_DEFAULT aligned to OWNER_POLICY.",
+      "affectedModules": ["atlas-ghl-telegram-live-guards.js", "telegram-outreach-dry-run.js"],
+      "testRequirements": ["Saturday blocks", "Sunday blocks", "No weekend override phrase bypasses"]
+    },
+    "OUTREACH_HOURS": {
+      "category": "OUTREACH_HOURS",
+      "rule": "Prospect SMS window is Monday through Friday, 12:00 PM through 6:00 PM.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "endBoundary": {
+        "startAllowed": "12:00:00",
+        "endAllowed": "17:59:59",
+        "endBlocked": "18:00:00",
+        "description": "12:00:00 PM is allowed. 5:59:59 PM is allowed. 6:00:00 PM and later is blocked."
+      },
+      "affectedModules": ["atlas-ghl-telegram-live-guards.js"],
+      "testRequirements": ["Monday 11:59:59 AM blocks", "Monday 12:00:00 PM passes", "Monday 5:59:59 PM passes", "Monday 6:00:00 PM blocks", "Old 10 AM default no longer governs"],
+      "supersededTechnicalDefaults": ["10:00 AM start hour in evaluateCanaryWindow (atlas-ghl-telegram-live-guards.js)"]
+    },
+    "TIMEZONE_POLICY": {
+      "category": "TIMEZONE_POLICY",
+      "rule": "The 12:00 PM–6:00 PM window uses the property's local timezone derived from the full property address ZIP code.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "status": "RESOLVED",
+      "selectedBasis": "PROPERTY_LOCAL_TIMEZONE",
+      "implementation": "Full 5-digit ZIP → timezone mapping with ZIP3-level precision. Multi-zone states use ZIP3-level resolution. Unknown or ambiguous timezone blocks production.",
+      "dayRendering": "[day] in the INT template is rendered using the same property-local timezone that controls the send window.",
+      "affectedModules": ["property-timezone.js", "atlas-ghl-telegram-live-guards.js"],
+      "testRequirements": ["Selected timezone policy loads", "Unknown timezone blocks", "Ambiguous timezone blocks", "Multi-zone state not broadly misclassified", "Florida panhandle and Eastern Florida resolve correctly", "Day rendering uses same timezone as business-time validation"]
+    },
+    "WEEKEND_OVERRIDE": {
+      "category": "WEEKEND_OVERRIDE",
+      "rule": "Weekend sending has no ad-hoc conversational override. No MANUAL_LIVE_ALLOWED bypass. No kill-switch state bypass.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "affectedModules": ["atlas-ghl-telegram-live-guards.js", "kill-switch.js", "canary-executor.js"],
+      "testRequirements": ["No override phrase bypasses", "MANUAL_LIVE_ALLOWED does not bypass weekend", "Kill-switch state does not bypass weekend"]
+    },
+    "PLAN_EXPIRATION": {
+      "category": "PLAN_EXPIRATION",
+      "rule": "A canary plan expires on the earliest of: configured absolute TTL, end of valid business window, change of local day, policy version change, template version change, opportunity/contact change, stage/status change, new inbound reply, suppression/opt-out change, prior-outreach change, sender/provider readiness change, or selection mutation. Sunday plan cannot be held for Monday. Every regeneration requires new plan ID, new hash, fresh rendered weekday, fresh guards, and new explicit approval.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "affectedModules": ["canary-executor.js", "atlas-ghl-telegram-live-guards.js"],
+      "testRequirements": ["Weekend plan cannot execute Monday", "Expired plan blocks", "Policy change invalidates hash", "Template change invalidates hash", "Record change invalidates hash", "Day change invalidates plan", "Sunday plan cannot execute Monday"]
+    },
+    "INT_TEMPLATE_VARIANT": {
+      "category": "INT_TEMPLATE_VARIANT",
+      "rule": "The owner-approved production INT rendering is: 'Happy [day], [Name]! Are you still accepting offers for [address]? My name is [your name], I'm looking to purchase this as a rental for my portfolio.'",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "templateId": "OWNER_APPROVED_PIPELINE_INT",
+      "provenance": "OWNER_POLICY — explicitly approved project variant derived from the owner's operating preference. Combines the 'Happy [day]' greeting from the SELLER_INITIAL call script (AIREI_MASTER_PLAYBOOK.md line 157) with the INT shortcut body. It is not Kayla's original SMS wording. The original course INT (COURSE_CANONICAL_INT) has no greeting and is preserved separately for audit.",
+      "affectedModules": ["kayla-course-spec.js", "kayla-template-registry.js", "canary-executor.js"],
+      "testRequirements": ["Owner-approved INT renders exact text with punctuation", "[day] resolves from selected timezone basis", "[Name] resolves correctly", "[address] resolves correctly", "[your name] resolves to Montelli", "Unresolved variable blocks", "Day change invalidates plan", "Course template remains retrievable separately"]
+    },
+    "SENDER_LOCK": {
+      "category": "SENDER_LOCK",
+      "rule": "The approved Pipeline sender is the 571 number ending 2619.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "affectedModules": ["kayla-course-spec.js", "justcall-integration.js"],
+      "testRequirements": ["Sender suffix 2619 verified", "Wrong sender blocks"]
+    },
+    "CANARY_LIMIT": {
+      "category": "CANARY_LIMIT",
+      "rule": "Maximum initial production canary size is 3 records.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "affectedModules": ["canary-executor.js", "atlas-ghl-telegram-live-guards.js"],
+      "testRequirements": ["Maximum three enforced", "Fourth record blocked"]
+    },
+    "APPROVAL": {
+      "category": "APPROVAL",
+      "rule": "Every production send requires an immutable plan and explicit owner approval.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "affectedModules": ["canary-executor.js", "kill-switch.js"],
+      "testRequirements": ["Explicit owner approval required", "Wrong owner blocks"]
+    },
+    "DNC_STOP": {
+      "category": "DNC_STOP",
+      "rule": "DNC, STOP, and opt-out contacts must never receive outreach. Unknown DNC/STOP state must block, not pass. Absence of a GHL tag is not affirmative clearance.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "complianceStates": ["CLEAR", "BLOCKED", "UNKNOWN"],
+      "unknownBehavior": "BLOCK",
+      "affectedModules": ["atlas-ghl-telegram-live-guards.js", "telegram-outreach-dry-run.js"],
+      "testRequirements": ["Missing DNC data blocks", "Missing STOP data blocks", "GHL tag blocks", "JustCall opt-out blocks", "Local suppression entry blocks", "Conflicting sources block", "Positive clear from every required source passes", "Absence of GHL tag alone does not pass"]
+    },
+    "PENDING_REPLY": {
+      "category": "PENDING_REPLY",
+      "rule": "Contacts with pending replies must not receive additional outreach. Unknown pending-reply state must block.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "complianceStates": ["CLEAR", "BLOCKED", "UNKNOWN"],
+      "unknownBehavior": "BLOCK",
+      "affectedModules": ["atlas-ghl-telegram-live-guards.js"],
+      "testRequirements": ["Missing pending-reply state blocks", "Known pending reply blocks"]
+    },
+    "ACTIVE_HUMAN_WORK": {
+      "category": "ACTIVE_HUMAN_WORK",
+      "rule": "Contacts with active human work must not receive automated outreach. Unknown active-human-work state must block.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "complianceStates": ["CLEAR", "BLOCKED", "UNKNOWN"],
+      "unknownBehavior": "BLOCK",
+      "affectedModules": ["atlas-ghl-telegram-live-guards.js"],
+      "testRequirements": ["Missing active-human-work state blocks", "Known active human work blocks"]
+    },
+    "PRIOR_OUTREACH": {
+      "category": "PRIOR_OUTREACH",
+      "rule": "Contacts with unresolved prior outreach must not receive additional outreach. Unknown prior-outreach state must block.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "complianceStates": ["CLEAR", "BLOCKED", "UNKNOWN"],
+      "unknownBehavior": "BLOCK",
+      "affectedModules": ["atlas-ghl-telegram-live-guards.js", "telegram-outreach-dry-run.js"],
+      "testRequirements": ["Missing prior-outreach state blocks", "Known prior outreach blocks"]
+    },
+    "DUPLICATE_HISTORY": {
+      "category": "DUPLICATE_HISTORY",
+      "rule": "Duplicate contacts or properties must not receive duplicate outreach. Unknown duplicate state must block.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "complianceStates": ["CLEAR", "BLOCKED", "UNKNOWN"],
+      "unknownBehavior": "BLOCK",
+      "affectedModules": ["atlas-ghl-telegram-live-guards.js"],
+      "testRequirements": ["Missing historical duplicate state blocks", "Known duplicate blocks"]
+    },
+    "CONTACT_PATH": {
+      "category": "CONTACT_PATH",
+      "rule": "No outreach until contact path is established. Unresolved role/contact path must block.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "affectedModules": ["kayla-stage1-transaction.js", "telegram-outreach-dry-run.js"],
+      "testRequirements": ["Unresolved contact path blocks", "Unsupported role blocks"]
+    },
+    "PROVIDER_UNCERTAINTY": {
+      "category": "PROVIDER_UNCERTAINTY",
+      "rule": "Provider uncertainty must block execution. No automatic retries after uncertain result.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "affectedModules": ["canary-executor.js", "justcall-integration.js"],
+      "testRequirements": ["Provider unavailable blocks", "Uncertain result never retries"]
+    },
+    "RETRY_POLICY": {
+      "category": "RETRY_POLICY",
+      "rule": "No automatic retries after an uncertain provider result.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "affectedModules": ["canary-executor.js"],
+      "testRequirements": ["Uncertain result never retries", "Failed send stops sequence"]
+    },
+    "GHL_WRITES": {
+      "category": "GHL_WRITES",
+      "rule": "No automatic GHL note, task, field, workflow, or contact write during the initial SMS canary.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "affectedModules": ["canary-executor.js", "ghl-integration.js"],
+      "testRequirements": ["No GHL writes during canary", "No notes created", "No tasks created", "No contact writes"]
+    },
+    "STAGE_MOVEMENT": {
+      "category": "STAGE_MOVEMENT",
+      "rule": "No automatic GHL stage movement during the initial SMS canary.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "affectedModules": ["canary-executor.js", "atlas-ghl-telegram-live-guards.js"],
+      "testRequirements": ["No stage movements during canary"]
+    },
+    "PROJECT_ISOLATION": {
+      "category": "PROJECT_ISOLATION",
+      "rule": "Divinity CRM is a separate project and must never influence this Pipeline.",
+      "enforcementLevel": "HARD_REQUIRED",
+      "overrideStatus": "NO_OVERRIDE",
+      "authority": "OWNER_POLICY",
+      "affectedModules": ["All Pipeline modules"],
+      "testRequirements": ["Divinity CRM excluded from Pipeline context"]
+    }
+  },
+  "templateRegistry": {
+    "COURSE_CANONICAL_INT": {
+      "templateId": "COURSE_CANONICAL_INT",
+      "authority": "KAYLA_CANONICAL_OPERATING_SYSTEM",
+      "channel": "SMS",
+      "exactWording": "[Name], are you still accepting offers for [address]? My name is [your name], I'm looking to purchase this as a rental for my portfolio.",
+      "variables": ["[Name]", "[address]", "[your name]"],
+      "provenance": "AIREI_MASTER_PLAYBOOK.md line 35; AIREI_SCRIPTS_REFERENCE.md line 10; kayla-course-spec.js SHORTCUT_BODIES.INT",
+      "approvalState": "COURSE_CANONICAL",
+      "effectiveScope": "AUDIT_AND_COMPARISON_ONLY"
+    },
+    "OWNER_APPROVED_PIPELINE_INT": {
+      "templateId": "OWNER_APPROVED_PIPELINE_INT",
+      "authority": "OWNER_POLICY",
+      "channel": "SMS",
+      "exactWording": "Happy [day], [Name]! Are you still accepting offers for [address]? My name is [your name], I'm looking to purchase this as a rental for my portfolio.",
+      "variables": ["[day]", "[Name]", "[address]", "[your name]"],
+      "provenance": "OWNER_POLICY — explicitly approved project variant derived from the owner's operating preference. Combines the 'Happy [day]' greeting from the SELLER_INITIAL call script (AIREI_MASTER_PLAYBOOK.md line 157) with the INT shortcut body. It is not Kayla's original SMS wording.",
+      "approvalState": "OWNER_APPROVED",
+      "effectiveScope": "PRODUCTION"
+    }
+  }
+}

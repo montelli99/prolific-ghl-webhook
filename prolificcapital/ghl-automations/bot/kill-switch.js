@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const KILL_SWITCH_PATH = path.resolve(__dirname, '..', 'data', 'telegram-outreach-dry-run', 'kill-switch.json');
-const KILL_STATES = Object.freeze(['PAUSED', 'DRY_RUN_ONLY', 'CANARY_ALLOWED', 'MANUAL_LIVE_ALLOWED']);
+const KILL_STATES = Object.freeze(['PAUSED', 'DRY_RUN_ONLY', 'CANARY_ALLOWED']);
 
 function readKillSwitch() {
   try {
@@ -34,11 +34,11 @@ function writeKillSwitch(state, extra = {}) {
 }
 
 function canSend(state) {
-  return state === 'CANARY_ALLOWED' || state === 'MANUAL_LIVE_ALLOWED';
+  return state === 'CANARY_ALLOWED';
 }
 
 function canSimulate(state) {
-  return state === 'DRY_RUN_ONLY' || state === 'CANARY_ALLOWED' || state === 'MANUAL_LIVE_ALLOWED';
+  return state === 'DRY_RUN_ONLY' || state === 'CANARY_ALLOWED';
 }
 
 function isPaused(state) {
@@ -53,9 +53,7 @@ function transitionAllowed(from, to, userId, adminIds, ownerId) {
   if (to === 'PAUSED') return true;
   if (from === 'PAUSED' && to === 'DRY_RUN_ONLY') return true;
   if (from === 'DRY_RUN_ONLY' && to === 'CANARY_ALLOWED') return true;
-  if (from === 'CANARY_ALLOWED' && to === 'MANUAL_LIVE_ALLOWED') return true;
   if (from === 'CANARY_ALLOWED' && to === 'PAUSED') return true;
-  if (from === 'MANUAL_LIVE_ALLOWED' && to === 'PAUSED') return true;
   return false;
 }
 

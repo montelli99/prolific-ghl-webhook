@@ -9,7 +9,7 @@ const { createTemplateRegistry, getTemplate, renderTemplate } = require('./kayla
 
 const SESSION_STATES = Object.freeze(['DRAFT', 'PLANNED', 'PREVIEWED', 'PARTIALLY_SELECTED', 'APPROVED_DRY_RUN', 'SIMULATED_EXECUTING', 'SIMULATED_COMPLETE', 'CANCELED', 'EXPIRED', 'BLOCKED']);
 const MODES = Object.freeze(['INITIAL_CONTACT', 'CALL_DUE', 'TEXT_DUE', 'FOLLOW_UP', 'OFFER_FEEDBACK', 'NEGOTIATION_ACTION', 'CONTRACT_ACTION']);
-const KILL_SWITCH_STATES = Object.freeze(['PAUSED', 'DRY_RUN_ONLY', 'LIVE_ALLOWED']);
+const KILL_SWITCH_STATES = Object.freeze(['PAUSED', 'DRY_RUN_ONLY', 'CANARY_ALLOWED']);
 const LIVE_SENDS = 0;
 const PRODUCTION_WRITES = 0;
 const STAGE_MOVEMENTS = 0;
@@ -64,7 +64,7 @@ function assertPermission(userId, requiredRole, env = process.env) {
 function getKillSwitch(options = {}) {
   const file = paths(options).killSwitch;
   const state = readJson(file, null);
-  if (state && KILL_SWITCH_STATES.includes(state.state) && state.state !== 'LIVE_ALLOWED') return state;
+  if (state && KILL_SWITCH_STATES.includes(state.state)) return state;
   const initial = { state: 'DRY_RUN_ONLY', updatedAt: nowIso(), liveSends: LIVE_SENDS, productionWrites: PRODUCTION_WRITES, stageMovements: STAGE_MOVEMENTS, workflowModifications: WORKFLOW_MODIFICATIONS };
   writeJson(file, initial);
   return initial;
@@ -72,8 +72,7 @@ function getKillSwitch(options = {}) {
 
 function setKillSwitch(state, ctx = {}, options = {}) {
   assertPermission(ctx.telegramUserId, 'ADMIN', ctx.env || process.env);
-  if (state === 'LIVE_ALLOWED') throw new Error('LIVE_ALLOWED_UNAVAILABLE_IN_DRY_RUN_BUILD');
-  if (!['PAUSED', 'DRY_RUN_ONLY'].includes(state)) throw new Error('INVALID_KILL_SWITCH_STATE');
+  if (!['PAUSED', 'DRY_RUN_ONLY', 'CANARY_ALLOWED'].includes(state)) throw new Error('INVALID_KILL_SWITCH_STATE');
   const next = { state, updatedAt: nowIso(), updatedBy: maskContact(ctx.telegramUserId), liveSends: LIVE_SENDS, productionWrites: PRODUCTION_WRITES, stageMovements: STAGE_MOVEMENTS, workflowModifications: WORKFLOW_MODIFICATIONS };
   writeJson(paths(options).killSwitch, next);
   appendJournal({ type: 'KILL_SWITCH_CHANGED', state, by: maskContact(ctx.telegramUserId) }, options);
