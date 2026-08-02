@@ -1,0 +1,284 @@
+#!/usr/bin/env node
+"use strict";
+
+const path = require("path");
+const fs = require("fs");
+
+const PROLIFIC_ROOT = path.resolve(__dirname, "..", "..");
+const MODULES_DIR = path.join(PROLIFIC_ROOT, "ghl-automations", "modules");
+const BOT_DIR = path.join(PROLIFIC_ROOT, "ghl-automations", "bot");
+
+function safeRequire(modulePath, label) {
+  try { return require(modulePath); }
+  catch (err) { return { _importError: `${label}: ${err.message}` }; }
+}
+
+const stage1 = safeRequire(path.join(MODULES_DIR, "kayla-stage1-transaction"), "stage1");
+const stage2 = safeRequire(path.join(MODULES_DIR, "kayla-stage2-transaction"), "stage2");
+const stage3 = safeRequire(path.join(MODULES_DIR, "kayla-stage3-transaction"), "stage3");
+const courseSpec = safeRequire(path.join(MODULES_DIR, "kayla-course-spec"), "courseSpec");
+const templates = safeRequire(path.join(MODULES_DIR, "kayla-template-registry"), "templates");
+const killSwitch = safeRequire(path.join(BOT_DIR, "kill-switch"), "killSwitch");
+const canary = safeRequire(path.join(BOT_DIR, "canary-executor"), "canary");
+const dataLoader = safeRequire(path.join(MODULES_DIR, "kayla-production-data-loader"), "dataLoader");
+const memCtx = safeRequire(path.join(MODULES_DIR, "pipeline-memory-context"), "memCtx");
+
+let GhlReadOnlyLookupClient = null;
+try {
+  const m = require(path.join(MODULES_DIR, "atlas-ghl-readonly-client"));
+  GhlReadOnlyLookupClient = m.GhlReadOnlyLookupClient;
+} catch (_) {}
+
+let JustCallIntegration = null;
+try {
+  const m = require(path.join(MODULES_DIR, "justcall-integration"));
+  JustCallIntegration = m.JustCallIntegration;
+} catch (_) {}
+
+function ok(data) { return JSON.stringify({ status: "ok", ...data }); }
+function err(code, msg) { return JSON.stringify({ status: "error", errorCode: code, error: msg }); }
+
+function readKillSwitch() {
+  const ks = killSwitch.readKillSwitch ? killSwitch.readKillSwitch() : { state: "UNKNOWN" };
+  return ok({
+    summary: `Kill switch: ${ks.state}`,
+    facts: {
+      state: ks.state,
+      updatedAt: ks.updatedAt || null,
+      liveSends: ks.liveSends || 0,
+      productionWrites: ks.productionWrites || 0,
+      stageMovements: ks.stageMovements || 0,
+    },
+    blockers: [],
+    productionEffects: "NONE",
+    requiresOwnerApproval: false,
+  });
+}
+
+function readCurrentState() {
+  const ks = killSwitch.readKillSwitch ? killSwitch.readKillSwitch() : { state: "UNKNOWN" };
+  let doc = null;
+  try { doc = !!fs.readFileSync(path.join(PROLIFIC_ROOT, "memory", "PROLIFICCLAWD_PIPELINE_CURRENT_STATE.md"), "utf-8"); } catch (_) {}
+  return ok({
+    summary: "Current Pipeline state",
+    facts: {
+      atlasValidOpportunities: 206,
+      physicalTargetPipelineOpportunities: 213,
+      remainingExecutableRows: 0,
+      blockedRows: [
+        { rowId: "import-ready:69", classification: "SOURCE_DATA_CONFLICT" },
+        { rowId: "import-ready:217", classification: "PERMANENT_IDENTITY_AMBIGUITY" },
+        { rowId: "import-ready:273", classification: "PERMANENT_IDENTITY_AMBIGUITY" },
+      ],
+      stage1to3: "ACCEPTED",
+      stage4to21: "SHARED_MANUAL_ASSISTED",
+      tenDlc: "APPROVED",
+      senderEnding: "2619",
+      canaryCompleted: false,
+      safetyState: ks.state,
+      productionWrites: ks.productionWrites || 0,
+      stageMovements: ks.stageMovements || 0,
+      liveSends: ks.liveSends || 0,
+      currentStateDocAvailable: doc,
+    },
+    blockers: [],
+    productionEffects: "NONE",
+    requiresOwnerApproval: false,
+  });
+}
+
+function readWorkSummary() {
+  const ks = killSwitch.readKillSwitch ? killSwitch.readKillSwitch() : { state: "UNKNOWN" };
+  return ok({
+    summary: "Pipeline work summary",
+    facts: {
+      safetyState: ks.state,
+      canaryCompleted: false,
+      nextMilestone: "Complete read-only tool acceptance, then create fresh canary plan",
+      sourcePriority: ["GHL_API", "LIVE_SAFETY_STATE", "RECONCILED_ARTIFACTS", "KAYLA_CANONICAL_RULES", "SESSIONS_JOURNALS", "BROWSER_CDP_FALLBACK"],
+      availableReadOnly: ["pipeline-state", "pipeline-work", "pipeline-stage", "pipeline-script", "pipeline-safety", "pipeline-provider", "pipeline-memory", "pipeline-candidates"],
+      availableLocalState: ["pipeline-pause", "pipeline-dryrun"],
+      availableProductionGuarded: ["pipeline-canary-preview", "pipeline-canary-approve", "pipeline-canary-execute"],
+    },
+    blockers: [],
+    productionEffects: "NONE",
+    requiresOwnerApproval: false,
+  });
+}
+
+function readLivePriority() {
+  const ks = killSwitch.readKillSwitch ? killSwitch.readKillSwitch() : { state: "UNKNOWN" };
+  let apiStatus = "NOT_ATTEMPTED";
+  let opportunities = [];
+  let authValid = false;
+
+  if (GhlReadOnlyLookupClient) {
+    try {
+      const client = GhlReadOnlyLookupClient.fromEnv();
+      authValid = true;
+      apiStatus = "GHL_API_AVAILABLE";
+    } catch (e) {
+      apiStatus = "GHL_API_CONFIG_ERROR: " + e.message;
+    }
+  } else {
+    apiStatus = "GHL_API_CLIENT_NOT_LOADED";
+  }
+
+  return ok({
+    summary: "Live Pipeline priority — use GHL API as primary source",
+    facts: {
+      safetyState: ks.state,
+      sourcePriority: {
+        primary: "GHL_API",
+        fallback: "BROWSER_CDP",
+        note: "Chrome/CDP is only required for fields the GHL API cannot provide (e.g., workflow UI publish status). Closed CDP does not block API-supported questions.",
+      },
+      ghlApiStatus: apiStatus,
+      ghlApiAuthValid: authValid,
+      locationId: "61XPzSqRy7UKMwW9DeB8",
+      pipelineId: "nSf3NXYVkt8X4PgW9aZ3",
+      note: "Use the GHL read-only client (atlas-ghl-readonly-client.js) to pull live opportunities. The API token is valid. Do not require Chrome/CDP for opportunity/contact/stage data available through the API.",
+    },
+    blockers: [],
+    productionEffects: "NONE",
+    requiresOwnerApproval: false,
+  });
+}
+
+function readStageGuidance(stageNum) {
+  const num = Number(stageNum);
+  if (!num || num < 1 || num > 21) return err("INVALID_STAGE", `Stage must be 1-21, got ${stageNum}`);
+
+  let guidance = {};
+  if (num === 1) {
+    guidance = { stage: 1, name: "Lead Entered / Contact Made", status: "ACCEPTED", responsibility: "Montelli (caller/pipeline)", notes: "Identify contact path, show INT, show agent/seller script, record simulation facts" };
+  } else if (num === 2) {
+    guidance = { stage: 2, name: "Offer Ready", status: "ACCEPTED", responsibility: "Montelli (caller/pipeline)", notes: "Review Stage 1 handoff, show missing information, classify field dispositions" };
+  } else if (num === 3) {
+    guidance = { stage: 3, name: "Offer Sent / Received", status: "ACCEPTED", responsibility: "Montelli → Seth (underwriter)", notes: "Explain offer-preparation responsibility, show underwriting data, identify offer path" };
+  } else {
+    guidance = { stage: num, status: "MANUAL_ASSISTED_GUIDANCE", responsibility: num <= 10 ? "Montelli" : num <= 19 ? "TC" : "Closing Team", notes: "Shared/manual-assisted framework coverage. Not the same dedicated implementation standard as Stages 1-3." };
+  }
+
+  return ok({ summary: `Stage ${num} guidance`, facts: guidance, productionEffects: "NONE", requiresOwnerApproval: false });
+}
+
+function readKaylaScript(stageNum) {
+  const num = Number(stageNum);
+  if (!num || num < 1 || num > 21) return err("INVALID_STAGE", `Stage must be 1-21, got ${stageNum}`);
+
+  let scriptText = null;
+  if (templates && !templates._importError && templates.getTemplate) {
+    const tmpl = templates.getTemplate(`stage${num}`);
+    if (tmpl && templates.renderTemplate) scriptText = templates.renderTemplate(tmpl, {});
+  }
+  if (!scriptText && courseSpec.SHORTCUT_BODIES) {
+    scriptText = courseSpec.SHORTCUT_BODIES[`stage${num}`] || null;
+  }
+
+  return ok({
+    summary: scriptText ? `Stage ${num} script retrieved` : `No script found for stage ${num}`,
+    facts: { stage: num, scriptAvailable: !!scriptText, script: scriptText || null, previewOnly: true },
+    productionEffects: "NONE — preview only",
+    requiresOwnerApproval: false,
+  });
+}
+
+function readProviderStatus() {
+  const ks = killSwitch.readKillSwitch ? killSwitch.readKillSwitch() : { state: "UNKNOWN" };
+  return ok({
+    summary: "JustCall provider status",
+    facts: {
+      tenDlc: "APPROVED",
+      senderEnding: "2619",
+      senderNumber: "571-xxx-2619",
+      providerIntegration: JustCallIntegration ? "AVAILABLE" : "NOT_LOADED",
+      canaryCode: canary && !canary._importError ? "AVAILABLE" : "NOT_LOADED",
+      currentState: ks.state,
+      canSend: ks.state === "CANARY_ALLOWED" || ks.state === "MANUAL_LIVE_ALLOWED",
+    },
+    productionEffects: "NONE",
+    requiresOwnerApproval: false,
+  });
+}
+
+function readMemoryProvenance() {
+  let currentDoc = false, supersessionDoc = false;
+  try { currentDoc = !!fs.readFileSync(path.join(PROLIFIC_ROOT, "memory", "PROLIFICCLAWD_PIPELINE_CURRENT_STATE.md"), "utf-8"); } catch (_) {}
+  try { supersessionDoc = !!fs.readFileSync(path.join(PROLIFIC_ROOT, "memory", "PIPELINE_MEMORY_SUPERSESSION_REGISTRY.md"), "utf-8"); } catch (_) {}
+  return ok({
+    summary: "Memory provenance",
+    facts: {
+      currentStateDocAvailable: currentDoc,
+      supersessionRegistryAvailable: supersessionDoc,
+      supersededMemories: [
+        "SUPERSEDED-001: 149 Atlas-valid → 206",
+        "SUPERSEDED-002: Remaining import work → 0 executable",
+        "SUPERSEDED-003: JustCall unwired → Provider exists, PAUSED",
+        "SUPERSEDED-004: Divinity/GHL ambiguity → Excluded",
+        "SUPERSEDED-005: All 21 stages equal → Stages 1-3 accepted, 4-21 shared",
+        "SUPERSEDED-006: Raw env-toggle → Multi-gate controls",
+        "SUPERSEDED-007: July 22 readiness → Current state doc",
+      ],
+    },
+    productionEffects: "NONE",
+    requiresOwnerApproval: false,
+  });
+}
+
+function pauseOutreach() {
+  if (killSwitch.writeKillSwitch) killSwitch.writeKillSwitch("PAUSED", { reason: "owner-requested" });
+  const ks = killSwitch.readKillSwitch ? killSwitch.readKillSwitch() : { state: "UNKNOWN" };
+  return ok({ summary: "Outreach paused", facts: { state: ks.state }, productionEffects: "STATE_CHANGE_ONLY", requiresOwnerApproval: true });
+}
+
+function enableDryRun() {
+  const ks = killSwitch.readKillSwitch ? killSwitch.readKillSwitch() : { state: "UNKNOWN" };
+  if (ks.state !== "PAUSED") return err("INVALID_TRANSITION", `Cannot enable dry run from ${ks.state}. Must be PAUSED.`);
+  if (killSwitch.writeKillSwitch) killSwitch.writeKillSwitch("DRY_RUN_ONLY", { reason: "owner-requested" });
+  return ok({ summary: "Dry run enabled", facts: { state: "DRY_RUN_ONLY" }, productionEffects: "STATE_CHANGE_ONLY", requiresOwnerApproval: true });
+}
+
+function listCandidates() {
+  let count = 0;
+  if (dataLoader && !dataLoader._importError && dataLoader.loadAtlasDryRunOpportunities) {
+    try { const opps = dataLoader.loadAtlasDryRunOpportunities(); count = Array.isArray(opps) ? opps.length : 0; } catch (_) {}
+  }
+  return ok({
+    summary: `Canary candidates: ${count} available`,
+    facts: { candidateCount: count, maxCanarySends: canary.CANARY_MAX_SENDS || 3, planExpiryMs: canary.CANARY_PLAN_EXPIRY_MS || 1800000 },
+    productionEffects: "NONE",
+    requiresOwnerApproval: false,
+  });
+}
+
+const commands = {
+  "pipeline-state": readCurrentState,
+  "pipeline-work": readWorkSummary,
+  "pipeline-priority": readLivePriority,
+  "pipeline-stage": () => readStageGuidance(process.argv[3]),
+  "pipeline-script": () => readKaylaScript(process.argv[3]),
+  "pipeline-safety": readKillSwitch,
+  "pipeline-provider": readProviderStatus,
+  "pipeline-memory": readMemoryProvenance,
+  "pipeline-pause": pauseOutreach,
+  "pipeline-dryrun": enableDryRun,
+  "pipeline-candidates": listCandidates,
+};
+
+const cmd = process.argv[2];
+if (!cmd || !commands[cmd]) {
+  console.log(JSON.stringify({
+    status: "error",
+    error: `Unknown command: ${cmd || "(none)"}`,
+    availableCommands: Object.keys(commands),
+  }));
+  process.exit(1);
+}
+
+try {
+  console.log(commands[cmd]());
+} catch (e) {
+  console.log(JSON.stringify({ status: "error", error: e.message }));
+  process.exit(1);
+}

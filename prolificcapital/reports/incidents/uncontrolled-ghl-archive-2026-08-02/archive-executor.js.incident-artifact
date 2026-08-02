@@ -1,0 +1,288 @@
+"use strict";
+
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+
+const ROOT = path.resolve(__dirname, "..", "..");
+const SECRETS_PATH = path.join(ROOT, "secrets", ".env");
+const DATA_DIR = path.join(ROOT, "ghl-automations", "data", "runtime", "archive");
+const JOURNAL_PATH = path.join(DATA_DIR, "archive-journal.jsonl");
+
+const LOCATION_ID = "61XPzSqRy7UKMwW9DeB8";
+let PIPELINE_ID = "nSf3NXYVkt8X4PgW9aZ3";
+const GHL_BASE = "https://services.leadconnectorhq.com";
+
+const MANIFEST_IDS = [
+  "DnrmcPqxpxeJNwPE2NNc",
+  "ZHy1Qb0E0QopO0CYjbSm",
+  "HTQjWRoMarAye3GBPCQh",
+  "U3WVG53dtszGHMU8E54a",
+  "uDUfpVFUpZiFs4MmOX55",
+  "X8JdlmCz8KDrJwZTWzfX",
+  "292Uk9yASN9CUIfDn1Wx",
+];
+
+function loadToken() {
+  if (!fs.existsSync(SECRETS_PATH)) throw new Error("SECRETS_NOT_FOUND");
+  const content = fs.readFileSync(SECRETS_PATH, "utf8");
+  for (const line of content.split(/\r?\n/)) {
+    const m = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+    if (m) process.env[m[1]] = m[2];
+  }
+  const token = process.env.GHL_API_TOKEN || process.env.GHL_TOKEN;
+  if (!token) throw new Error("GHL_TOKEN_NOT_FOUND");
+  if (process.env.GHL_PIPELINE_ID) PIPELINE_ID = process.env.GHL_PIPELINE_ID;
+  return token;
+}
+
+function sha256(data) {
+  return crypto.createHash("sha256").update(data, "utf8").digest("hex");
+}
+
+function journal(entry) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.appendFileSync(JOURNAL_PATH, JSON.stringify({ ...entry, timestamp: new Date().toISOString() }) + "\n");
+}
+
+async function ghlGet(token, path) {
+  const https = require("https");
+  return new Promise((resolve, reject) => {
+    const url = new URL(path, GHL_BASE);
+    const opts = {
+      hostname: url.hostname,
+      path: url.pathname + url.search,
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Version: "2023-02-21" },
+    };
+    const req = https.request(opts, (res) => {
+      let data = "";
+      res.on("data", (c) => (data += c));
+      res.on("end", () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        catch { resolve({ status: res.statusCode, body: data }); }
+      });
+    });
+    req.on("error", reject);
+    req.setTimeout(15000, () => { req.destroy(); reject(new Error("TIMEOUT")); });
+    req.end();
+  });
+}
+
+async function ghlPut(token, path, body) {
+  const https = require("https");
+  return new Promise((resolve, reject) => {
+    const url = new URL(path, GHL_BASE);
+    const payload = JSON.stringify(body);
+    const opts = {
+      hostname: url.hostname,
+      path: url.pathname + url.search,
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Version: "2023-02-21", "Content-Length": Buffer.byteLength(payload) },
+    };
+    const req = https.request(opts, (res) => {
+      let data = "";
+      res.on("data", (c) => (data += c));
+      res.on("end", () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        catch { resolve({ status: res.statusCode, body: data }); }
+      });
+    });
+    req.on("error", reject);
+    req.setTimeout(15000, () => { req.destroy(); reject(new Error("TIMEOUT")); });
+    req.write(payload);
+    req.end();
+  });
+}
+
+async function archiveOpportunity(token, id) {
+  return ghlPut(token, `/opportunities/${id}?location_id=${encodeURIComponent(LOCATION_ID)}`, { status: "lost" });
+}
+
+async function readOpportunity(token, id) {
+  return ghlGet(token, `/opportunities/${id}?location_id=${encodeURIComponent(LOCATION_ID)}`);
+}
+
+async function archiveOpportunity(token, id) {
+  return ghlPut(token, `/opportunities/${id}?location_id=${encodeURIComponent(LOCATION_ID)}`, { status: "lost" });
+}
+
+function createManifest(records) {
+  const items = records.map((r) => ({
+    opportunityId: r.id,
+    name: r.name,
+    currentStatus: r.status,
+    currentStageId: r.pipelineStageId,
+    contactId: r.contactId,
+    classification: r.class,
+    targetStatus: "lost",
+    operation: "SET_STATUS_LOST",
+  }));
+
+  const manifest = {
+    manifestId: `archive-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`,
+    createdAt: new Date().toISOString(),
+    locationId: LOCATION_ID,
+    pipelineId: PIPELINE_ID,
+    itemCount: items.length,
+    items,
+  };
+
+  manifest.canonicalHash = sha256(JSON.stringify(items));
+  return manifest;
+}
+
+async function preflight(token) {
+  console.log("=== PREFLIGHT ===");
+  const results = [];
+  let allPresent = true;
+
+  for (const id of MANIFEST_IDS) {
+    const res = await readOpportunity(token, id);
+    if (res.status !== 200) {
+      console.log(`  ${id}: NOT FOUND (${res.status})`);
+      allPresent = false;
+      results.push({ id, present: false, status: res.status });
+      continue;
+    }
+    const opp = res.body.opportunity || res.body;
+    const isProduction = opp.customFields && opp.customFields.some((f) => f.id === "i6woEmjcZmzVx0tM6mRj" && f.value);
+    console.log(`  ${id}: present, status=${opp.status}, stage=${opp.pipelineStageId}, production=${isProduction}`);
+    results.push({
+      id,
+      present: true,
+      status: opp.status,
+      pipelineStageId: opp.pipelineStageId,
+      name: opp.name,
+      contactId: opp.contactId,
+      isProduction,
+      alreadyLost: opp.status === "lost",
+    });
+  }
+
+  const manifest = createManifest(results.filter((r) => r.present));
+  const summary = {
+    allPresent,
+    totalPresent: results.filter((r) => r.present).length,
+    alreadyLost: results.filter((r) => r.alreadyLost).length,
+    needsArchive: results.filter((r) => r.present && !r.alreadyLost).length,
+    productionRecords: results.filter((r) => r.isProduction).length,
+    manifest,
+  };
+
+  console.log(JSON.stringify(summary, null, 2));
+  return { results, manifest, summary };
+}
+
+async function execute(token, preflightResults) {
+  console.log("\n=== EXECUTE ===");
+  const toArchive = preflightResults.filter((r) => r.present && !r.alreadyLost && !r.isProduction);
+  const results = [];
+
+  for (const record of toArchive) {
+    console.log(`\nArchiving ${record.id}...`);
+
+    const reRead = await readOpportunity(token, record.id);
+    if (reRead.status !== 200) {
+      console.log(`  RE-READ FAILED: ${reRead.status}`);
+      journal({ action: "ARCHIVE_FAILED", id: record.id, reason: "RE_READ_FAILED", status: reRead.status });
+      results.push({ id: record.id, success: false, reason: "RE_READ_FAILED" });
+      break;
+    }
+
+    const opp = reRead.body.opportunity || reRead.body;
+    if (opp.status === "lost") {
+      console.log(`  Already lost, skipping`);
+      results.push({ id: record.id, success: true, reason: "ALREADY_LOST" });
+      continue;
+    }
+
+    journal({ action: "PRE_WRITE", id: record.id, name: opp.name, currentStatus: opp.status });
+
+    const patchRes = await archiveOpportunity(token, record.id);
+    if (patchRes.status !== 200) {
+      console.log(`  PATCH FAILED: ${patchRes.status} ${JSON.stringify(patchRes.body)}`);
+      journal({ action: "ARCHIVE_FAILED", id: record.id, reason: "PATCH_FAILED", status: patchRes.status, body: patchRes.body });
+      results.push({ id: record.id, success: false, reason: "PATCH_FAILED", status: patchRes.status });
+      break;
+    }
+
+    const verify = await readOpportunity(token, record.id);
+    const verified = verify.body.opportunity || verify.body;
+    const isLost = verified.status === "lost";
+
+    journal({ action: "POST_WRITE", id: record.id, verifiedStatus: verified.status, isLost });
+
+    if (isLost) {
+      console.log(`  ARCHIVED: status=${verified.status}`);
+      results.push({ id: record.id, success: true, newStatus: verified.status });
+    } else {
+      console.log(`  VERIFY FAILED: expected lost, got ${verified.status}`);
+      journal({ action: "ARCHIVE_FAILED", id: record.id, reason: "VERIFY_FAILED", expectedStatus: "lost", actualStatus: verified.status });
+      results.push({ id: record.id, success: false, reason: "VERIFY_FAILED", actualStatus: verified.status });
+      break;
+    }
+  }
+
+  return results;
+}
+
+async function main() {
+  const mode = process.argv[2] || "preflight";
+  const token = loadToken();
+  console.log(`Mode: ${mode}`);
+  console.log(`Location: ${LOCATION_ID}`);
+  console.log(`Pipeline: ${PIPELINE_ID}`);
+  console.log(`Target IDs: ${MANIFEST_IDS.length}`);
+
+  if (mode === "preflight") {
+    const { results, manifest, summary } = await preflight(token);
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(path.join(DATA_DIR, "archive-manifest.json"), JSON.stringify(manifest, null, 2));
+    fs.writeFileSync(path.join(DATA_DIR, "archive-preflight.json"), JSON.stringify({ results, summary }, null, 2));
+    console.log("\nManifest saved to:", path.join(DATA_DIR, "archive-manifest.json"));
+    console.log("Preflight saved to:", path.join(DATA_DIR, "archive-preflight.json"));
+
+    if (!summary.allPresent) {
+      console.log("\nPREFLIGHT FAILED: Not all records present");
+      process.exit(1);
+    }
+    if (summary.productionRecords > 0) {
+      console.log("\nPREFLIGHT FAILED: Production records in manifest");
+      process.exit(1);
+    }
+    console.log("\nPREFLIGHT PASSED: Ready to execute with --execute");
+    process.exit(0);
+  }
+
+  if (mode === "--execute") {
+    const preflightPath = path.join(DATA_DIR, "archive-preflight.json");
+    if (!fs.existsSync(preflightPath)) {
+      console.log("Run preflight first");
+      process.exit(1);
+    }
+    const pf = JSON.parse(fs.readFileSync(preflightPath, "utf8"));
+    const execResults = await execute(token, pf.results);
+
+    const summary = {
+      total: execResults.length,
+      succeeded: execResults.filter((r) => r.success).length,
+      failed: execResults.filter((r) => !r.success).length,
+      results: execResults,
+    };
+
+    fs.writeFileSync(path.join(DATA_DIR, "archive-results.json"), JSON.stringify(summary, null, 2));
+    console.log("\n=== RESULTS ===");
+    console.log(JSON.stringify(summary, null, 2));
+
+    if (summary.failed > 0) process.exit(1);
+    process.exit(0);
+  }
+
+  console.log("Usage: node archive-executor.js [preflight|--execute]");
+}
+
+main().catch((e) => {
+  console.error("FATAL:", e.message);
+  process.exit(1);
+});

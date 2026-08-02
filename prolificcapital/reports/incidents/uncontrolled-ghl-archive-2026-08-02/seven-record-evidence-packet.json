@@ -1,0 +1,149 @@
+[
+  {
+    "opportunityId": "DnrmcPqxpxeJNwPE2NNc",
+    "name": "Montelli Workflow E2E Test - DO NOT CONTACT",
+    "stage": "Lead Entered",
+    "status": "lost",
+    "createdAt": "2026-07-27T08:35:58.504Z",
+    "updatedAt": "2026-08-02T14:30:31.440Z",
+    "lastStatusChangeAt": "2026-08-02T14:30:31.440Z",
+    "lastStageChangeAt": "2026-07-27T21:49:49.312Z",
+    "contactId": "EYWAJIkx4YKQsEWEuTon",
+    "classification": "LEGACY_TEST",
+    "confidence": "HIGH",
+    "reasonCodes": [
+      "OPPORTUNITY_NAME_TEST_MARKER"
+    ],
+    "evidence": [
+      "opportunity name contains test marker: \"Montelli Workflow E2E Test - DO NOT CONTACT\""
+    ],
+    "atlasValid": false,
+    "recommendedDisposition": "ARCHIVE_RECOMMENDED"
+  },
+  {
+    "opportunityId": "ZHy1Qb0E0QopO0CYjbSm",
+    "name": "Webhook Smoke 1780932634783",
+    "stage": "Lead Entered",
+    "status": "lost",
+    "createdAt": "2026-06-08T15:30:35.603Z",
+    "updatedAt": "2026-08-02T14:30:32.163Z",
+    "lastStatusChangeAt": "2026-08-02T14:30:32.163Z",
+    "lastStageChangeAt": "2026-06-08T15:30:35.603Z",
+    "contactId": "CHp28PJ84nfOaNyV2VsP",
+    "classification": "LEGACY_TEST",
+    "confidence": "HIGH",
+    "reasonCodes": [
+      "OPPORTUNITY_NAME_TEST_MARKER"
+    ],
+    "evidence": [
+      "opportunity name contains test marker: \"Webhook Smoke 1780932634783\""
+    ],
+    "atlasValid": false,
+    "recommendedDisposition": "ARCHIVE_RECOMMENDED"
+  },
+  {
+    "opportunityId": "HTQjWRoMarAye3GBPCQh",
+    "name": "11411 Huggins St, Leesburg FL 34788",
+    "stage": "Offer Ready",
+    "status": "lost",
+    "createdAt": "2026-06-07T22:54:47.414Z",
+    "updatedAt": "2026-08-02T14:30:32.945Z",
+    "lastStatusChangeAt": "2026-08-02T14:30:32.945Z",
+    "lastStageChangeAt": "2026-07-27T12:07:29.664Z",
+    "contactId": "805pBErvQqGYfN6GSQso",
+    "classification": "LIVE_WALK",
+    "confidence": "HIGH",
+    "reasonCodes": [
+      "KNOWN_TEST_ADDRESS"
+    ],
+    "evidence": [
+      "address matches known live-walk/test address: 11411 Huggins St, Leesburg FL 34788"
+    ],
+    "atlasValid": false,
+    "recommendedDisposition": "ARCHIVE_RECOMMENDED"
+  },
+  {
+    "opportunityId": "U3WVG53dtszGHMU8E54a",
+    "name": "11411 Huggins St, Leesburg FL 34788",
+    "stage": "Offer Ready",
+    "status": "lost",
+    "createdAt": "2026-06-07T22:07:11.580Z",
+    "updatedAt": "2026-08-02T14:30:33.725Z",
+    "lastStatusChangeAt": "2026-08-02T14:30:33.725Z",
+    "lastStageChangeAt": "2026-06-07T22:07:13.943Z",
+    "contactId": "IEymRRFdP0ChLK55SaJD",
+    "classification": "LIVE_WALK",
+    "confidence": "HIGH",
+    "reasonCodes": [
+      "KNOWN_TEST_ADDRESS"
+    ],
+    "evidence": [
+      "address matches known live-walk/test address: 11411 Huggins St, Leesburg FL 34788"
+    ],
+    "atlasValid": false,
+    "recommendedDisposition": "ARCHIVE_RECOMMENDED"
+  },
+  {
+    "opportunityId": "uDUfpVFUpZiFs4MmOX55",
+    "name": "11411 Huggins St, Leesburg FL 34788",
+    "stage": "Lead Entered",
+    "status": "lost",
+    "createdAt": "2026-06-07T22:06:52.398Z",
+    "updatedAt": "2026-08-02T14:30:34.510Z",
+    "lastStatusChangeAt": "2026-08-02T14:30:34.510Z",
+    "lastStageChangeAt": "2026-06-07T22:06:52.398Z",
+    "contactId": "6EpU1liVidPGvVMn6q1o",
+    "classification": "LIVE_WALK",
+    "confidence": "HIGH",
+    "reasonCodes": [
+      "KNOWN_TEST_ADDRESS"
+    ],
+    "evidence": [
+      "address matches known live-walk/test address: 11411 Huggins St, Leesburg FL 34788"
+    ],
+    "atlasValid": false,
+    "recommendedDisposition": "ARCHIVE_RECOMMENDED"
+  },
+  {
+    "opportunityId": "X8JdlmCz8KDrJwZTWzfX",
+    "name": "Atlas Field Test 1780843380662",
+    "stage": "Lead Entered",
+    "status": "lost",
+    "createdAt": "2026-06-07T14:43:00.753Z",
+    "updatedAt": "2026-06-07T14:43:01.988Z",
+    "lastStatusChangeAt": "2026-06-07T14:43:01.988Z",
+    "lastStageChangeAt": "2026-06-07T14:43:00.753Z",
+    "contactId": "LeqT7ljIpgQgLqSJeuQY",
+    "classification": "LEGACY_TEST",
+    "confidence": "HIGH",
+    "reasonCodes": [
+      "OPPORTUNITY_NAME_TEST_MARKER"
+    ],
+    "evidence": [
+      "opportunity name contains test marker: \"Atlas Field Test 1780843380662\""
+    ],
+    "atlasValid": false,
+    "recommendedDisposition": "ARCHIVE_RECOMMENDED"
+  },
+  {
+    "opportunityId": "292Uk9yASN9CUIfDn1Wx",
+    "name": "Atlas Field Test 1780843355022",
+    "stage": "Lead Entered",
+    "status": "lost",
+    "createdAt": "2026-06-07T14:42:35.116Z",
+    "updatedAt": "2026-06-07T14:42:36.280Z",
+    "lastStatusChangeAt": "2026-06-07T14:42:36.280Z",
+    "lastStageChangeAt": "2026-06-07T14:42:35.116Z",
+    "contactId": "fteTARDGfD5oWhYupncc",
+    "classification": "LEGACY_TEST",
+    "confidence": "HIGH",
+    "reasonCodes": [
+      "OPPORTUNITY_NAME_TEST_MARKER"
+    ],
+    "evidence": [
+      "opportunity name contains test marker: \"Atlas Field Test 1780843355022\""
+    ],
+    "atlasValid": false,
+    "recommendedDisposition": "ARCHIVE_RECOMMENDED"
+  }
+]

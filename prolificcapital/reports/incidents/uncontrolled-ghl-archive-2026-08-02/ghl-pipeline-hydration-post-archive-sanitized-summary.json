@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-08-02T14:37:38.536Z",
+  "source": "GHL_AUTHORITATIVE_PIPELINE_HYDRATOR",
+  "profile": "INVENTORY",
+  "locationId": "61XPzSqRy7UKMwW9DeB8",
+  "pipelineId": "nSf3NXYVkt8X4PgW9aZ3",
+  "totalOpportunities": 213,
+  "activeOpportunities": 206,
+  "activeProduction": 206,
+  "activeNonProduction": 0,
+  "historicalLostTestArtifacts": 7,
+  "unknown": 0,
+  "byClassification": {
+    "PRODUCTION": 206,
+    "LEGACY_TEST": 4,
+    "LIVE_WALK": 3
+  },
+  "nonProductionOpportunityIds": [
+    "DnrmcPqxpxeJNwPE2NNc",
+    "ZHy1Qb0E0QopO0CYjbSm",
+    "HTQjWRoMarAye3GBPCQh",
+    "U3WVG53dtszGHMU8E54a",
+    "uDUfpVFUpZiFs4MmOX55",
+    "X8JdlmCz8KDrJwZTWzfX",
+    "292Uk9yASN9CUIfDn1Wx"
+  ],
+  "apiCalls": 401,
+  "elapsedMs": 17569,
+  "endpointCounts": {
+    "/opportunities/search": 3,
+    "/opportunities/{id}": 213,
+    "/contacts/{id}": 184
+  },
+  "sideEffects": {
+    "sends": 0,
+    "contactWrites": 0,
+    "stageMovements": 0,
+    "notesCreated": 0,
+    "tasksCreated": 0,
+    "tagsChanged": 0,
+    "workflowsModified": 0
+  }
+}

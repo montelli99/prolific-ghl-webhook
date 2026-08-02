@@ -209,19 +209,6 @@ class GhlAuthoritativeHydrator {
     return { available: false, status: 'READ_FAILED', error: res.body, statusCode: res.status };
   }
 
-  async getOpportunityNotes(id) {
-    const res = await this._retry(() => this._request(`/opportunities/${id}/notes`), `opportunity notes ${id}`);
-    if (res.status === 200) {
-      return { available: true, status: 'AVAILABLE', data: res.body.notes || [], responseKeys: Object.keys(res.body) };
-    }
-    if (res.status === 404) {
-      return { available: false, status: 'API_NOT_SUPPORTED', error: res.body, statusCode: res.status };
-    }
-    if (res.status === 401 || res.status === 403) {
-      return { available: false, status: 'AUTH_REQUIRED', error: res.body, statusCode: res.status };
-    }
-    return { available: false, status: 'READ_FAILED', error: res.body, statusCode: res.status };
-  }
 
   static unwrapContact(responseBody) {
     if (responseBody == null) return { contact: null, shape: 'NULL', unwrapped: false };
@@ -365,7 +352,6 @@ class GhlAuthoritativeHydrator {
           rawShapeVersion: contactUnwrap.shape,
           notes: profile !== 'INVENTORY' ? { status: (contactNotesById.get(contactId) || {}).status || 'UNAVAILABLE', count: ((contactNotesById.get(contactId) || {}).data || []).length } : { status: 'SKIPPED_BY_PROFILE', count: 0 }
         },
-        opportunityNotes: profile !== 'INVENTORY' ? { status: (oppNotesById.get(row.id) || {}).status || 'UNAVAILABLE', count: ((oppNotesById.get(row.id) || {}).data || []).length } : { status: 'SKIPPED_BY_PROFILE', count: 0 },
         atlas: {
           isAtlasValid: atlasValid,
           sourceRow: atlasFields.sourceRowId.value,
@@ -380,7 +366,7 @@ class GhlAuthoritativeHydrator {
           opportunityDirect: oppResult.status,
           contactDirect: contactResult.status,
           contactNotes: profile === 'INVENTORY' ? 'SKIPPED_BY_PROFILE' : ((contactNotesById.get(contactId) || {}).status || 'UNAVAILABLE'),
-          opportunityNotes: profile === 'INVENTORY' ? 'SKIPPED_BY_PROFILE' : ((oppNotesById.get(row.id) || {}).status || 'UNAVAILABLE'),
+          opportunityNotes: 'API_NOT_SUPPORTED',
           contactTasks: 'API_NOT_SUPPORTED',
           timeline: 'API_NOT_SUPPORTED',
           conversations: 'API_NOT_SUPPORTED'
@@ -395,7 +381,23 @@ class GhlAuthoritativeHydrator {
       total: records.length,
       byClassification: records.reduce((acc, r) => { acc[r.classification.recordClass] = (acc[r.classification.recordClass] || 0) + 1; return acc; }, {}),
       apiCalls: this.requestLog.length,
-      endpointCounts: this.requestLog.reduce((acc, r) => { acc[r.path.split('?')[0].replace(/\/{id}$/, '/{id}')] = (acc[r.path.split('?')[0].replace(/\/{id}$/, '/{id}')] || 0) + 1; return acc; }, {}),
+      endpointCounts: this.requestLog.reduce((acc, r) => {
+        const base = r.path.split('?')[0];
+        let normalized;
+        if (base === '/opportunities/search') {
+          normalized = '/opportunities/search';
+        } else if (base.endsWith('/notes') && base.includes('/contacts/')) {
+          normalized = '/contacts/{id}/notes';
+        } else if (base.includes('/opportunities/')) {
+          normalized = '/opportunities/{id}';
+        } else if (base.includes('/contacts/')) {
+          normalized = '/contacts/{id}';
+        } else {
+          normalized = base;
+        }
+        acc[normalized] = (acc[normalized] || 0) + 1;
+        return acc;
+      }, {}),
       elapsedMs: Date.now() - startTime,
       profile,
       timestamp: new Date().toISOString()
@@ -406,3 +408,6 @@ class GhlAuthoritativeHydrator {
 }
 
 module.exports = { GhlAuthoritativeHydrator, ATLAS_FIELD_IDS, STAGE_BY_ID };
+
+
+
