@@ -1,0 +1,3 @@
+# Runtime artifacts and local-only data
+ghl-automations/data/runtime/pipeline-hydration/*.json
+ghl-automations/data/runtime/pipeline-hydration/*.md
