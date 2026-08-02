@@ -307,13 +307,9 @@ class GhlAuthoritativeHydrator {
     const directContactById = new Map(directContactResults.map((r) => [r.id, r.result]));
 
     let contactNotesById = new Map();
-    let oppNotesById = new Map();
     if (profile === 'PRIORITIZATION' || profile === 'CANARY') {
       const contactNotesResults = await this._batches(contactIds, (id) => this.getContactNotes(id).then((r) => ({ id, result: r })));
       contactNotesById = new Map(contactNotesResults.map((r) => [r.id, r.result]));
-
-      const oppNotesResults = await this._batches(searchRows.map((r) => r.id), (id) => this.getOpportunityNotes(id).then((r) => ({ id, result: r })));
-      oppNotesById = new Map(oppNotesResults.map((r) => [r.id, r.result]));
     }
 
     const records = [];
