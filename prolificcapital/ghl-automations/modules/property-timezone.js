@@ -113,7 +113,18 @@ const FLORIDA_EASTERN_ZIP3 = new Set([
 
 function parseStateZip(record = {}) {
   const raw = record.raw || {};
-  const text = [record.propertyAddress, raw.address, raw.city, raw.state, raw.zip].filter(Boolean).join(' ');
+  const opp = record.opportunity || {};
+  const contact = record.contact || {};
+  const text = [
+    record.propertyAddress,
+    opp.name,
+    opp.address,
+    raw.address,
+    raw.city,
+    raw.state,
+    raw.zip,
+    contact.address,
+  ].filter(Boolean).join(' ');
   const state = String(raw.state || (text.match(/\b([A-Z]{2})\b\s*\d{5}(?:-\d{4})?\b/) || [])[1] || '').toUpperCase();
   const zip = String(raw.zip || (text.match(/\b(\d{5})(?:-\d{4})?\b/) || [])[1] || '');
   return { state, zip };

@@ -1,0 +1,29 @@
+{
+  "certificationType": "CANARY_PREVIEW_E2E",
+  "timestamp": "2026-08-02T18:18:44.299Z",
+  "planId": "plan_abcb5f94d4516112",
+  "planHash": "f7df6157128c91c8a45e36b05f5186a8c7fd4a502603246da90e1dc1405960d9",
+  "executable": false,
+  "productionEffects": {
+    "sends": 0,
+    "ghlWrites": 0,
+    "stageMovements": 0
+  },
+  "totalCandidates": 77,
+  "selectedCount": 0,
+  "blockedCount": 77,
+  "blockerDistribution": {
+    "DNC": 77,
+    "STOP_OPT_OUT": 77,
+    "WRONG_NUMBER": 77,
+    "PENDING_REPLY": 77,
+    "ACTIVE_HUMAN_WORK": 77,
+    "PRIOR_OUTREACH": 77,
+    "DUPLICATE_HISTORY": 77,
+    "PROVIDER_UNCERTAINTY": 77
+  },
+  "killSwitchState": "PAUSED",
+  "gatewayPid": 11784,
+  "gatewayPort": 18789,
+  "result": "ALL_CANDIDATES_BLOCKED"
+}

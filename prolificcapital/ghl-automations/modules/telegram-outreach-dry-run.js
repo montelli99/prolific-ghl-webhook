@@ -87,7 +87,7 @@ function normalizeOpportunity(input) {
     opportunityId: opp.opportunityId || opp.id,
     contactId: opp.contactId || contact.contactId || contact.id,
     propertyAddress: opp.propertyAddress || opp.address || opp.name || opp.opportunityName,
-    contactName: opp.contactName || contact.name || contact.firstName || opp.name || 'Unknown',
+    contactName: opp.contactName || contact.name || contact.fullName || contact.firstName || opp.name || 'Unknown',
     contactRoleText: opp.contactRole || opp.role || contact.role || opp.relationship || '',
     currentStageId: opp.stageId || opp.pipelineStageId || LEAD_ENTERED_STAGE_ID,
     currentStageName: opp.stageName || opp.pipelineStageName || 'Lead Entered',
@@ -105,14 +105,19 @@ function normalizeOpportunity(input) {
 
 function classifyRole(record) {
   const text = `${record.contactRoleText || ''} ${record.contactName || ''}`.toLowerCase();
+  const raw = record.raw || {};
+  const contact = raw.contact || {};
+  const companyText = `${contact.companyName || ''} ${(contact.tags || []).join(' ')}`.toLowerCase();
+  const fullText = `${text} ${companyText}`;
   const evidence = [];
   let role = 'unknown';
   let confidence = 0.2;
   let status = 'unknown';
-  if (/\bagent\b|realtor|listing/.test(text)) { role = 'agent'; confidence = 0.8; status = 'inferred'; evidence.push('role/name contains agent, realtor, or listing'); }
-  else if (/\bbroker\b/.test(text)) { role = 'broker'; confidence = 0.8; status = 'inferred'; evidence.push('role/name contains broker'); }
-  else if (/\bowner\b|seller|fsbo/.test(text)) { role = 'owner'; confidence = 0.75; status = 'inferred'; evidence.push('role/name contains owner, seller, or fsbo'); }
-  else if (/investor|wholesale|llc|holdings|capital|properties/.test(text)) { role = /llc|holdings|properties/.test(text) ? 'organization/LLC' : 'investor/wholesaler'; confidence = 0.65; status = 'inferred'; evidence.push('role/name contains investor, wholesaler, LLC, holdings, capital, or properties'); }
+  if (/\bagent\b|realtor|listing/.test(fullText)) { role = 'agent'; confidence = 0.8; status = 'inferred'; evidence.push('role/name/company contains agent, realtor, or listing'); }
+  else if (/\bbroker\b/.test(fullText)) { role = 'broker'; confidence = 0.8; status = 'inferred'; evidence.push('role/name/company contains broker'); }
+  else if (/\bowner\b|seller|fsbo/.test(fullText)) { role = 'owner'; confidence = 0.75; status = 'inferred'; evidence.push('role/name/company contains owner, seller, or fsbo'); }
+  else if (/investor|wholesale|llc|holdings|capital|properties/.test(fullText)) { role = /llc|holdings|properties/.test(fullText) ? 'organization/LLC' : 'investor/wholesaler'; confidence = 0.65; status = 'inferred'; evidence.push('role/name/company contains investor, wholesaler, LLC, holdings, capital, or properties'); }
+  else if (raw.classification?.recordClass === 'PRODUCTION' && raw.atlas?.isAtlasValid) { role = 'agent'; confidence = 0.6; status = 'inferred'; evidence.push('Atlas/Propwire-sourced record; listing agent assumed'); }
   if (record.contactRoleText && ['owner', 'agent', 'broker', 'investor/wholesaler', 'organization/LLC'].includes(String(record.contactRoleText).toLowerCase())) {
     role = String(record.contactRoleText).toLowerCase(); confidence = 1; status = 'confirmed'; evidence.push('explicit role field');
   }
