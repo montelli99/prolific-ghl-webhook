@@ -21,6 +21,15 @@ app.get('/api/scripts', (req, res) => {
   res.sendFile(path.join(__dirname, 'ghl-scripts-reference.json'));
 });
 
+// Contact-card VCF asset — direct download for JustCall MMS media_url
+app.get('/assets/contact-cards/montelli-scott-divinity-aligned-v2.vcf', (req, res) => {
+  const vcfPath = path.join(__dirname, 'public', 'assets', 'contact-cards', 'montelli-scott-divinity-aligned-v2.vcf');
+  res.setHeader('Content-Type', 'text/vcard; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="montelli-scott-divinity-aligned.vcf"');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.sendFile(vcfPath);
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
