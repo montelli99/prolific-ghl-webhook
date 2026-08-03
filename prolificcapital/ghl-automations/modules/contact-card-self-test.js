@@ -16,6 +16,10 @@ const APPROVED_SENDER = '+15716012619';
 const EXPECTED_CARD_HASH = '77bbcbdab80a604d3161d0a898fd92e1832d258c7c91a41349a86a5d18f60065';
 const EXPECTED_SPEC_HASH = 'da4d29b570bab1e455527b2478c710a92110fe95c8c400ff49a1b8233093a247';
 const PREVIEW_EXPIRY_MS = 5 * 60 * 1000;
+const PUBLIC_MEDIA_BASE_URL = process.env.CONTACT_CARD_MEDIA_BASE_URL || 'https://raw.githubusercontent.com';
+const PUBLIC_VCF_PATH = '/montelli99/prolific-ghl-webhook/master/public/assets/contact-cards/montelli-scott-divinity-aligned-v2.vcf';
+const PUBLIC_MEDIA_URL = `${PUBLIC_MEDIA_BASE_URL}${PUBLIC_VCF_PATH}`;
+const TEST_BODY = 'Montelli contact card — tap the attached file to add my contact.';
 
 function loadCardSpec() {
   if (!fs.existsSync(CARD_SPEC_PATH)) return { error: 'CARD_SPEC_NOT_FOUND' };
@@ -121,8 +125,10 @@ function buildSelfTestPreview(ownerId) {
       filename: path.basename(VCF_PATH),
       vcfHash: card.cardHash,
       vcfHashShort: card.cardHash.slice(0, 16),
+      publicMediaUrl: PUBLIC_MEDIA_URL,
     },
     method: 'JustCall MMS vCard attachment (POST /v2.1/texts/new with media_url)',
+    smsBody: TEST_BODY,
     expectedEffects: {
       ownerTestMessages: 1,
       prospectMessages: 0,
@@ -130,7 +136,7 @@ function buildSelfTestPreview(ownerId) {
       stageMovements: 0,
       finalState: 'PAUSED',
     },
-    approvalPhrase: 'Send the contact card test',
+    approvalPhrase: 'Send the corrected contact card test',
     state: 'PREVIEW_PENDING_APPROVAL',
   };
 
@@ -162,6 +168,7 @@ function approveSelfTest(ownerId, message) {
 
   const normalized = (message || '').toLowerCase().trim();
   const approved = (
+    normalized.includes('send the corrected contact card test') ||
     normalized.includes('send the contact card test') ||
     normalized.includes('send it to my test phone') ||
     normalized.includes('approve the card self-test')
@@ -244,22 +251,28 @@ function formatPreviewText(preview) {
   lines.push(`${preview.card.email}`);
   lines.push(`${preview.card.website}`);
   lines.push('');
-  lines.push('*Asset:*');
+  lines.push('*Delivery:*');
+  lines.push('MMS with downloadable `.vcf` attachment');
+  lines.push('');
+  lines.push('*Attachment filename:*');
   lines.push(`${preview.asset.filename}`);
+  lines.push('');
+  lines.push('*Public media URL:*');
+  lines.push(`${preview.asset.publicMediaUrl}`);
   lines.push('');
   lines.push(`VCF hash: \`${preview.asset.vcfHashShort}\``);
   lines.push('');
-  lines.push('*Method:*');
-  lines.push('JustCall MMS/vCard attachment');
+  lines.push('*SMS body:*');
+  lines.push(`"${preview.smsBody}"`);
   lines.push('');
   lines.push('*Expected effects:*');
-  lines.push('- 1 owner-controlled test message');
+  lines.push('- 1 owner-controlled MMS after approval');
   lines.push('- 0 prospect messages');
   lines.push('- 0 GHL writes');
   lines.push('- 0 stage movements');
   lines.push('- return to PAUSED');
   lines.push('');
-  lines.push('Nothing has been sent. Tell me "Send the contact card test" to approve this exact self-test.');
+  lines.push('Nothing has been sent. Tell me "Send the corrected contact card test" to approve this exact self-test.');
 
   return lines.join('\n');
 }

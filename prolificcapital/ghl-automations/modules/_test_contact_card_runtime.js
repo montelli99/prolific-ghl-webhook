@@ -226,7 +226,7 @@ await test('22 Preview text includes all required sections', () => {
   assert.ok(text.includes('Divinity Aligned LLC'));
   assert.ok(text.includes('montelli-scott-divinity-aligned.vcf'));
   assert.ok(text.includes('Nothing has been sent'));
-  assert.ok(text.includes('Send the contact card test'));
+  assert.ok(text.includes('Send the corrected contact card test'));
 });
 
 // === PHASE 9: DETERMINISTIC APPROVAL ===

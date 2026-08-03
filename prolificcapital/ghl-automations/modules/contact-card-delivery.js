@@ -15,6 +15,10 @@ const CARD_STATES = Object.freeze({
 });
 
 const CARD_SPEC_PATH = path.resolve(__dirname, '..', '..', 'docs', 'montelli-contact-card.json');
+const VCF_ASSET_PATH = path.resolve(__dirname, '..', 'data', 'runtime', 'montelli-scott-divinity-aligned.vcf');
+const EXPECTED_VCF_HASH = '77bbcbdab80a604d3161d0a898fd92e1832d258c7c91a41349a86a5d18f60065';
+const PUBLIC_MEDIA_BASE_URL = process.env.CONTACT_CARD_MEDIA_BASE_URL || 'https://raw.githubusercontent.com';
+const PUBLIC_VCF_PATH = '/montelli99/prolific-ghl-webhook/master/public/assets/contact-cards/montelli-scott-divinity-aligned-v2.vcf';
 
 class ContactCardDelivery {
   constructor(config = {}) {
@@ -81,7 +85,17 @@ class ContactCardDelivery {
     }
 
     const vcf = this.generateVCF(spec);
-    const vcfHash = crypto.createHash('sha256').update(vcf).digest('hex').slice(0, 16);
+    const vcfHash = crypto.createHash('sha256').update(vcf).digest('hex');
+    if (vcfHash !== EXPECTED_VCF_HASH) {
+      return { ok: false, state: 'CONTACT_CARD_FAILED', reason: `VCF_HASH_MISMATCH: expected ${EXPECTED_VCF_HASH.slice(0,16)}, got ${vcfHash.slice(0,16)}` };
+    }
+
+    const mediaUrl = `${PUBLIC_MEDIA_BASE_URL}${PUBLIC_VCF_PATH}`;
+
+    const preflight = await this._mediaPreflight(mediaUrl, vcfHash);
+    if (!preflight.ok) {
+      return { ok: false, state: 'CONTACT_CARD_FAILED', reason: `MEDIA_PREFLIGHT_FAILED: ${preflight.reason}` };
+    }
 
     const justcall = new JustCallIntegration({
       apiKey: this.apiKey,
@@ -90,25 +104,95 @@ class ContactCardDelivery {
     });
 
     try {
-      const result = await justcall.sendSMS(recipientPhone, vcf, {
+      const result = await justcall.sendContactCard(recipientPhone, mediaUrl, {
         from: this.fromNumber,
-        mediaUrl: options.mediaUrl || undefined,
+        body: options.body || 'Montelli contact card — tap the attached file to add my contact.',
       });
 
       if (!result || !result.messageId) {
-        return { ok: false, state: 'CONTACT_CARD_UNCERTAIN', reason: 'NO_MESSAGE_ID', vcfHash };
+        return { ok: false, state: 'CONTACT_CARD_UNCERTAIN', reason: 'NO_MESSAGE_ID', vcfHash: vcfHash.slice(0, 16) };
+      }
+
+      const providerDetail = await this._fetchProviderDetail(result.messageId);
+      const isMms = providerDetail?.sms_info?.is_mms === 'yes' || providerDetail?.sms_info?.is_mms === 'Yes';
+      const hasMedia = Array.isArray(providerDetail?.sms_info?.mms) && providerDetail.sms_info.mms.length > 0;
+
+      if (!isMms || !hasMedia) {
+        return {
+          ok: false,
+          state: 'CONTACT_CARD_TEST_TRANSPORT_FAILED',
+          reason: 'DELIVERED_AS_TEXT_NOT_CONTACT_CARD',
+          providerMessageId: String(result.messageId).slice(0, 16),
+          vcfHash: vcfHash.slice(0, 16),
+          providerDetail,
+        };
       }
 
       return {
         ok: true,
-        state: 'CONTACT_CARD_SENT',
+        state: 'CONTACT_CARD_PROVIDER_DELIVERED_AWAITING_DEVICE_CONFIRMATION',
         providerMessageId: String(result.messageId).slice(0, 16),
-        vcfHash,
+        vcfHash: vcfHash.slice(0, 16),
+        mediaUrl,
         sentAt: new Date().toISOString(),
         recipient: recipientPhone ? `${recipientPhone.slice(0, 4)}***${recipientPhone.slice(-4)}` : null,
+        providerDetail,
       };
     } catch (e) {
       return { ok: false, state: 'CONTACT_CARD_FAILED', reason: `PROVIDER_ERROR: ${e.message}` };
+    }
+  }
+
+  async _mediaPreflight(mediaUrl, expectedHash) {
+    const https = require('https');
+    const http = require('http');
+    return new Promise((resolve) => {
+      const client = mediaUrl.startsWith('https://') ? https : http;
+      const req = client.get(mediaUrl, { timeout: 15000 }, (res) => {
+        if (res.statusCode !== 200) {
+          return resolve({ ok: false, reason: `HTTP_${res.statusCode}` });
+        }
+        const contentType = res.headers['content-type'] || '';
+        if (!contentType.includes('text/vcard') && !contentType.includes('text/directory')) {
+          return resolve({ ok: false, reason: `WRONG_CONTENT_TYPE: ${contentType}` });
+        }
+        const chunks = [];
+        res.on('data', (d) => chunks.push(d));
+        res.on('end', () => {
+          const body = Buffer.concat(chunks).toString('utf8');
+          if (!body.startsWith('BEGIN:VCARD')) {
+            return resolve({ ok: false, reason: 'NOT_A_VCARD' });
+          }
+          if (!body.endsWith('END:VCARD\n') && !body.endsWith('END:VCARD')) {
+            return resolve({ ok: false, reason: 'VCARD_NOT_TERMINATED' });
+          }
+          if (body.includes('<html') || body.includes('<!DOCTYPE')) {
+            return resolve({ ok: false, reason: 'HTML_RESPONSE_NOT_VCARD' });
+          }
+          const actualHash = crypto.createHash('sha256').update(body).digest('hex');
+          if (actualHash !== expectedHash) {
+            return resolve({ ok: false, reason: `HASH_MISMATCH: expected ${expectedHash.slice(0,16)}, got ${actualHash.slice(0,16)}` });
+          }
+          resolve({ ok: true, hash: actualHash, contentType, size: body.length });
+        });
+      });
+      req.on('error', (e) => resolve({ ok: false, reason: `FETCH_ERROR: ${e.message}` }));
+      req.on('timeout', () => { req.destroy(); resolve({ ok: false, reason: 'TIMEOUT' }); });
+    });
+  }
+
+  async _fetchProviderDetail(messageId) {
+    if (!messageId) return null;
+    const justcall = new JustCallIntegration({
+      apiKey: this.apiKey,
+      apiSecret: this.apiSecret,
+      fromNumber: this.fromNumber,
+    });
+    try {
+      const raw = await justcall._justcallRequest('GET', '/v2.1/texts/' + messageId, null, { retried: 0 });
+      return raw?.data || raw;
+    } catch (_) {
+      return null;
     }
   }
 
