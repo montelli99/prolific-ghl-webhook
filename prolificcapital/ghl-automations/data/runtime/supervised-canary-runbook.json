@@ -6,7 +6,7 @@
   "topicId": 389,
   "createdAt": "2026-08-03T06:55:00Z",
   "retrievalPhrase": "Begin the first supervised canary.",
-  "status": "PENDING_NOT_EXECUTED",
+  "status": "SUPERSEDED_NOT_EXECUTABLE",
   "policyVersion": "OP-2026-08-02-v1",
   "procedure": [
     "1. Owner confirms JustCall account is on paid plan with SMS credits.",

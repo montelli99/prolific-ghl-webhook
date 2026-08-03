@@ -11,14 +11,16 @@ const { JustCallTextHistoryReadService } = require('./justcall-text-history-read
 const { LocalSuppressionRegistry } = require('./local-suppression-registry');
 const { SELECTED_SENDER_SUFFIX } = require('./kayla-course-spec');
 const { evaluateCanaryWindow } = require('./atlas-ghl-telegram-live-guards');
-const { derivePropertyTimezone } = require('./property-timezone');
 const killSwitch = require('../bot/kill-switch');
+const { verifyRunbookHash, computeRunbookHash } = require('./runbook-hash');
 
-const RUNBOOK_PATH = path.resolve(__dirname, '..', 'data', 'runtime', 'supervised-canary-runbook.json');
-const RUNBOOK_ID = 'runbook_supervised_canary_v1';
+const RUNBOOK_PATH = path.resolve(__dirname, '..', 'data', 'runtime', 'supervised-canary-runbook-v2.json');
+const RUNBOOK_ID = 'runbook_supervised_canary_v2';
+const V1_HISTORICAL_RUNBOOK_PATH = path.resolve(__dirname, '..', 'data', 'runtime', 'supervised-canary-runbook.json');
 const OWNER_ID = '718718959';
 const CHAT_ID = '-1003975794600';
 const TOPIC_ID = 389;
+const PROVIDER_CONFIRMATION_TTL_MS = 5 * 60 * 1000;
 
 const TRIGGER_PATTERNS = [
   /begin\s+(the\s+)?first\s+supervised\s+canary/i,
@@ -78,11 +80,17 @@ class SupervisedCanaryRunbookService {
   loadRunbook() {
     if (!fs.existsSync(this.runbookPath)) return null;
     const runbook = JSON.parse(fs.readFileSync(this.runbookPath, 'utf8'));
-    const computedHash = stableHash(runbook);
-    if (runbook.canonicalHash && computedHash !== runbook.canonicalHash) {
-      return { ...runbook, _hashMismatch: true };
+    const verification = verifyRunbookHash(runbook);
+    if (!verification.ok) {
+      return { ...runbook, _hashMismatch: true, _verification: verification };
     }
     return runbook;
+  }
+
+  loadV1HistoricalRunbook() {
+    if (!fs.existsSync(V1_HISTORICAL_RUNBOOK_PATH)) return null;
+    const runbook = JSON.parse(fs.readFileSync(V1_HISTORICAL_RUNBOOK_PATH, 'utf8'));
+    return { ...runbook, _historical: true, _executable: false };
   }
 
   isTrigger(text) {
@@ -124,7 +132,48 @@ class SupervisedCanaryRunbookService {
     if (String(ctx.telegramUserId) !== OWNER_ID) errors.push('NOT_OWNER');
     if (String(ctx.chatId) !== CHAT_ID) errors.push('WRONG_CHAT');
     if (ctx.topicId && String(ctx.topicId) !== String(TOPIC_ID)) errors.push('WRONG_TOPIC');
-    return { ok: errors.length === 0, errors };
+    return { ok: errors.length === 0, errors, ownerId: OWNER_ID, chatId: CHAT_ID, topicId: TOPIC_ID };
+  }
+
+  providerConfirmationPath() {
+    return path.resolve(__dirname, '..', 'data', 'runtime', 'supervised-canary-provider-confirmation.json');
+  }
+
+  recordProviderConfirmation(ctx = {}) {
+    const record = {
+      ownerUserId: OWNER_ID,
+      chatId: CHAT_ID,
+      topicId: TOPIC_ID,
+      originatingMessageId: ctx.messageId || null,
+      confirmedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + PROVIDER_CONFIRMATION_TTL_MS).toISOString(),
+      reason: 'MANUAL_FUNDING_CONFIRMATION',
+    };
+    const tmp = this.providerConfirmationPath() + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(record, null, 2) + '\n');
+    fs.renameSync(tmp, this.providerConfirmationPath());
+    return record;
+  }
+
+  loadProviderConfirmation() {
+    const p = this.providerConfirmationPath();
+    if (!fs.existsSync(p)) return null;
+    try {
+      const record = JSON.parse(fs.readFileSync(p, 'utf8'));
+      if (new Date(record.expiresAt) <= new Date()) return { ...record, _expired: true };
+      return record;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  getCurrentRuntimeRevision() {
+    try {
+      const root = path.resolve(__dirname, '..', '..');
+      return require('child_process').execSync('git rev-parse HEAD', { cwd: root, encoding: 'utf8' }).trim();
+    } catch (e) {
+      return 'UNKNOWN';
+    }
   }
 
   async beginPreparation(ctx = {}) {
@@ -135,33 +184,24 @@ class SupervisedCanaryRunbookService {
 
     const runbook = this.loadRunbook();
     if (!runbook) return { reply: 'Runbook not found. The supervised canary workflow has not been initialized.' };
-    if (runbook._hashMismatch) return { reply: 'Runbook hash mismatch. The runbook may have been tampered with. Cannot proceed.' };
+    if (runbook._hashMismatch) return { reply: `Runbook hash mismatch. The runbook may have been tampered with. Cannot proceed. computed=${runbook._verification?.computed} declared=${runbook._verification?.declared}` };
     if (runbook.status !== 'PENDING_NOT_EXECUTED') return { reply: `Runbook status is ${runbook.status}. Cannot begin preparation.` };
 
     const ks = killSwitch.readKillSwitch();
     if (ks.state !== 'PAUSED') return { reply: `Kill switch is ${ks.state}, not PAUSED. Transition to PAUSED first.` };
 
+    const stalePlan = this.planStore.loadPlan('plan_4986dcaa4139c38e');
+    if (stalePlan && stalePlan.status === 'PREVIEW_PENDING_APPROVAL') {
+      this.planStore.supersedePlan(stalePlan.planId, 'SUPERSEDED_EXPIRED_UNTRUSTED_CONTEXT');
+    }
+
     const existingPlans = this.planStore.listPlans({ status: 'PREVIEW_PENDING_APPROVAL' })
       .concat(this.planStore.listPlans({ status: 'APPROVED_PENDING_EXECUTION' }));
     for (const plan of existingPlans) {
-      if (new Date(plan.expiresAt) > new Date()) {
-        return { reply: `An active plan already exists (${plan.planId}). Cancel or supersede it first.` };
-      }
       this.planStore.supersedePlan(plan.planId, 'new preparation started');
     }
 
     const now = new Date();
-    const sampleTz = derivePropertyTimezone({ propertyAddress: '123 Main St Indianapolis IN 46227', raw: { zip: '46227' } }, { now });
-    const window = evaluateCanaryWindow({ now, timeZone: sampleTz.timeZone });
-
-    if (!window.ok) {
-      const nextWindow = window.reason === 'WEEKEND_BLOCKS_CANARY'
-        ? 'next Monday at 12:00 PM'
-        : 'today at 12:00 PM';
-      return {
-        reply: `Cannot create an approvable production plan right now.\n\nCurrent time: ${sampleTz.currentWeekday} ${sampleTz.currentLocalTime} ${sampleTz.timeZone}\nWindow: ${window.reason}\n\nNext valid preparation window: ${nextWindow} ${sampleTz.timeZone}.\n\nI remain PAUSED. Try again during business hours.`,
-      };
-    }
 
     this.builder = new CanaryPlanBuilder({
       ghlToken: process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '',
@@ -174,21 +214,84 @@ class SupervisedCanaryRunbookService {
     });
 
     try {
+      const runtimeRevision = this.getCurrentRuntimeRevision();
       const plan = await this.builder.buildPreview({
         now,
         ownerId: OWNER_ID,
         chatId: CHAT_ID,
         topicId: TOPIC_ID,
+        originatingMessageId: ctx.messageId || null,
+        runbookId: runbook.instructionId || RUNBOOK_ID,
+        runbookHash: runbook.canonicalHash || computeRunbookHash(runbook),
+        runtimeRevision,
       });
 
+      const windowCheck = this.evaluateSelectedWindows(plan.items, now);
+      if (windowCheck.inWindow.length === 0) {
+        this.planStore.supersedePlan(plan.planId, 'ALL_CANDIDATES_OUTSIDE_LOCAL_WINDOW');
+        return {
+          reply: this.formatWindowBlocked(plan, windowCheck),
+        };
+      }
+
+      const filteredPlan = this.filterPlanToWindow(plan, windowCheck.inWindow);
+
       return {
-        reply: this.formatPreview(plan),
-        plan,
+        reply: this.formatPreview(filteredPlan),
+        plan: filteredPlan,
         state: 'PREVIEW_READY',
       };
     } catch (e) {
       return { reply: `Preparation failed: ${e.message}. Remaining PAUSED.` };
     }
+  }
+
+  evaluateSelectedWindows(items, now = new Date()) {
+    const inWindow = [];
+    const outOfWindow = [];
+    for (const item of items) {
+      const tz = item.timezone;
+      if (!tz) {
+        outOfWindow.push({ item, reason: 'UNKNOWN_TIMEZONE_BLOCKS_CANARY' });
+        continue;
+      }
+      const window = evaluateCanaryWindow({ now, timeZone: tz });
+      if (window.ok) inWindow.push(item);
+      else outOfWindow.push({ item, reason: window.reason, window });
+    }
+    return { inWindow, outOfWindow };
+  }
+
+  filterPlanToWindow(plan, inWindowItems) {
+    const allowedNumbers = new Set(inWindowItems.map(i => i.number));
+    const filteredItems = plan.items.filter(i => allowedNumbers.has(i.number));
+    const filteredPlan = { ...plan, items: filteredItems, selectedCount: filteredItems.length };
+    if (filteredItems.length < plan.items.length) {
+      filteredPlan.filteredFromOriginalCount = plan.items.length;
+      filteredPlan.filterReason = 'OUTSIDE_LOCAL_WINDOW';
+    }
+    return filteredPlan;
+  }
+
+  formatWindowBlocked(plan, windowCheck) {
+    const lines = [
+      '*Supervised Canary Preview — No Sendable Candidates Right Now*',
+      '',
+      `Plan: \`${plan.planId.slice(0, 16)}\` (superseded: ALL_CANDIDATES_OUTSIDE_LOCAL_WINDOW)`,
+      `Generated: ${new Date(plan.createdAt).toLocaleString('en-US')}`,
+      `State: PAUSED — nothing sent`,
+      '',
+      `Evaluated ${plan.items.length} candidate(s) against their property-local business windows:`,
+    ];
+    for (const { item, reason, window } of windowCheck.outOfWindow) {
+      lines.push(`• ${item.number}. ${item.contactName} — ${item.propertyAddress}`);
+      lines.push(`  Timezone: ${item.timezone} | ${reason}`);
+      if (window && window.hour != null) lines.push(`  Local time: ${window.hour}:${String(window.minute || 0).padStart(2, '0')}`);
+    }
+    lines.push('');
+    lines.push('Next valid window: Monday–Friday 12:00 PM – 6:00 PM in each property\'s local timezone.');
+    lines.push('_I remain PAUSED._');
+    return lines.join('\n');
   }
 
   formatPreview(plan) {
@@ -285,6 +388,9 @@ class SupervisedCanaryRunbookService {
     if (!plan) return { reply: 'Plan not found. It may have expired.' };
     if (plan.status !== 'PREVIEW_PENDING_APPROVAL') return { reply: `Plan status is ${plan.status}, not pending approval.` };
     if (new Date(plan.expiresAt) <= new Date()) return { reply: 'Plan has expired. Generate a new plan.' };
+    if (!plan.ownerId || !plan.chatId || !plan.topicId || !plan.originatingMessageId || !plan.runbookId || !plan.runbookHash) {
+      return { reply: 'Plan lacks trusted provenance (owner/chat/topic/message/runbook). Cannot approve.' };
+    }
 
     const parsed = this.parseApproval(text);
     if (!parsed || parsed.items.length === 0) {
@@ -333,7 +439,16 @@ class SupervisedCanaryRunbookService {
   getActivePlanId() {
     const pending = this.planStore.listPlans({ status: 'PREVIEW_PENDING_APPROVAL' });
     const approved = this.planStore.listPlans({ status: 'APPROVED_PENDING_EXECUTION' });
-    const all = [...pending, ...approved].filter(p => new Date(p.expiresAt) > new Date());
+    const all = [...pending, ...approved]
+      .filter(p => new Date(p.expiresAt) > new Date())
+      .filter(p => Boolean(
+        p.ownerId === OWNER_ID &&
+        p.chatId === CHAT_ID &&
+        p.topicId === TOPIC_ID &&
+        p.originatingMessageId &&
+        p.runbookId === RUNBOOK_ID &&
+        p.runbookHash
+      ));
     return all.length > 0 ? all[0].planId : null;
   }
 }
@@ -342,6 +457,7 @@ module.exports = {
   SupervisedCanaryRunbookService,
   RUNBOOK_PATH,
   RUNBOOK_ID,
+  V1_HISTORICAL_RUNBOOK_PATH,
   OWNER_ID,
   CHAT_ID,
   TOPIC_ID,

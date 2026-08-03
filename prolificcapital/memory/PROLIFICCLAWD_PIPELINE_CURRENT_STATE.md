@@ -92,10 +92,27 @@ GHL pipeline: `nSf3NXYVkt8X4PgW9aZ3`
 
 ---
 
+## Supervised Canary INT — RUNBOOK V2 AUTHORITATIVE
+
+- **Authoritative runbook ID:** `runbook_supervised_canary_v2`
+- **Authoritative runbook path:** `ghl-automations/data/runtime/supervised-canary-runbook-v2.json`
+- **Runbook hash contract:** `canonicalHash` covers all operational fields except `canonicalHash` itself; keys are sorted; serialized as compact JSON; SHA-256.
+- **Runbook v2 canonical hash:** `9ac8c2f054ceff7527af8be72c1d47be50a3c794209b2c52db0081818391cf72`
+- **Runbook v1 status:** `SUPERSEDED_NOT_EXECUTABLE` — retained for audit only; no fallback to v1.
+- **Natural trigger:** "Begin the first supervised canary."
+- **Policy version:** `OP-2026-08-02-v1`
+- **Template ID:** `OWNER_APPROVED_PIPELINE_INT`
+- **Max canary size:** 3
+- **Stale plan disposition:** `plan_4986dcaa4139c38e` is now `SUPERSEDED_EXPIRED_UNTRUSTED_CONTEXT` (expired, missing owner/chat/topic/originating-message provenance, generated before corrected v2 binding).
+- **Trusted preview provenance required for every plan:** plan ID, plan hash, runbook ID, runbook hash, policy version, template ID/version, owner ID `718718959`, chat ID `-1003975794600`, topic ID `389`, originating Telegram message ID, creation timestamp, expiration timestamp, current runtime revision, exact selected item IDs, exact rendered messages, sender, property-local timezone per item, compliance evidence snapshot, status `PREVIEW_PENDING_APPROVAL`, `executable: false`.
+- **Sample timezone removed:** No `123 Main St Indianapolis IN 46227` gate. Each candidate is evaluated in its own property-local window.
+- **Provider readiness:** Contact-card MMS proved Telegram/OpenClaw → JustCall → owner phone transport only. Prospect INT readiness is reported as `READY_WITH_MANUAL_FUNDING_CONFIRMATION`; execution requires owner session-scoped funding confirmation and exact item approval.
+- **Approval invariant:** Requires owner, correct group/topic, active v2 runbook, matching runbook/plan hashes, exact item numbers, unexpired plan, unchanged policy/template, live guard revalidation, property-local window, provider readiness. Ambiguous phrases do not approve.
+
 ## JustCall / Outreach
 
 - **10DLC:** Approved
-- **Approved sender:** Ends 2619 (571 number)
+- **Approved sender:** +15716012619 (ends 2619)
 - **Provider integration:** `JustCallIntegration.sendSMS` exists
 - **Guarded canary executor:** Implemented
 - **Eligibility double-normalization bug:** Identified and repaired

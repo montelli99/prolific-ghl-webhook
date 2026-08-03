@@ -156,6 +156,7 @@ function _handleKaylaOutreach(args, ctx) {
 
 async function _handleCanary(args, ctx) {
   const service = new (_getCanaryRunbook().SupervisedCanaryRunbookService)();
+  ctx.topicId = ctx.sourceTopicId;
   const text = args || '';
 
   if (service.isSafetyCommand(text)) {

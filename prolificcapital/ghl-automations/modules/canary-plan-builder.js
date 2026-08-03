@@ -132,6 +132,8 @@ class CanaryPlanBuilder {
         phone: phone ? `${phone.slice(0, 4)}***${phone.slice(-4)}` : null,
         timezone: timezone.timeZone,
         timezoneConfidence: timezone.confidence,
+        localWeekday: timezone.currentWeekday || null,
+        localTime: timezone.currentLocalTime || null,
         renderedMessage: rendered,
         compliance,
         passed: compliance.passed,
@@ -174,6 +176,9 @@ class CanaryPlanBuilder {
       chatId: options.chatId || null,
       topicId: options.topicId || null,
       originatingMessageId: options.originatingMessageId || null,
+      runbookId: options.runbookId || null,
+      runbookHash: options.runbookHash || null,
+      runtimeRevision: options.runtimeRevision || null,
       totalCandidates: candidates.length,
       selectedCount: selected.length,
       blockedCount: blocked.length,
@@ -188,6 +193,8 @@ class CanaryPlanBuilder {
         timezone: s.timezone,
         timezoneConfidence: s.timezoneConfidence,
         renderedMessage: s.renderedMessage,
+        localWeekday: s.localWeekday,
+        localTime: s.localTime,
         guardEvidence: Object.fromEntries(
           Object.entries(s.compliance.guards).map(([name, g]) => [name, { state: g.state, sources: g.sources.map(src => ({ source: src.source, state: src.state })) }])
         ),

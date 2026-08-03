@@ -13,6 +13,21 @@ const PLAN_STATUSES = Object.freeze([
   'FAILED',
   'EXPIRED',
   'SUPERSEDED',
+  'SUPERSEDED_EXPIRED_UNTRUSTED_CONTEXT',
+  'SUPERSEDED_OUTSIDE_LOCAL_WINDOW',
+  'SUPERSEDED_ITEM_REMOVED',
+  'SUPERSEDED_ITEM_REPLACEMENT',
+  'SUPERSEDED_CANCELLED',
+  'SUPERSEDED_NEW_PREPARATION',
+]);
+
+const STABLE_PLAN_HASH_FIELDS = Object.freeze([
+  'planId',
+  'items',
+  'policyVersion',
+  'templateId',
+  'templateVersion',
+  'createdAt',
 ]);
 
 function stableHash(value) {
@@ -44,11 +59,8 @@ class PlanStore {
     return path.join(this.storeDir, `${planId}.json`);
   }
 
-  savePlan(plan) {
-    if (!plan.planId || !plan.planHash) throw new Error('PLAN_REQUIRES_ID_AND_HASH');
-    const filePath = this.planPath(plan.planId);
-    if (fs.existsSync(filePath)) throw new Error(`PLAN_ALREADY_EXISTS: ${plan.planId}`);
-    const computedHash = stableHash({
+  _hashProjection(plan) {
+    return {
       planId: plan.planId,
       items: (plan.items || []).map(i => ({
         number: i.number,
@@ -60,7 +72,18 @@ class PlanStore {
       templateId: plan.templateId,
       templateVersion: plan.templateVersion,
       createdAt: plan.createdAt,
-    });
+    };
+  }
+
+  computePlanHash(plan) {
+    return stableHash(this._hashProjection(plan));
+  }
+
+  savePlan(plan) {
+    if (!plan.planId || !plan.planHash) throw new Error('PLAN_REQUIRES_ID_AND_HASH');
+    const filePath = this.planPath(plan.planId);
+    if (fs.existsSync(filePath)) throw new Error(`PLAN_ALREADY_EXISTS: ${plan.planId}`);
+    const computedHash = this.computePlanHash(plan);
     if (computedHash !== plan.planHash) throw new Error(`PLAN_HASH_MISMATCH: expected ${computedHash}, got ${plan.planHash}`);
     atomicWrite(filePath, plan);
     const readback = readJson(filePath);
@@ -86,9 +109,17 @@ class PlanStore {
   supersedePlan(planId, reason) {
     const plan = this.loadPlan(planId);
     if (!plan) throw new Error(`PLAN_NOT_FOUND: ${planId}`);
-    plan.status = 'SUPERSEDED';
+    let status = 'SUPERSEDED';
+    if (reason === 'SUPERSEDED_EXPIRED_UNTRUSTED_CONTEXT') status = 'SUPERSEDED_EXPIRED_UNTRUSTED_CONTEXT';
+    else if (reason === 'ALL_CANDIDATES_OUTSIDE_LOCAL_WINDOW') status = 'SUPERSEDED_OUTSIDE_LOCAL_WINDOW';
+    else if (reason && reason.startsWith('item')) status = 'SUPERSEDED_ITEM_REMOVED';
+    else if (reason && reason.includes('replacement')) status = 'SUPERSEDED_ITEM_REPLACEMENT';
+    else if (reason && (reason.startsWith('cancelled') || reason === 'plan cancelled')) status = 'SUPERSEDED_CANCELLED';
+    else if (reason === 'new preparation started') status = 'SUPERSEDED_NEW_PREPARATION';
+    plan.status = status;
     plan.supersededAt = new Date().toISOString();
     plan.supersededReason = reason;
+    plan.executable = false;
     atomicWrite(this.planPath(planId), plan);
     return plan;
   }
@@ -103,4 +134,4 @@ class PlanStore {
   }
 }
 
-module.exports = { PlanStore, PLAN_STORE_DIR, PLAN_STATUSES, stableHash };
+module.exports = { PlanStore, PLAN_STORE_DIR, PLAN_STATUSES, stableHash, STABLE_PLAN_HASH_FIELDS };

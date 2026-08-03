@@ -1,6 +1,6 @@
 {
   "instructionId": "runbook_supervised_canary_v2",
-  "canonicalHash": "63b1a67b1ab1418ba1fb68624ccde4dc5a34f281154f0c119c3aadbf3fbf0966",
+  "canonicalHash": "9ac8c2f054ceff7527af8be72c1d47be50a3c794209b2c52db0081818391cf72",
   "version": 2,
   "supersedes": "runbook_supervised_canary_v1",
   "ownerUserId": "718718959",

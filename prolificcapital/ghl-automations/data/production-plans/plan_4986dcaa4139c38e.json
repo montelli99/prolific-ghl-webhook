@@ -1,7 +1,7 @@
 {
   "planId": "plan_4986dcaa4139c38e",
   "planHash": "1881f94312eb4ea4138ff6e8a8db277498f053edaa69eacc7456b9b5b51ca231",
-  "status": "PREVIEW_PENDING_APPROVAL",
+  "status": "SUPERSEDED_EXPIRED_UNTRUSTED_CONTEXT",
   "schema": "canary-plan-v2",
   "policyVersion": "OP-2026-08-02-v1",
   "templateId": "OWNER_APPROVED_PIPELINE_INT",
@@ -448,5 +448,15 @@
     "justcallTotalCount": 18,
     "justcallFetchedCount": 13
   },
-  "warnings": []
+  "warnings": [],
+  "supersededAt": "2026-08-03T15:51:29.690Z",
+  "supersededReason": "SUPERSEDED_EXPIRED_UNTRUSTED_CONTEXT",
+  "supersededDetail": {
+    "expired": true,
+    "missingOwnerId": true,
+    "missingChatId": true,
+    "missingTopicId": true,
+    "missingOriginatingMessageId": true,
+    "generatedBeforeCorrectedActiveRunbookBinding": true
+  }
 }
