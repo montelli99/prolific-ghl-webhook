@@ -605,20 +605,54 @@ function runAllStrategiesLocal(fields) {
 // formatAllStrategies() — converts the runAllStrategies() result to a GHL-note-ready string
 function formatAllStrategies(result) {
   if (!result || !result.cash) throw new Error('formatAllStrategies requires runAllStrategies() result');
+  const m = result.meta;
   const lines = [
-    '=== CASH OFFER UNDERWRITING (Atlas auto-calc 6/5) ===',
-    `ARV: $${result.meta.aru.toLocaleString()} | Repair tier: $${result.meta.tier}/sqft | Sqft: ${result.meta.sqft.toLocaleString()} | Repairs: $${result.meta.repairs.toLocaleString()} | Fee: $${result.meta.fee.toLocaleString()}`,
+    '=== CASH OFFER UNDERWRITING (Course Applicability Engine) ===',
+    `ARV: $${m.aru.toLocaleString()} | Repair tier: $${m.tier}/sqft | Sqft: ${m.sqft.toLocaleString()} | Repairs: $${m.repairs.toLocaleString()}`,
+    `Wholesale fee: $${m.fee.toLocaleString()} (OWNER: $${m.feeOwner?.toLocaleString()}, COURSE: $${m.feeCourse?.toLocaleString()})`,
     '',
-    'STRATEGY         | OFFER       | STRUCTURE',
-    '─────────────────┼─────────────┼──────────────────────────────────',
-    `Cash             | $${result.cash.offer.toLocaleString().padStart(10)} | 0.70×ARV − repairs − fee`,
-    `F50 (turnkey)    | $${result.f50.offer.toLocaleString().padStart(10)} | $${result.f50.downPayment.toLocaleString()} now + $${result.f50.carryback.toLocaleString()} in 72mo (deed in lieu)`,
-    `F10 (renovation) | $${result.f10.offer.toLocaleString().padStart(10)} | $${result.f10.downPayment.toLocaleString()} now + $${result.f10.carryback.toLocaleString()} in 24mo`,
-    `SubTo            | $${result.subTo.offer.toLocaleString().padStart(10)} | ${result.subTo.assumedDebt > 0 ? `Take over $${result.subTo.assumedDebt.toLocaleString()} mtg` : 'verify existing loan'}`,
-    `Mid-term (FF)    | $${result.midTerm.offer.toLocaleString().padStart(10)} | $${result.midTerm.monthlyRent.toLocaleString()}/mo (1.2% rule)`,
-    '',
-    `Recommended for this lead: pick the strategy that matches seller intent.`,
+    'STRATEGY         | OFFER       | SOURCE       | STRUCTURE',
+    '─────────────────┼─────────────┼──────────────┼──────────────────────────────────',
+    `Cash             | $${result.cash.offer.toLocaleString().padStart(10)} | ${result.cash.source.padEnd(12)} | 0.70×ARV − repairs − fee`,
+    `F50 (turnkey)    | $${result.f50.offer.toLocaleString().padStart(10)} | ${result.f50.source.padEnd(12)} | $${result.f50.downPayment.toLocaleString()} now + $${result.f50.carryback.toLocaleString()} in 72mo`,
+    `F10 (renovation) | $${result.f10.offer.toLocaleString().padStart(10)} | ${result.f10.source.padEnd(12)} | $${result.f10.downPayment.toLocaleString()} now + $${result.f10.carryback.toLocaleString()} in 24mo`,
   ];
+
+  if (result.subTo) {
+    lines.push(`SubTo            | $${result.subTo.offer.toLocaleString().padStart(10)} | ${result.subTo.source.padEnd(12)} | Purchase − DP − EMD − Payoff = equity`);
+    lines.push(`                 |              |              | Cash flow: $${result.subTo.monthlyCashFlow.toLocaleString()}/mo`);
+  }
+
+  if (result.rental) {
+    const r = result.rental;
+    lines.push(`Rental (LT)      | $${r.monthlyCashFlow.toLocaleString().padStart(10)} | ${r.source.padEnd(12)} | $${r.monthlyRent.toLocaleString()}/mo, 1%: ${r.onePercentPasses ? 'PASS' : 'FAIL'}`);
+    lines.push(`                 |              |              | Cash flow: $${r.monthlyCashFlow.toLocaleString()}/mo (threshold: $${r.cashFlowThreshold})`);
+    if (r.dscr !== null) lines.push(`                 |              |              | DSCR: ${r.dscr} (threshold: ${r.dscrThreshold})`);
+  }
+
+  if (result.midTerm) {
+    const mt = result.midTerm;
+    lines.push(`Mid-term (MTR)   | $${mt.offer.toLocaleString().padStart(10)} | ${mt.rentSource.padEnd(12)} | $${mt.monthlyRent.toLocaleString()}/mo`);
+    lines.push(`                 |              |              | Cash flow threshold: $${mt.cashFlowThreshold} (MTR)`);
+  }
+
+  lines.push('');
+  lines.push('Seller protections by strategy:');
+  if (result.cash.sellerProtections.length) lines.push(`  Cash: ${result.cash.sellerProtections.join(', ')}`);
+  if (result.f50.sellerProtections.length) lines.push(`  F50: ${result.f50.sellerProtections.join(', ')}`);
+  if (result.f10.sellerProtections.length) lines.push(`  F10: ${result.f10.sellerProtections.join(', ')}`);
+  if (result.subTo.sellerProtections.length) lines.push(`  SubTo: ${result.subTo.sellerProtections.join(', ')}`);
+
+  lines.push('');
+  lines.push('SOURCE LEGEND:');
+  lines.push('  COURSE_UNIVERSAL — applies to all deals of this type');
+  lines.push('  COURSE_PATH_SPECIFIC — applies to this strategy path');
+  lines.push('  SPREADSHEET_EXAMPLE — deal-specific, not universal');
+  lines.push('  OWNER_MODIFICATION — owner override from course default');
+  lines.push('  ADVISORY_ESTIMATE — not verified, actual data required');
+  lines.push('');
+  lines.push('Recommended: pick the strategy that matches seller intent.');
+
   return lines.join('\n');
 }
 

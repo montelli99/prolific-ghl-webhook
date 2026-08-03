@@ -1,0 +1,492 @@
+{
+  "version": "1.0",
+  "date": "2026-08-03T16:23:11.411Z",
+  "source": "Course transcripts, spreadsheets, SOPs, LOIs, written processes",
+  "strategies": {
+    "cash": {
+      "label": "Cash / Wholesale",
+      "implemented": true,
+      "stages": [
+        "comp",
+        "offer"
+      ],
+      "source": "COURSE_UNIVERSAL",
+      "cashFlowThreshold": 200,
+      "interestRate": {
+        "value": 0.07,
+        "source": "COURSE_PATH_SPECIFIC",
+        "note": "Course example; configurable"
+      },
+      "onePercentRule": {
+        "applies": true,
+        "action": "SCREEN_ONLY",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "dscr": {
+        "applies": false
+      },
+      "repairMethod": {
+        "type": "TIER_X_SQFT",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "sellerProtections": [
+        "deed_in_lieu"
+      ],
+      "wholesaleFee": {
+        "applies": true,
+        "course": 10000,
+        "owner": 20000,
+        "active": 20000,
+        "source": "OWNER_MODIFICATION"
+      },
+      "arvMultiplier": {
+        "value": 0.7,
+        "source": "COURSE_UNIVERSAL"
+      },
+      "formula": "ARV × 0.70 − repairs − wholesale_fee",
+      "requiredEvidence": [
+        "aru",
+        "tier",
+        "sqft"
+      ],
+      "note": null
+    },
+    "f50": {
+      "label": "F50 (Stack 50%)",
+      "implemented": true,
+      "stages": [
+        "offer",
+        "negotiation"
+      ],
+      "source": "COURSE_PATH_SPECIFIC",
+      "cashFlowThreshold": 200,
+      "interestRate": {
+        "value": 0.07,
+        "source": "COURSE_PATH_SPECIFIC",
+        "note": "Course example; configurable"
+      },
+      "onePercentRule": {
+        "applies": true,
+        "action": "SCREEN_ONLY",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "dscr": {
+        "applies": false
+      },
+      "repairMethod": {
+        "type": "TIER_X_SQFT",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "sellerProtections": [
+        "deed_in_lieu",
+        "balloon_72mo"
+      ],
+      "wholesaleFee": {
+        "applies": true,
+        "course": 10000,
+        "owner": 20000,
+        "active": 20000,
+        "source": "OWNER_MODIFICATION"
+      },
+      "arvMultiplier": {
+        "value": 0.7,
+        "source": "COURSE_UNIVERSAL"
+      },
+      "formula": "(ARV × 0.70 − repairs) split 50/50, 72mo balloon",
+      "requiredEvidence": [
+        "aru",
+        "tier",
+        "sqft"
+      ],
+      "note": null
+    },
+    "f10": {
+      "label": "F10 (Stack 10%)",
+      "implemented": true,
+      "stages": [
+        "offer",
+        "negotiation"
+      ],
+      "source": "COURSE_PATH_SPECIFIC",
+      "cashFlowThreshold": 200,
+      "interestRate": {
+        "value": 0.07,
+        "source": "COURSE_PATH_SPECIFIC",
+        "note": "Course example; configurable"
+      },
+      "onePercentRule": {
+        "applies": true,
+        "action": "SCREEN_ONLY",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "dscr": {
+        "applies": false
+      },
+      "repairMethod": {
+        "type": "TIER_X_SQFT",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "sellerProtections": [
+        "deed_in_lieu",
+        "balloon_24mo"
+      ],
+      "wholesaleFee": {
+        "applies": true,
+        "course": 10000,
+        "owner": 20000,
+        "active": 20000,
+        "source": "OWNER_MODIFICATION"
+      },
+      "arvMultiplier": {
+        "value": 0.7,
+        "source": "COURSE_UNIVERSAL"
+      },
+      "formula": "(ARV × 0.70 − repairs) split 10/90, 24mo lump sum",
+      "requiredEvidence": [
+        "aru",
+        "tier",
+        "sqft"
+      ],
+      "note": null
+    },
+    "stack_principal": {
+      "label": "Stack Principal",
+      "implemented": false,
+      "stages": [
+        "offer",
+        "negotiation"
+      ],
+      "source": "COURSE_PATH_SPECIFIC",
+      "cashFlowThreshold": 200,
+      "interestRate": {
+        "value": 0.07,
+        "source": "COURSE_PATH_SPECIFIC",
+        "note": "Course example; configurable"
+      },
+      "onePercentRule": {
+        "applies": true,
+        "action": "SCREEN_ONLY",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "dscr": {
+        "applies": false
+      },
+      "repairMethod": {
+        "type": "TIER_X_SQFT",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "sellerProtections": [
+        "deed_in_lieu"
+      ],
+      "wholesaleFee": {
+        "course": 10000,
+        "owner": 20000,
+        "active": 20000,
+        "source": "OWNER_MODIFICATION"
+      },
+      "arvMultiplier": {
+        "value": 0.7,
+        "source": "COURSE_UNIVERSAL"
+      },
+      "formula": "Principal + interest stack. Monthly payments to seller.",
+      "requiredEvidence": [
+        "aru",
+        "tier",
+        "sqft",
+        "purchasePrice"
+      ],
+      "note": "NOT_IMPLEMENTED — outside current production launch scope."
+    },
+    "interest_only_stack": {
+      "label": "Interest Only Stack",
+      "implemented": false,
+      "stages": [
+        "offer",
+        "negotiation"
+      ],
+      "source": "COURSE_PATH_SPECIFIC",
+      "cashFlowThreshold": 200,
+      "interestRate": {
+        "value": 0.07,
+        "source": "COURSE_PATH_SPECIFIC",
+        "note": "Course example; configurable"
+      },
+      "onePercentRule": {
+        "applies": true,
+        "action": "SCREEN_ONLY",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "dscr": {
+        "applies": false
+      },
+      "repairMethod": {
+        "type": "TIER_X_SQFT",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "sellerProtections": [
+        "deed_in_lieu"
+      ],
+      "wholesaleFee": {
+        "course": 10000,
+        "owner": 20000,
+        "active": 20000,
+        "source": "OWNER_MODIFICATION"
+      },
+      "arvMultiplier": {
+        "value": 0.7,
+        "source": "COURSE_UNIVERSAL"
+      },
+      "formula": "Interest-only payments to seller. Balloon at term.",
+      "requiredEvidence": [
+        "aru",
+        "tier",
+        "sqft",
+        "purchasePrice"
+      ],
+      "note": "NOT_IMPLEMENTED — outside current production launch scope."
+    },
+    "zero_down": {
+      "label": "Zero Down",
+      "implemented": false,
+      "stages": [
+        "offer",
+        "negotiation"
+      ],
+      "source": "COURSE_PATH_SPECIFIC",
+      "cashFlowThreshold": 200,
+      "interestRate": {
+        "value": 0.07,
+        "source": "COURSE_PATH_SPECIFIC",
+        "note": "Course example; configurable"
+      },
+      "onePercentRule": {
+        "applies": true,
+        "action": "SCREEN_ONLY",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "dscr": {
+        "applies": false
+      },
+      "repairMethod": {
+        "type": "TIER_X_SQFT",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "sellerProtections": [
+        "deed_in_lieu"
+      ],
+      "wholesaleFee": {
+        "course": 10000,
+        "owner": 20000,
+        "active": 20000,
+        "source": "OWNER_MODIFICATION"
+      },
+      "arvMultiplier": {
+        "value": 0.7,
+        "source": "COURSE_UNIVERSAL"
+      },
+      "formula": "Rental AND owned free/clear. No down payment.",
+      "requiredEvidence": [
+        "aru",
+        "tier",
+        "sqft",
+        "isOwnedFree"
+      ],
+      "note": "NOT_IMPLEMENTED — outside current production launch scope."
+    },
+    "subject_to": {
+      "label": "Subject To",
+      "implemented": true,
+      "stages": [
+        "offer",
+        "negotiation",
+        "loi"
+      ],
+      "source": "COURSE_PATH_SPECIFIC",
+      "cashFlowThreshold": 200,
+      "interestRate": {
+        "value": 0.03,
+        "source": "SPREADSHEET_EXAMPLE",
+        "note": "Deal-specific LOI example; configurable per deal"
+      },
+      "onePercentRule": {
+        "applies": true,
+        "action": "SCREEN_ONLY",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "dscr": {
+        "applies": false
+      },
+      "repairMethod": {
+        "type": "TIER_X_SQFT",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "sellerProtections": [
+        "deed_in_lieu",
+        "automated_payments",
+        "escrow_held_deed"
+      ],
+      "wholesaleFee": {
+        "applies": true,
+        "course": 10000,
+        "owner": 20000,
+        "active": 20000,
+        "source": "OWNER_MODIFICATION"
+      },
+      "arvMultiplier": {
+        "value": 0.7,
+        "source": "COURSE_UNIVERSAL"
+      },
+      "formula": "Purchase price − DP − EMD − payoff = seller equity. Monthly cash flow = rent − PITI.",
+      "requiredEvidence": [
+        "purchasePrice",
+        "downPayment",
+        "emd",
+        "payoff",
+        "existingLoan",
+        "existingRate",
+        "monthlyRent",
+        "propertyTaxes",
+        "insurance"
+      ],
+      "note": "SubTo uses purchase price, DP, EMD, payoff, seller equity, and monthly cash flow — not ARV − repairs − loan."
+    },
+    "novation": {
+      "label": "Novation",
+      "implemented": false,
+      "stages": [
+        "offer",
+        "negotiation"
+      ],
+      "source": "COURSE_PATH_SPECIFIC",
+      "cashFlowThreshold": 200,
+      "interestRate": {
+        "value": 0.07,
+        "source": "COURSE_PATH_SPECIFIC",
+        "note": "Course example; configurable"
+      },
+      "onePercentRule": {
+        "applies": true,
+        "action": "SCREEN_ONLY",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "dscr": {
+        "applies": false
+      },
+      "repairMethod": {
+        "type": "TIER_X_SQFT",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "sellerProtections": [],
+      "wholesaleFee": {
+        "course": 10000,
+        "owner": 20000,
+        "active": 20000,
+        "source": "OWNER_MODIFICATION"
+      },
+      "arvMultiplier": {
+        "value": 0.7,
+        "source": "COURSE_UNIVERSAL"
+      },
+      "formula": "Move-in ready, low motivation. Transfer contract position.",
+      "requiredEvidence": [
+        "aru",
+        "tier",
+        "sqft",
+        "moveInReady",
+        "motivation"
+      ],
+      "note": "NOT_IMPLEMENTED — outside current production launch scope."
+    },
+    "rental": {
+      "label": "General Rental (Long-Term)",
+      "implemented": true,
+      "stages": [
+        "comp",
+        "offer"
+      ],
+      "source": "COURSE_UNIVERSAL",
+      "cashFlowThreshold": 200,
+      "interestRate": {
+        "value": 0.07,
+        "source": "COURSE_PATH_SPECIFIC",
+        "note": "Course example; configurable"
+      },
+      "onePercentRule": {
+        "applies": true,
+        "action": "SCREEN_ONLY",
+        "source": "COURSE_UNIVERSAL",
+        "note": "Failed 1% → pivot to MTR"
+      },
+      "dscr": {
+        "applies": true,
+        "threshold": 1.25,
+        "source": "COURSE_UNIVERSAL"
+      },
+      "repairMethod": {
+        "type": "TIER_X_SQFT",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "sellerProtections": [],
+      "wholesaleFee": {
+        "applies": false
+      },
+      "arvMultiplier": {
+        "value": 0.7,
+        "source": "COURSE_UNIVERSAL"
+      },
+      "formula": "Monthly cash flow = rent − PITI − vacancy − maintenance − management. Must exceed cashFlowThreshold.",
+      "requiredEvidence": [
+        "monthlyRent",
+        "purchasePrice",
+        "propertyTaxes",
+        "insurance"
+      ],
+      "note": null
+    },
+    "mid_term": {
+      "label": "Mid-Term Rental (Furnished Finder)",
+      "implemented": true,
+      "stages": [
+        "comp",
+        "offer"
+      ],
+      "source": "COURSE_PATH_SPECIFIC",
+      "cashFlowThreshold": 250,
+      "interestRate": {
+        "value": 0.07,
+        "source": "COURSE_PATH_SPECIFIC",
+        "note": "Course example; configurable"
+      },
+      "onePercentRule": {
+        "applies": true,
+        "action": "PIVOT_TRIGGER",
+        "source": "COURSE_PATH_SPECIFIC",
+        "note": "Failed long-term 1% triggers MTR pivot"
+      },
+      "dscr": {
+        "applies": true,
+        "threshold": 1.25,
+        "source": "COURSE_UNIVERSAL"
+      },
+      "repairMethod": {
+        "type": "TIER_X_SQFT",
+        "source": "COURSE_UNIVERSAL"
+      },
+      "sellerProtections": [],
+      "wholesaleFee": {
+        "applies": false
+      },
+      "arvMultiplier": {
+        "value": 0.7,
+        "source": "COURSE_UNIVERSAL"
+      },
+      "formula": "Actual Furnished Finder per-room rate × bedrooms. Existing multipliers are ADVISORY_ONLY.",
+      "requiredEvidence": [
+        "furnishedFinderRate",
+        "bedrooms",
+        "purchasePrice"
+      ],
+      "note": "Requires actual Furnished Finder data. ARV × 1.2% is ADVISORY_ONLY fallback."
+    }
+  }
+}
