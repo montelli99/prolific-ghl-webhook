@@ -14,6 +14,7 @@ const {
   clearSelfTestState, formatPreviewText,
   OWNER_TELEGRAM_ID, OWNER_CONTROLLED_TEST_PHONE,
   APPROVED_SENDER, EXPECTED_CARD_HASH, EXPECTED_SPEC_HASH,
+  PUBLIC_MEDIA_URL, providerReadiness,
 } = require('./contact-card-self-test');
 
 const { ContactCardDelivery, CARD_STATES } = require('./contact-card-delivery');
@@ -280,6 +281,53 @@ await test('28 Changed recipient blocks approval', () => {
 });
 
 // === PHASE 10: EXECUTION AND RECONCILIATION ===
+
+await test('28b Expired preview auto-refreshes and approves when provider is ready', () => {
+  clearSelfTestState();
+  const savedKey = process.env.JUSTCALL_API_KEY;
+  const savedSecret = process.env.JUSTCALL_API_SECRET;
+  const savedFrom = process.env.JUSTCALL_FROM_NUMBER;
+  process.env.JUSTCALL_API_KEY = 'test_key';
+  process.env.JUSTCALL_API_SECRET = 'test_secret';
+  process.env.JUSTCALL_FROM_NUMBER = '+15716012619';
+  buildSelfTestPreview(OWNER_TELEGRAM_ID);
+  const preview = loadSelfTestPreview();
+  preview.expiresAt = new Date(Date.now() - 1000).toISOString();
+  fs.writeFileSync(require('./contact-card-self-test').SELF_TEST_PREVIEW_PATH, JSON.stringify(preview, null, 2) + '\n');
+  const approval = approveSelfTest(OWNER_TELEGRAM_ID, 'Send the contact card test');
+  process.env.JUSTCALL_API_KEY = savedKey;
+  process.env.JUSTCALL_API_SECRET = savedSecret;
+  process.env.JUSTCALL_FROM_NUMBER = savedFrom;
+  assert.ok(approval.ok, approval.error);
+  assert.strictEqual(approval.approval.type, 'CONTACT_CARD_SELF_TEST_APPROVAL');
+});
+
+await test('28c Expired preview auto-refresh fails if provider is not ready', () => {
+  clearSelfTestState();
+  const savedKey = process.env.JUSTCALL_API_KEY;
+  const savedSecret = process.env.JUSTCALL_API_SECRET;
+  const savedFrom = process.env.JUSTCALL_FROM_NUMBER;
+  process.env.JUSTCALL_API_KEY = '';
+  process.env.JUSTCALL_API_SECRET = '';
+  process.env.JUSTCALL_FROM_NUMBER = '';
+  buildSelfTestPreview(OWNER_TELEGRAM_ID);
+  const preview = loadSelfTestPreview();
+  preview.expiresAt = new Date(Date.now() - 1000).toISOString();
+  fs.writeFileSync(require('./contact-card-self-test').SELF_TEST_PREVIEW_PATH, JSON.stringify(preview, null, 2) + '\n');
+  const approval = approveSelfTest(OWNER_TELEGRAM_ID, 'Send the contact card test');
+  process.env.JUSTCALL_API_KEY = savedKey;
+  process.env.JUSTCALL_API_SECRET = savedSecret;
+  process.env.JUSTCALL_FROM_NUMBER = savedFrom;
+  assert.ok(!approval.ok);
+  assert.strictEqual(approval.error, 'PROVIDER_NOT_READY');
+});
+
+await test('28d Public media URL matches authoritative production URL', () => {
+  const preview = buildSelfTestPreview(OWNER_TELEGRAM_ID);
+  assert.ok(preview.ok);
+  assert.strictEqual(preview.preview.asset.publicMediaUrl, PUBLIC_MEDIA_URL);
+  assert.ok(preview.preview.asset.publicMediaUrl.includes('prolific-ghl-webhook-0b16.onrender.com'));
+});
 
 await test('29 Exactly one provider operation allowed', () => {
   buildSelfTestPreview(OWNER_TELEGRAM_ID);

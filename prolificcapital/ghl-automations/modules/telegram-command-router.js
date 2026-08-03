@@ -469,7 +469,7 @@ async function _handleContract(args) {
   };
 }
 
-function _handleContactCard(args, ctx) {
+async function _handleContactCard(args, ctx) {
   const { ContactCardDelivery } = require(path.join(__dirname, 'contact-card-delivery'));
   const { buildSelfTestPreview, loadSelfTestPreview, approveSelfTest, formatPreviewText, verifyCard } = require(path.join(__dirname, 'contact-card-self-test'));
   const delivery = new ContactCardDelivery();

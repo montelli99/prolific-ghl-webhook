@@ -146,6 +146,39 @@ function buildSelfTestPreview(ownerId) {
   return { ok: true, preview };
 }
 
+function providerReadiness() {
+  const apiKey = process.env.JUSTCALL_API_KEY || '';
+  const apiSecret = process.env.JUSTCALL_API_SECRET || '';
+  const fromNumber = process.env.JUSTCALL_FROM_NUMBER || '+15716012619';
+  return Boolean(apiKey && apiSecret && fromNumber);
+}
+
+function revalidateAndRefreshPreview() {
+  const card = verifyCard();
+  if (card.error) return card;
+
+  const fresh = buildSelfTestPreview(OWNER_TELEGRAM_ID);
+  if (!fresh.ok) return fresh;
+
+  if (fresh.preview.recipient.phone !== OWNER_CONTROLLED_TEST_PHONE) {
+    return { error: 'RECIPIENT_CHANGED_SINCE_PREVIEW', message: 'The test recipient has changed since the preview was created. Please request a new preview.' };
+  }
+  if (fresh.preview.sender.phone !== APPROVED_SENDER) {
+    return { error: 'SENDER_CHANGED_SINCE_PREVIEW', message: 'The sender has changed since the preview was created. Please request a new preview.' };
+  }
+  if (fresh.preview.asset.publicMediaUrl !== PUBLIC_MEDIA_URL) {
+    return { error: 'MEDIA_URL_CHANGED', message: 'The contact card media URL has changed since the preview was created. Please request a new preview.' };
+  }
+  if (fresh.preview.asset.vcfHash !== EXPECTED_CARD_HASH) {
+    return { error: 'CARD_CHANGED_SINCE_PREVIEW', message: 'The contact card has changed since the preview was created. Please request a new preview.' };
+  }
+  if (!providerReadiness()) {
+    return { error: 'PROVIDER_NOT_READY', message: 'JustCall API key/secret/from number are not configured. Cannot auto-refresh expired preview.' };
+  }
+
+  return { ok: true, preview: fresh.preview };
+}
+
 function loadSelfTestPreview() {
   if (!fs.existsSync(SELF_TEST_PREVIEW_PATH)) return null;
   try {
@@ -162,7 +195,13 @@ function approveSelfTest(ownerId, message) {
     return { error: 'NOT_OWNER', message: 'Only the owner can approve a contact-card self-test.' };
   }
 
-  const preview = loadSelfTestPreview();
+  let preview = loadSelfTestPreview();
+  if (preview && preview.error === 'PREVIEW_EXPIRED') {
+    const refreshed = revalidateAndRefreshPreview();
+    if (!refreshed.ok) return refreshed;
+    preview = refreshed.preview;
+  }
+
   if (!preview) return { error: 'NO_PREVIEW', message: 'No active self-test preview. Say "Test my Montelli contact card to my phone." first.' };
   if (preview.error) return preview;
 
@@ -288,10 +327,15 @@ module.exports = {
   APPROVED_SENDER,
   EXPECTED_CARD_HASH,
   EXPECTED_SPEC_HASH,
+  PUBLIC_MEDIA_BASE_URL,
+  PUBLIC_VCF_PATH,
+  PUBLIC_MEDIA_URL,
   loadCardSpec,
   verifyVCF,
   verifyCard,
   buildSelfTestPreview,
+  revalidateAndRefreshPreview,
+  providerReadiness,
   loadSelfTestPreview,
   approveSelfTest,
   loadSelfTestApproval,
