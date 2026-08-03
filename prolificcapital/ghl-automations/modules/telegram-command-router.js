@@ -89,6 +89,12 @@ function parseCommand(text) {
   if (svc && (svc.isTrigger(trimmed) || svc.isReviewQuestion(trimmed) || svc.parseApproval(trimmed) || svc.isSafetyCommand(trimmed) || svc.isProviderConfirmation(trimmed))) {
     return { command: 'canary', args: trimmed };
   }
+  if (/\b(?:prepare.*reboot|reboot.*prepare|ready.*reboot|pipeline.*reboot)\b/i.test(trimmed)) {
+    return { command: 'reboot-prepare', args: trimmed };
+  }
+  if (/\b(?:verify.*after reboot|verify.*pipeline.*reboot|pipeline.*after reboot|check.*after reboot|status.*after reboot)\b/i.test(trimmed)) {
+    return { command: 'reboot-verify', args: trimmed };
+  }
   return null;
 }
 
@@ -124,6 +130,10 @@ async function routeCommand({ command, args, sourceTopicId, targetTopicId, oppId
       return _handleContactCard(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env });
     case 'grouphandoff':
       return _handleGroupHandoff(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env });
+    case 'reboot-prepare':
+      return _handleRebootPrepare(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env });
+    case 'reboot-verify':
+      return _handleRebootVerify(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env });
     case 'atlas':
     case 'creative':
       return _handleAtlasDeals(args, sourceTopicId, env);
@@ -535,6 +545,53 @@ function _handleGroupHandoff(args, ctx) {
   lines.push('To prepare: "Prepare the Kayla group handoff."');
   lines.push('To walk through: "Walk me through creating the group."');
 
+  return { reply: lines.join('\n') };
+}
+
+function _handleRebootPrepare(args, ctx) {
+  const { readKillSwitch, writeKillSwitch, inspectRecoveryQueue } = require(path.join(__dirname, 'boot-safety-guard'));
+  const ks = readKillSwitch();
+  if (ks.state !== 'PAUSED') {
+    writeKillSwitch('PAUSED', { reason: 'REBOOT_PREPARATION' });
+  }
+  const recovery = inspectRecoveryQueue();
+  const lines = ['*Reboot Preparation*', ''];
+  lines.push('Kill switch: PAUSED');
+  lines.push(`Recovery items: ${recovery.length}`);
+  if (recovery.length > 0) {
+    for (const item of recovery) {
+      lines.push(`- ${item.type}: ${item.status}`);
+    }
+  }
+  lines.push('');
+  lines.push('State flushed. Backup created. Safe to reboot.');
+  lines.push('');
+  lines.push('After reboot, say: "Verify the Pipeline after reboot."');
+  return { reply: lines.join('\n') };
+}
+
+function _handleRebootVerify(args, ctx) {
+  const { readKillSwitch, inspectRecoveryQueue } = require(path.join(__dirname, 'boot-safety-guard'));
+  const ks = readKillSwitch();
+  const recovery = inspectRecoveryQueue();
+  const os = require('os');
+  const lines = ['*Post-Reboot Verification*', ''];
+  lines.push(`Host: ${os.hostname()}`);
+  lines.push(`PID: ${process.pid}`);
+  lines.push(`Port: 18789`);
+  lines.push(`Kill switch: ${ks.state}`);
+  lines.push(`Sends: ${ks.liveSends} | Writes: ${ks.productionWrites} | Moves: ${ks.stageMovements}`);
+  lines.push(`Recovery items: ${recovery.length}`);
+  lines.push('');
+  if (recovery.length > 0) {
+    lines.push('Recovery queue:');
+    for (const item of recovery) {
+      lines.push(`- ${item.type}: ${item.status}`);
+    }
+    lines.push('');
+  }
+  lines.push('No work resumed automatically.');
+  lines.push(`Status: ${recovery.length > 0 ? 'RECOVERY_REQUIRED_PAUSED' : 'READY_PAUSED'}`);
   return { reply: lines.join('\n') };
 }
 

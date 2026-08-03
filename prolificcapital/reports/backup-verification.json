@@ -1,0 +1,34 @@
+{
+  "verifiedAt": "2026-08-03T13:01:27.528Z",
+  "backupPath": "C:\\Users\\mscott\\AI_Workspace\\prolificcapital\\backups\\pipeline-backup-20260803-085723",
+  "manifestHash": "E54AF165D6AEF021A1B5BC4526E77631927B6EB537F965FDFCBE5E06B2E4DEA6",
+  "fileCount": 16,
+  "restoreTest": {
+    "method": "temporary_directory",
+    "result": "PASS",
+    "filesVerified": 16
+  },
+  "encryption": {
+    "samePcDPAPI": "AVAILABLE",
+    "portablePassword": "AVAILABLE"
+  },
+  "secretScan": {
+    "secretsInGit": "NONE",
+    "secretsInLogs": "NONE",
+    "secretsInReports": "NONE"
+  },
+  "files": [
+    {
+      "path": "config\\openclaw.json",
+      "hash": "5ebf6fc27b3d991d26e98387ee5156a572be5358412c6848d8c1654f42318611"
+    },
+    {
+      "path": "config\\gateway.cmd",
+      "hash": "b88148f5b9f5330f80b52b36e5625f56244afb7ba5a14fc986360770259cc156"
+    },
+    {
+      "path": "assets\\montelli-scott-divinity-aligned.vcf",
+      "hash": "77bbcbdab80a604d3161d0a898fd92e1832d258c7c91a41349a86a5d18f60065"
+    }
+  ]
+}

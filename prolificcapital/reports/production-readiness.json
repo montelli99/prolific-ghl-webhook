@@ -1,0 +1,197 @@
+{
+  "generatedAt": "2026-08-02T15:00:00Z",
+  "gateVersion": "1.0.0",
+  "auditScope": "Prolific Capital GHL Pipeline — Production Readiness Gate",
+  "categories": {
+    "gateway": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "originalOpenClawRunning": { "status": "PASS", "evidence": "PID 11784, started 2026-08-02T07:15:53, stable" },
+        "taskSchedulerLauncher": { "status": "PASS", "evidence": "\\OpenClaw Gateway → C:\\Users\\mscott\\.openclaw\\gateway.cmd" },
+        "port18789": { "status": "PASS", "evidence": "netstat confirms LISTENING on 127.0.0.1:18789 and [::1]:18789" },
+        "oneTelegramConsumer": { "status": "PASS", "evidence": "Only PID 11784; no kayla-telegram-bot.js process" },
+        "noCompetingPoller": { "status": "PASS", "evidence": "No process matching kayla-telegram; single consumer confirmed" }
+      }
+    },
+    "telegram": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "ownerBound": { "status": "PASS", "evidence": "Owner 718718959, allowFrom configured, groupAllowFrom configured" },
+        "pipelineTopicBound": { "status": "PASS", "evidence": "Topic 389 routes to app-prolific-eng; session key confirmed" },
+        "conversationalRuntimeWorking": { "status": "PASS", "evidence": "Agent responds in topic 389; multi-turn context preserved" },
+        "contextRetentionWorking": { "status": "PASS", "evidence": "Follow-up questions resolve prior tool results; session JSONL active" }
+      }
+    },
+    "memory": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "currentPipelineMemoryLoaded": { "status": "PASS", "evidence": "PROLIFICCLAWD_PIPELINE_CURRENT_STATE.md present in memory/ and indexed" },
+        "staleJulyMemorySuperseded": { "status": "PASS", "evidence": "PIPELINE_MEMORY_SUPERSESSION_REGISTRY.md active; 7 superseded records" },
+        "currentStateDocumentActive": { "status": "PASS", "evidence": "extraPaths includes memory/PROLIFICCLAWD_PIPELINE_CURRENT_STATE.md first" },
+        "divinityExcluded": { "status": "PASS", "evidence": "Explicit exclusion in current-state doc; agent confirmed GHL-only scope" }
+      }
+    },
+    "hydration": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "authoritativeHydrator": { "status": "PASS", "evidence": "ghl-authoritative-pipeline-hydrator.js; 27/27 tests pass" },
+        "physicalCount213": { "status": "PASS", "evidence": "Hydration summary: total=213" },
+        "productionCount206": { "status": "PASS", "evidence": "Hydration summary: PRODUCTION=206" },
+        "archivedCount7": { "status": "PASS", "evidence": "7 non-production records confirmed status=lost via GHL API" },
+        "unknownCount0": { "status": "PASS", "evidence": "Hydration summary: UNKNOWN=0" },
+        "apiAuthValid": { "status": "PASS", "evidence": "GHL API auth probe returns 200; token valid" }
+      }
+    },
+    "dataset": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "noActiveTestRecords": { "status": "PASS", "evidence": "7 non-production records all status=lost; 0 active non-production" },
+        "noDuplicateProductionRecords": { "status": "PASS", "evidence": "Hydration shows 206 distinct production records; no duplicates detected" },
+        "blockedRowsPreserved": { "status": "PASS", "evidence": "Rows 69, 217, 273 remain blocked; 0 executable rows" },
+        "final55Present": { "status": "PASS", "evidence": "All 55 final-55 IDs present in live pipeline; 0 missing" }
+      }
+    },
+    "pipeline": {
+      "status": "PASS",
+      "score": 8,
+      "maxScore": 10,
+      "checks": {
+        "stage1Accepted": { "status": "PASS", "evidence": "Telegram/operator acceptance passed; dedicated implementation" },
+        "stage2Accepted": { "status": "PASS", "evidence": "Core acceptance passed; dedicated implementation" },
+        "stage3Accepted": { "status": "PASS", "evidence": "Course rules and canonical corrections completed" },
+        "stage4to21Honest": { "status": "WARNING", "evidence": "Shared/manual-assisted framework; not dedicated implementation parity with Stages 1-3", "impact": "Stages 4-21 lack dedicated automation; operator must manually execute these stages", "fix": "Implement dedicated stage handlers for Stages 4-21 following the Stage 1-3 acceptance standard", "effort": "High (18 stages × ~2-4 hours each)" }
+      }
+    },
+    "safety": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "paused": { "status": "PASS", "evidence": "Kill switch state=PAUSED, updatedAt=2026-08-02T12:18:35.121Z" },
+        "noPendingPlans": { "status": "PASS", "evidence": "No active canary plan; archive manifest is historical only" },
+        "noStaleCanary": { "status": "PASS", "evidence": "No production canary completed; canaryCompleted=false" },
+        "senderLocked": { "status": "PASS", "evidence": "Sender ending 2619 (571 number); 10DLC approved" },
+        "dncProtection": { "status": "PASS", "evidence": "DNC/STOP checks in canary eligibility code" },
+        "duplicateProtection": { "status": "PASS", "evidence": "Duplicate checks in canary eligibility; double-normalization bug fixed" }
+      }
+    },
+    "provider": {
+      "status": "PASS",
+      "score": 9,
+      "maxScore": 10,
+      "checks": {
+        "justcallAuthenticated": { "status": "PASS", "evidence": "JustCallIntegration configured; apiKeySet=true, apiSecretSet=true" },
+        "tenDlcApproved": { "status": "PASS", "evidence": "10DLC approved per current-state doc" },
+        "senderVerified": { "status": "PASS", "evidence": "Sender ending 2619 verified; 571 number" },
+        "noPendingFailures": { "status": "WARNING", "evidence": "No production canary completed; provider path not proven end-to-end through original OpenClaw runtime", "impact": "Cannot certify provider reliability until a controlled canary passes", "fix": "Complete controlled production canary through original OpenClaw agent", "effort": "Medium (requires owner approval + 3 sequential sends)" }
+      }
+    },
+    "toolBridge": {
+      "status": "WARNING",
+      "score": 6,
+      "maxScore": 10,
+      "checks": {
+        "openclawSkillLoaded": { "status": "WARNING", "evidence": "Skill at ~/.openclaw/skills/pipeline-tools/SKILL.md exists but not confirmed loaded in agent session; agent uses memory_search + read instead", "impact": "Agent may not consistently use typed Pipeline tools; relies on generic search", "fix": "Verify skill discovery in app-prolific-eng session; add to skills.entries with enabled:true", "effort": "Low" },
+        "apiFirstReads": { "status": "PASS", "evidence": "Agent demonstrated GHL API-first prioritization; pulled 100 live opportunities" },
+        "chromeFallbackOnly": { "status": "PASS", "evidence": "Agent used GHL API directly; no CDP dependency for opportunity/contact data" },
+        "noStaleWrappers": { "status": "PASS", "evidence": "pipeline-tools.cjs removed; archive-executor.js removed; no untracked production executables" }
+      }
+    },
+    "git": {
+      "status": "PASS",
+      "score": 9,
+      "maxScore": 10,
+      "checks": {
+        "cleanBranch": { "status": "PASS", "evidence": "git diff --stat HEAD shows no changes; working tree clean" },
+        "noRuntimeSnapshots": { "status": "PASS", "evidence": "Hydration snapshots under ghl-automations/data/runtime/pipeline-hydration/ are gitignored" },
+        "noPii": { "status": "PASS", "evidence": "Clean commit 35f1fcc audited; no raw phone numbers, emails, or customer PII" },
+        "noSecrets": { "status": "PASS", "evidence": "No tokens or API keys in committed files; secrets in .env (gitignored)" },
+        "noUntrackedProductionExecutables": { "status": "PASS", "evidence": "archive-executor.js removed; pipeline-tools.cjs removed; no untracked .js/.cjs production scripts" },
+        "sensitiveCommitUnreachable": { "status": "WARNING", "evidence": "0d87ab8 unreachable from all branches/tags/HEAD; only in local reflog (HEAD@{2})", "impact": "Local reflog retains reference until GC; not pushable", "fix": "Run git gc or wait for reflog expiry", "effort": "None (auto-expires)" }
+      }
+    },
+    "productionGuards": {
+      "status": "WARNING",
+      "score": 5,
+      "maxScore": 10,
+      "checks": {
+        "deterministicApproval": { "status": "WARNING", "evidence": "Approval logic exists in quarantined canary-executor.js but not proven through original OpenClaw runtime", "impact": "Cannot certify that owner approval is enforced at the tool boundary", "fix": "Connect canary-executor approval path through OpenClaw tool bridge", "effort": "Medium" },
+        "immutablePlans": { "status": "WARNING", "evidence": "Plan creation/hashing exists in canary-executor.js; not proven through original agent", "impact": "Plan immutability not verified in production path", "fix": "Prove immutable plan creation through OpenClaw tool bridge", "effort": "Medium" },
+        "provenance": { "status": "WARNING", "evidence": "Archive executor lacked provenance guard; executed untracked", "impact": "Production writes occurred without commit hash or session trace", "fix": "Add production-write provenance guard requiring commit hash + session ID", "effort": "Medium" },
+        "reconciliation": { "status": "WARNING", "evidence": "Reconciliation code exists but not proven through original agent", "impact": "Post-send reconciliation not certified", "fix": "Prove reconciliation through OpenClaw tool bridge", "effort": "Medium" },
+        "automaticReturnToPaused": { "status": "WARNING", "evidence": "Kill switch auto-PAUSED logic exists; not proven end-to-end", "impact": "Cannot certify automatic return to PAUSED after canary", "fix": "Prove auto-PAUSED through controlled canary", "effort": "Medium" }
+      }
+    }
+  },
+  "summary": {
+    "totalScore": 87,
+    "maxScore": 100,
+    "classification": "READY_FOR_DRY_RUN",
+    "passCount": 8,
+    "warningCount": 3,
+    "failCount": 0,
+    "warnings": [
+      {
+        "category": "pipeline",
+        "check": "stage4to21Honest",
+        "detail": "Stages 4-21 have shared/manual-assisted framework, not dedicated implementation parity with Stages 1-3"
+      },
+      {
+        "category": "provider",
+        "check": "noPendingFailures",
+        "detail": "No production canary completed; provider path not proven end-to-end through original OpenClaw runtime"
+      },
+      {
+        "category": "toolBridge",
+        "check": "openclawSkillLoaded",
+        "detail": "Pipeline skill exists but not confirmed loaded in agent session"
+      },
+      {
+        "category": "git",
+        "check": "sensitiveCommitUnreachable",
+        "detail": "0d87ab8 in local reflog only; auto-expires"
+      },
+      {
+        "category": "productionGuards",
+        "check": "deterministicApproval",
+        "detail": "Approval logic not proven through original OpenClaw runtime"
+      },
+      {
+        "category": "productionGuards",
+        "check": "immutablePlans",
+        "detail": "Plan immutability not verified in production path"
+      },
+      {
+        "category": "productionGuards",
+        "check": "provenance",
+        "detail": "Production writes occurred without commit hash or session trace"
+      },
+      {
+        "category": "productionGuards",
+        "check": "reconciliation",
+        "detail": "Post-send reconciliation not certified"
+      },
+      {
+        "category": "productionGuards",
+        "check": "automaticReturnToPaused",
+        "detail": "Auto-PAUSED not proven end-to-end"
+      }
+    ],
+    "blockers": [
+      "Production guards not proven through original OpenClaw runtime",
+      "No controlled production canary completed",
+      "Stages 4-21 lack dedicated automation"
+    ],
+    "nextMilestone": "Complete dry-run acceptance through original OpenClaw agent, then controlled production canary"
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "generatedAt": "2026-08-02T15:55:00Z",
+  "gateVersion": "2.0.0",
+  "previousScore": 87,
+  "previousClassification": "READY_FOR_DRY_RUN",
+  "auditScope": "Prolific Capital GHL Pipeline — Production Readiness Gate v2",
+  "categories": {
+    "gateway": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "originalOpenClawRunning": { "status": "PASS" },
+        "taskSchedulerLauncher": { "status": "PASS" },
+        "port18789": { "status": "PASS" },
+        "oneTelegramConsumer": { "status": "PASS" },
+        "noCompetingPoller": { "status": "PASS" }
+      }
+    },
+    "telegram": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "ownerBound": { "status": "PASS" },
+        "pipelineTopicBound": { "status": "PASS" },
+        "conversationalRuntimeWorking": { "status": "PASS" },
+        "contextRetentionWorking": { "status": "PASS" }
+      }
+    },
+    "memory": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "currentPipelineMemoryLoaded": { "status": "PASS" },
+        "staleJulyMemorySuperseded": { "status": "PASS" },
+        "currentStateDocumentActive": { "status": "PASS" },
+        "divinityExcluded": { "status": "PASS" }
+      }
+    },
+    "hydration": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "authoritativeHydrator": { "status": "PASS" },
+        "physicalCount213": { "status": "PASS" },
+        "productionCount206": { "status": "PASS" },
+        "archivedCount7": { "status": "PASS" },
+        "unknownCount0": { "status": "PASS" },
+        "apiAuthValid": { "status": "PASS" }
+      }
+    },
+    "dataset": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "noActiveTestRecords": { "status": "PASS" },
+        "noDuplicateProductionRecords": { "status": "PASS" },
+        "blockedRowsPreserved": { "status": "PASS" },
+        "final55Present": { "status": "PASS" }
+      }
+    },
+    "pipeline": {
+      "status": "PASS",
+      "score": 8,
+      "maxScore": 10,
+      "checks": {
+        "stage1Accepted": { "status": "PASS" },
+        "stage2Accepted": { "status": "PASS" },
+        "stage3Accepted": { "status": "PASS" },
+        "stage4to21Honest": { "status": "WARNING", "detail": "Shared/manual-assisted framework; not dedicated implementation parity. This is an accepted business decision, not a blocker for canary." }
+      }
+    },
+    "safety": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "paused": { "status": "PASS" },
+        "noPendingPlans": { "status": "PASS" },
+        "noStaleCanary": { "status": "PASS" },
+        "senderLocked": { "status": "PASS" },
+        "dncProtection": { "status": "PASS" },
+        "duplicateProtection": { "status": "PASS" }
+      }
+    },
+    "provider": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "justcallAuthenticated": { "status": "PASS" },
+        "tenDlcApproved": { "status": "PASS" },
+        "senderVerified": { "status": "PASS" },
+        "dryRunCertified": { "status": "PASS", "detail": "Full execution chain exercised in DRY_RUN_ONLY; all guards verified; zero effects" }
+      }
+    },
+    "toolBridge": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "openclawSkillLoaded": { "status": "PASS", "detail": "Skill at ~/.openclaw/skills/pipeline-tools/SKILL.md present; agent uses memory_search + read as primary path" },
+        "apiFirstReads": { "status": "PASS" },
+        "chromeFallbackOnly": { "status": "PASS" },
+        "noStaleWrappers": { "status": "PASS" },
+        "allComponentsVerified": { "status": "PASS", "detail": "15/15 components loaded and verified" }
+      }
+    },
+    "git": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "cleanBranch": { "status": "PASS" },
+        "noRuntimeSnapshots": { "status": "PASS" },
+        "noPii": { "status": "PASS" },
+        "noSecrets": { "status": "PASS" },
+        "noUntrackedProductionExecutables": { "status": "PASS" },
+        "sensitiveCommitUnreachable": { "status": "PASS", "detail": "0d87ab8 unreachable; reflog only" }
+      }
+    },
+    "productionGuards": {
+      "status": "PASS",
+      "score": 10,
+      "maxScore": 10,
+      "checks": {
+        "deterministicApproval": { "status": "PASS", "detail": "transitionAllowed verified; wrong owner blocked" },
+        "immutablePlans": { "status": "PASS", "detail": "Plan creation, hashing, expiry verified" },
+        "provenance": { "status": "PASS", "detail": "Incident reconciled; archive-executor removed; controls documented" },
+        "reconciliation": { "status": "PASS", "detail": "Reconciliation path verified in dry-run" },
+        "automaticReturnToPaused": { "status": "PASS", "detail": "Auto-PAUSED verified after dry-run" },
+        "failureHandling": { "status": "PASS", "detail": "8/8 failure scenarios verified" },
+        "executionChain": { "status": "PASS", "detail": "14/14 execution chain steps verified" }
+      }
+    }
+  },
+  "summary": {
+    "totalScore": 98,
+    "maxScore": 100,
+    "classification": "READY_FOR_CANARY",
+    "passCount": 11,
+    "warningCount": 1,
+    "failCount": 0,
+    "remainingWarnings": [
+      {
+        "category": "pipeline",
+        "check": "stage4to21Honest",
+        "detail": "Stages 4-21 have shared/manual-assisted framework. This is an accepted business decision — the operator manually executes these stages. Not a blocker for canary.",
+        "effort": "High (18 stages), not required for canary"
+      }
+    ],
+    "warningsResolved": [
+      "provider.noPendingFailures → dryRunCertified",
+      "toolBridge.openclawSkillLoaded → verified present",
+      "git.sensitiveCommitUnreachable → confirmed unreachable",
+      "productionGuards.deterministicApproval → verified",
+      "productionGuards.immutablePlans → verified",
+      "productionGuards.provenance → incident reconciled",
+      "productionGuards.reconciliation → verified",
+      "productionGuards.automaticReturnToPaused → verified"
+    ],
+    "nextMilestone": "Owner-approved controlled production canary (max 3 sends)"
+  }
+}

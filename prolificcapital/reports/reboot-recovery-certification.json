@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-08-03T13:01:27.515Z",
+  "backup": {
+    "path": "backups\\pipeline-backup-20260803-085723",
+    "manifestHash": "E54AF165D6AEF021A1B5BC4526E77631927B6EB537F965FDFCBE5E06B2E4DEA6",
+    "fileCount": 16
+  },
+  "gateway": {
+    "pid": 17716,
+    "port": 18789,
+    "startedVia": "gateway.cmd",
+    "staleLockRecovery": "PASS",
+    "duplicateStartRejected": "PASS"
+  },
+  "killSwitch": {
+    "state": "PAUSED",
+    "liveSends": 0,
+    "productionWrites": 0,
+    "stageMovements": 0
+  },
+  "tests": {
+    "contact_card_runtime": "53/53",
+    "contact_card_closeout": "41/41",
+    "handoff_readiness": "30/30",
+    "justcall_integration": "11/11",
+    "atlas_ghl_readonly": "27/27",
+    "atlas_ghl_live": "20/20",
+    "ghl_authoritative_pipeline_hydrator": "27/27",
+    "total": "209/209"
+  },
+  "revisions": {
+    "prolificcapital": "803f797",
+    "openclaw": "cd34b109f",
+    "prolific_ghl_webhook": "8be38d0"
+  },
+  "status": "READY_PAUSED"
+}

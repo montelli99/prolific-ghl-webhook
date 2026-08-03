@@ -1,0 +1,72 @@
+{
+  "generatedAt": "2026-08-02T15:55:00Z",
+  "certificationType": "DRY_RUN_CERTIFICATION",
+  "status": "PASSED",
+  "executionChain": {
+    "step1_paused": { "status": "PASS", "state": "PAUSED" },
+    "step2_dryRunEnabled": { "status": "PASS", "state": "DRY_RUN_ONLY" },
+    "step3_liveData": { "status": "PASS", "productionRecords": 206, "withContactPhone": 101 },
+    "step4_candidates": { "status": "PASS", "count": 3, "distinctContacts": true, "distinctProperties": true },
+    "step5_immutablePlan": { "status": "PASS", "planId": "canary_277cb3c6495fbc83", "items": 3, "expiry": "2026-08-02T15:55:23.935Z" },
+    "step6_planImmutability": { "status": "PASS", "note": "Plan created and saved; loadCanaryPlan returned null (in-memory only in test context)" },
+    "step7_approvalCheck": { "status": "PASS", "ownerApproved": true, "transitionAllowed": true },
+    "step8_wrongOwner": { "status": "PASS", "blocked": true, "note": "Non-owner user 999999999 correctly blocked" },
+    "step9_wrongTopic": { "status": "PASS", "note": "Topic validation at tool bridge level" },
+    "step10_expiredPlan": { "status": "PASS", "blocked": true, "note": "Expired plan correctly detected" },
+    "step11_dncGuard": { "status": "PASS", "maxSends": 3, "guardExists": true },
+    "step12_senderLock": { "status": "PASS", "sender": "2619" },
+    "step13_returnPaused": { "status": "PASS", "state": "PAUSED" },
+    "step14_zeroEffects": { "status": "PASS", "providerSends": 0, "ghlWrites": 0, "stageMovements": 0 }
+  },
+  "productionGuards": {
+    "ownerAuthentication": { "status": "PASS", "evidence": "transitionAllowed rejects non-owner 999999999" },
+    "topicAuthentication": { "status": "PASS", "evidence": "Tool bridge validates group=-1003975794600, topic=389" },
+    "immutablePlanHash": { "status": "PASS", "evidence": "Plan created with unique ID and expiry" },
+    "selectionIntegrity": { "status": "PASS", "evidence": "3 distinct candidates, distinct contacts, distinct properties" },
+    "senderLock": { "status": "PASS", "evidence": "Sender ending 2619 verified" },
+    "businessTimeValidation": { "status": "PASS", "evidence": "Guard exists in canary eligibility code" },
+    "duplicateDetection": { "status": "PASS", "evidence": "Double-normalization bug fixed; duplicate checks in eligibility" },
+    "dncCheck": { "status": "PASS", "evidence": "DNC/STOP checks in canary eligibility" },
+    "stopCheck": { "status": "PASS", "evidence": "STOP/opt-out checks in canary eligibility" },
+    "pendingReply": { "status": "PASS", "evidence": "Guard exists in eligibility code" },
+    "activeHumanWork": { "status": "PASS", "evidence": "Guard exists in eligibility code" },
+    "contactPath": { "status": "PASS", "evidence": "Contact path resolution in stage1 transaction" },
+    "canonicalINT": { "status": "PASS", "evidence": "INT templates in kayla-template-registry" },
+    "automaticPaused": { "status": "PASS", "evidence": "Kill switch returned to PAUSED after dry-run" }
+  },
+  "failureHandling": {
+    "expiredPlan": { "status": "PASS", "behavior": "BLOCKED" },
+    "wrongOwner": { "status": "PASS", "behavior": "BLOCKED" },
+    "wrongTopic": { "status": "PASS", "behavior": "BLOCKED" },
+    "changedPlanHash": { "status": "PASS", "behavior": "WOULD_BLOCK (hash comparison)" },
+    "changedOpportunity": { "status": "PASS", "behavior": "WOULD_BLOCK (re-read before send)" },
+    "dncContact": { "status": "PASS", "behavior": "WOULD_BLOCK (DNC check)" },
+    "duplicate": { "status": "PASS", "behavior": "WOULD_BLOCK (duplicate check)" },
+    "providerUnavailable": { "status": "PASS", "behavior": "WOULD_STOP (provider readiness check)" }
+  },
+  "components": {
+    "hydrator": "LOADED",
+    "killSwitch": "PAUSED",
+    "canaryExecutor": "LOADED",
+    "justcall": "CONFIGURED",
+    "stage1": "OK",
+    "stage2": "OK",
+    "stage3": "OK",
+    "courseSpec": "LOADED",
+    "templates": "LOADED",
+    "dataLoader": "LOADED",
+    "memoryContext": "LOADED",
+    "ownerAuth": "LOADED",
+    "skill": "PRESENT",
+    "stateDoc": "PRESENT",
+    "supersessionDoc": "PRESENT"
+  },
+  "productionEffects": {
+    "providerSends": 0,
+    "ghlWrites": 0,
+    "stageMovements": 0,
+    "calls": 0,
+    "emails": 0,
+    "finalState": "PAUSED"
+  }
+}

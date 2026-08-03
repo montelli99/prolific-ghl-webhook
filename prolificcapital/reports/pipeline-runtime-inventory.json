@@ -1,0 +1,69 @@
+{
+  "generatedAt": "2026-08-03T12:45:00Z",
+  "hostname": "WIN-JNBS65NTMGN",
+  "baseline": "pipeline-production-v1.1-recovery-ready",
+  "system": {
+    "os": "Windows",
+    "nodeVersion": "v25.6.1",
+    "nodePath": "C:\\Program Files\\nodejs\\node.exe",
+    "openclawVersion": "2026.7.1-2",
+    "ollamaVersion": "0.32.5"
+  },
+  "repositories": {
+    "prolificcapital": {
+      "path": "C:\\Users\\mscott\\AI_Workspace\\prolificcapital",
+      "revision": "803f797583600e0947ca3b113ed015e51f00319e",
+      "branch": "master"
+    },
+    "openclaw": {
+      "path": "C:\\Users\\mscott\\AI_Workspace\\OpenClaw",
+      "revision": "cd34b109fae41d6d580ad8e3a6d4c09fb7ba7991",
+      "branch": "feature/prolific-shared-memory-tests"
+    },
+    "prolific-ghl-webhook": {
+      "path": "C:\\Users\\mscott\\AI_Workspace\\prolificcapital\\prolific-ghl-webhook",
+      "revision": "8be38d00cd10cfa5d0582aa8d8755f5c07cad2f0",
+      "branch": "master"
+    }
+  },
+  "gateway": {
+    "port": 18789,
+    "launcher": "C:\\Users\\mscott\\.openclaw\\gateway.cmd",
+    "taskScheduler": "\\OpenClaw Gateway",
+    "config": "C:\\Users\\mscott\\AI_Workspace\\OpenClaw\\openclaw.json"
+  },
+  "telegram": {
+    "pipelineGroup": "-1003975794600",
+    "pipelineTopic": 389,
+    "ownerId": "718718959",
+    "agent": "app-prolific-eng",
+    "consumerCount": 1
+  },
+  "ghl": {
+    "baseUrl": "https://services.leadconnectorhq.com",
+    "locationId": "61XPzSqRy7UKMwW9DeB8",
+    "pipelineId": "nSf3NXYVkt8X4PgW9aZ3"
+  },
+  "justcall": {
+    "apiVersion": "v2.1",
+    "sender": "ending 2619",
+    "mmsEnabled": true,
+    "tenDlcVerified": true,
+    "businessApproved": true
+  },
+  "contactCard": {
+    "version": "2.0.0",
+    "vcfHash": "77bbcbdab80a604d3161d0a898fd92e1832d258c7c91a41349a86a5d18f60065",
+    "mediaUrl": "https://prolific-ghl-webhook-0b16.onrender.com/assets/contact-cards/montelli-scott-divinity-aligned-v2.vcf"
+  },
+  "killSwitch": {
+    "state": "PAUSED",
+    "liveSends": 0,
+    "productionWrites": 0,
+    "stageMovements": 0
+  },
+  "ports": {
+    "gateway": 18789,
+    "ollama": 11434
+  }
+}
