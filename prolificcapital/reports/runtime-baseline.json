@@ -1,0 +1,27 @@
+{
+  "gitCommit": "7adf254",
+  "timestamp": "2026-08-03T07:18:56.371Z",
+  "modules": {
+    "ghl-automations/modules/ghl-authoritative-pipeline-hydrator.js": "5d8cb26efbadabb5ee5c5a5f2a06a327cff8afd20e87b4888d79cf0eccb47179",
+    "ghl-automations/modules/canary-plan-builder.js": "15e4d855a63cae2bb10d9fc5cdedc60d3dd9d4390880025a5dc60f24fcb21d55",
+    "ghl-automations/modules/plan-store.js": "22f55703e64ec6c35e3a2f834a0b512eae241d3129c063f7d3377fab88676806",
+    "ghl-automations/modules/approval-store.js": "0c72a2d52c95c7cf147f6596ea50d1811e30258669d174669e0a275a7b4a8e3e",
+    "ghl-automations/modules/outreach-compliance-resolver.js": "df71a2d1f325255a38aabb887799dbedd937f29385ef1195a31789777b36a154",
+    "ghl-automations/modules/atlas-ghl-telegram-live-guards.js": "653ca59f624d92ffe4357cf3302bc9c5a83493904b10d85bf0a5d0752e0ffc2f",
+    "ghl-automations/modules/property-timezone.js": "053bde4afc0a08840e3922f4caf1d5650bd670a53be5f7e5c2218bf31b4c34d7",
+    "ghl-automations/modules/justcall-suppression-read-service.js": "859d167934f1ed738d3dbb5e9c1675a5c4da238d517f33c6406adc44fb0382c0",
+    "ghl-automations/modules/justcall-text-history-read-service.js": "32bdc19abf5b0419e8fc45ad6738a9e952c7d0035364b4613320254055f48287",
+    "ghl-automations/modules/justcall-integration.js": "8d60bcbf66f7fddcb1f320f70551c489d34694c9f134a9c9f2594a0d3dcca668",
+    "ghl-automations/modules/local-suppression-registry.js": "f07fdc77bfb696f1f71be034497d116990f9c0d9414197e8e53585e5978b2c92",
+    "ghl-automations/modules/kayla-course-spec.js": "3282e2b21b37e15ea1afac8fc9735be8596c9c12eb103262d4e285d748c8614b",
+    "ghl-automations/modules/kayla-course-evidence.js": "bce8b2e17a06a3365fc260538152a1d0ea12f813701ba30547b3b2cd1808c372",
+    "ghl-automations/modules/kayla-template-registry.js": "6f71e7c4f5b9757f5774f09d751df9cfdf684e879eb7cf40d139ded118866d65",
+    "ghl-automations/modules/kayla-role-classifier.js": "3be0f89cd84dbf329d379a66ae5ddc5cb582eed061fda5fc52ff4d14046f330d",
+    "ghl-automations/modules/telegram-outreach-dry-run.js": "4d13e62933f2d2d059921c4c7fb6d21cc056d498ab43a30b5234f77a9e8cfb66",
+    "ghl-automations/bot/kill-switch.js": "a5761ae504767bdab89325a53d891ab272412ed72185be487fd808c7e0b61826",
+    "ghl-automations/bot/canary-executor.js": "550629b387a7b6fd549636c91381c2a0b518e8894e6450fc33d3b12e2ebac3f5",
+    "docs/OWNER_OPERATIONAL_POLICY.md": "de6dcfc4e72374abc37b952c21a156c8f80622aa61b51233c7d68116975151e4",
+    "docs/owner-operational-policy.json": "f5efbde9900ff5178d87a9af9c1ce1824f601a461f132fc59b42d0023525bede"
+  },
+  "baselineHash": "d0377b3aca119b8e0107e826fd4c6a0cd35a1323a7d12bcf7e15253b7ae4a6bc"
+}
