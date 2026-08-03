@@ -1,0 +1,20 @@
+{
+  "bootId": "1785760474361-18380",
+  "timestamp": "2026-08-03T12:34:34.361Z",
+  "hostname": "WIN-JNBS65NTMGN",
+  "pid": 18380,
+  "port": 18789,
+  "nodeVersion": "v25.6.1",
+  "pauseResult": {
+    "forced": false,
+    "previousState": "PAUSED",
+    "currentState": "PAUSED"
+  },
+  "recoveryQueue": {
+    "createdAt": "2026-08-03T12:34:34.360Z",
+    "items": [],
+    "count": 0,
+    "instructions": "All items require owner review. No automatic execution or retry."
+  },
+  "status": "READY_PAUSED"
+}
