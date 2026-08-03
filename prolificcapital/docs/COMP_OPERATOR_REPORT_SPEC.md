@@ -1,6 +1,6 @@
 # Comp Operator Report Specification
 
-**Version:** 1.0
+**Version:** 1.2
 **Date:** 2026-08-03
 
 ## Required Sections
@@ -74,5 +74,24 @@ For each strategy show:
 - Owner approvals explicitly listed
 - Production effects always shown
 - No stale Resideline/MLS claims
-- No stale  fee
+- No stale $10K fee
 - No stale Jaxon-as-closer claim
+
+## Formatter Output Mapping
+
+The existing `formatAllStrategies()` function in `offer-calculator.js` was
+audited and already consumed the authoritative result from
+`cash-offer-underwriter.js` `runAllStrategies()`. No production mapping change
+was required.
+
+| Rendered Field | Engine Source | Type |
+|---|---|---|
+| Cash flow value | rental.monthlyCashFlow | number |
+| DSCR value | rental.dscr | number |
+| DSCR threshold | rental.dscrThreshold | number |
+| Cash flow threshold | rental.cashFlowThreshold | number |
+| 1% rule status | rental.onePercentPasses | boolean |
+| Source classification | rental.source | string |
+| Monthly rent | rental.monthlyRent | number |
+
+No calculation, transformation, or default injection in the formatter. All values are read-only from the engine result.

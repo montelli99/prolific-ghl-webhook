@@ -1,0 +1,61 @@
+{
+  "contextVersion": "1.3",
+  "date": "2026-08-03T16:00:00.000Z",
+  "status": "COMP_FORMATTER_SCHEMA_VERIFIED_AND_STATE_PRESERVED",
+  "modules": {
+    "cash-offer-underwriter.js": {
+      "role": "AUTHORITATIVE_ACTIVE",
+      "functions": ["runAllStrategies", "cashStrategy", "f50Strategy", "f10Strategy", "subToStrategy", "midTermStrategy", "rentalStrategy", "normalizeTier", "round2"],
+      "exports": ["runAllStrategies", "REPAIR_TIERS", "_internal"]
+    },
+    "offer-calculator.js": {
+      "role": "ROUTE_TO_AUTHORITATIVE_ENGINE",
+      "activeFunctions": ["runAllStrategies", "runAllStrategiesLocal", "formatAllStrategies", "fetchOpportunity", "fetchContactNotes", "recommendStrategy", "midTermPivot"],
+      "deprecatedFunctions": ["calculate", "formatOutput"],
+      "gatedFunctions": ["handleOfferCalculated"],
+      "exports": ["calculate", "formatOutput", "run", "fetchOpportunity", "fetchContactNotes", "fetchContactConversationMessages", "updateOpportunityNotes", "updateOpportunityStage", "safePatchOpportunity", "safeUpdateNotes", "safeUpdateStage", "assertOurPipeline", "recommendStrategy", "midTermPivot", "runAllStrategies", "runAllStrategiesLocal", "formatAllStrategies", "handleOfferCalculated", "EXIT_STRATEGY_RULES", "STAGE", "PIPELINE_ID", "LOCATION_ID"]
+    },
+    "comp-evidence-model.js": {
+      "role": "ACTIVE_ADVISORY",
+      "functions": ["createCompRecord", "selectComp", "rejectComp", "ownerApproveComp", "compSetChanged", "determineValuationState", "computeArvRange"],
+      "exports": ["createCompRecord", "selectComp", "rejectComp", "ownerApproveComp", "compSetChanged", "determineValuationState", "computeArvRange"]
+    },
+    "course-profile-engine.js": {
+      "role": "ACTIVE_ADVISORY",
+      "functions": ["getProfile", "cashFlowThreshold", "interestRate", "onePercentRule", "dscrConfig", "repairMethod", "sellerProtections", "wholesaleFee", "arvMultiplier", "requiredEvidence", "isImplemented", "getApplicableRules", "getRequiredApprovals", "getRequiredDisclosures"],
+      "exports": ["STRATEGIES", "STAGES", "SOURCE", "PROFILES", "getProfile", "cashFlowThreshold", "interestRate", "onePercentRule", "dscrConfig", "repairMethod", "sellerProtections", "wholesaleFee", "arvMultiplier", "requiredEvidence", "isImplemented", "getApplicableRules", "getRequiredApprovals", "getRequiredDisclosures"]
+    },
+    "comps.js": {
+      "role": "ACTIVE_ADVISORY",
+      "functions": ["finalizeCompReport"]
+    },
+    "mid-term-pivot.js": {
+      "role": "ACTIVE_ADVISORY",
+      "functions": ["MidTermPivot", "estimateMidTermRent", "evaluate"]
+    }
+  },
+  "formatterEngineSchema": {
+    "monthlyCashFlow": { "engineField": "rental.monthlyCashFlow", "type": "number" },
+    "dscr": { "engineField": "rental.dscr", "type": "number" },
+    "dscrThreshold": { "engineField": "rental.dscrThreshold", "type": "number" },
+    "cashFlowThreshold": { "engineField": "rental.cashFlowThreshold", "type": "number" },
+    "onePercentPasses": { "engineField": "rental.onePercentPasses", "type": "boolean" },
+    "source": { "engineField": "rental.source", "type": "string" },
+    "monthlyRent": { "engineField": "rental.monthlyRent", "type": "number" }
+  },
+  "productionChange": {
+    "formatterChanged": false,
+    "underwriterChanged": false,
+    "calculationLogicChanged": false,
+    "classification": "VERIFICATION_ONLY"
+  },
+  "testResults": {
+    "compVerification": { "total": 67, "passed": 67, "status": "ALL_PASS" },
+    "formatterRegression": { "total": 1, "passed": 1, "status": "ALL_PASS" },
+    "topic733Routing": { "total": 1, "passed": 1, "status": "READ_ONLY_VERIFIED" }
+  },
+  "killSwitch": "PAUSED",
+  "providerSends": 0,
+  "ghlWrites": 0,
+  "stageMovements": 0
+}

@@ -470,5 +470,45 @@ test('66 Seller protections are structure-specific', () => {
   assert.deepStrictEqual(profileEngine.sellerProtections('rental'), []);
 });
 
+// =============================================================
+// FORMATTER SCHEMA REGRESSION
+// =============================================================
+
+test('67 Formatter consumes authoritative engine result schema', () => {
+  const r = cashUnderwriter.runAllStrategies(FIXTURE);
+  const before = JSON.stringify(r);
+  const formatted = offerCalc.formatAllStrategies(r);
+  const after = JSON.stringify(r);
+
+  // Verify every field the formatter accesses exists on the engine result
+  assert.strictEqual(typeof r.rental.monthlyCashFlow, 'number', 'monthlyCashFlow must be number');
+  assert.strictEqual(typeof r.rental.dscr, 'number', 'dscr must be number');
+  assert.strictEqual(typeof r.rental.dscrThreshold, 'number', 'dscrThreshold must be number');
+  assert.strictEqual(typeof r.rental.cashFlowThreshold, 'number', 'cashFlowThreshold must be number');
+  assert.strictEqual(typeof r.rental.onePercentPasses, 'boolean', 'onePercentPasses must be boolean');
+  assert.strictEqual(typeof r.rental.source, 'string', 'source must be string');
+  assert.strictEqual(typeof r.rental.monthlyRent, 'number', 'monthlyRent must be number');
+
+  // Verify invalid values cannot leak into rendered output.
+  assert.ok(!formatted.includes('undefined'), 'output must not contain undefined');
+  assert.ok(!formatted.includes('NaN'), 'output must not contain NaN');
+  assert.ok(!formatted.includes('[object Object]'), 'output must not contain object coercion');
+
+  // Verify labeled report fragments derive from the authoritative result.
+  const expectedCashFlow = `Cash flow: $${r.rental.monthlyCashFlow.toLocaleString()}/mo (threshold: $${r.rental.cashFlowThreshold})`;
+  const expectedDscr = `DSCR: ${r.rental.dscr} (threshold: ${r.rental.dscrThreshold})`;
+  const expectedRental = `$${r.rental.monthlyRent.toLocaleString()}/mo, 1%: ${r.rental.onePercentPasses ? 'PASS' : 'FAIL'}`;
+  assert.ok(formatted.includes(expectedCashFlow), 'output must map authoritative rental cash flow');
+  assert.ok(formatted.includes(expectedDscr), 'output must map authoritative rental DSCR');
+  assert.ok(formatted.includes(expectedRental), 'output must map authoritative rent and 1% status');
+
+  // Verify the formatter implementation does not use legacy schema accesses.
+  const formatterSource = offerCalc.formatAllStrategies.toString();
+  assert.ok(!formatterSource.includes('r.kaylaCashFlow'), 'formatter must not access r.kaylaCashFlow');
+  assert.ok(!formatterSource.includes('r.dscr.kaylaSpreadsheet'), 'formatter must not access r.dscr.kaylaSpreadsheet');
+
+  assert.strictEqual(after, before, 'formatter must not mutate engine results');
+});
+
 console.log(`\n${passed}/${passed + failed} tests passed`);
 if (failed > 0) process.exit(1);
