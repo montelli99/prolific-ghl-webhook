@@ -1,0 +1,452 @@
+{
+  "planId": "plan_4986dcaa4139c38e",
+  "planHash": "1881f94312eb4ea4138ff6e8a8db277498f053edaa69eacc7456b9b5b51ca231",
+  "status": "PREVIEW_PENDING_APPROVAL",
+  "schema": "canary-plan-v2",
+  "policyVersion": "OP-2026-08-02-v1",
+  "templateId": "OWNER_APPROVED_PIPELINE_INT",
+  "templateVersion": "e5e48e3767cd599364a75194e44917f50e90b088e99a5295cedf2f33d72de8be",
+  "createdAt": "2026-08-03T07:12:22.543Z",
+  "expiresAt": "2026-08-03T07:42:22.543Z",
+  "executable": false,
+  "productionEffects": {
+    "sends": 0,
+    "ghlWrites": 0,
+    "stageMovements": 0
+  },
+  "sender": "+*******2619",
+  "ownerId": null,
+  "chatId": null,
+  "topicId": null,
+  "originatingMessageId": null,
+  "totalCandidates": 73,
+  "selectedCount": 3,
+  "blockedCount": 0,
+  "items": [
+    {
+      "number": 1,
+      "opportunityId": "x6wHpQJXxCi4loMj6lTZ",
+      "contactId": "LcqernTqlVOxoMBnSroZ",
+      "propertyAddress": "7117 Manker St, Indianapolis IN 46227",
+      "contactName": "Tamara Harper",
+      "contactRole": "agent",
+      "phone": "+180***1727",
+      "timezone": "America/Indiana/Indianapolis",
+      "timezoneConfidence": "HIGH_CONFIDENCE_ZIP3",
+      "renderedMessage": "Happy Mon, Tamara Harper! Are you still accepting offers for 7117 Manker St, Indianapolis IN 46227? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "guardEvidence": {
+        "DNC": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_CONTACT_STATUS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "STOP_OPT_OUT": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "WRONG_NUMBER": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PENDING_REPLY": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "ACTIVE_HUMAN_WORK": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PRIOR_OUTREACH": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "DUPLICATE_HISTORY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "WITHIN_PLAN",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PROVIDER_UNCERTAINTY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "number": 2,
+      "opportunityId": "Y9s3qTQrdmxMdHLtFtJU",
+      "contactId": "H2B2QyA3JmG0XxzjB2pg",
+      "propertyAddress": "1542 S Alabama St, Indianapolis IN 46225",
+      "contactName": "Fred McIntire",
+      "contactRole": "agent",
+      "phone": "+131***5959",
+      "timezone": "America/Indiana/Indianapolis",
+      "timezoneConfidence": "HIGH_CONFIDENCE_ZIP3",
+      "renderedMessage": "Happy Mon, Fred McIntire! Are you still accepting offers for 1542 S Alabama St, Indianapolis IN 46225? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "guardEvidence": {
+        "DNC": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_CONTACT_STATUS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "STOP_OPT_OUT": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "WRONG_NUMBER": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PENDING_REPLY": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "ACTIVE_HUMAN_WORK": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PRIOR_OUTREACH": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "DUPLICATE_HISTORY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "WITHIN_PLAN",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PROVIDER_UNCERTAINTY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "number": 3,
+      "opportunityId": "GosQsh6swBJXAt7cB690",
+      "contactId": "MmU3jmQqkul67E6DgDFY",
+      "propertyAddress": "418 N Centennial St, Indianapolis IN 46222",
+      "contactName": "Sydney Tilford",
+      "contactRole": "agent",
+      "phone": "+131***5111",
+      "timezone": "America/Indiana/Indianapolis",
+      "timezoneConfidence": "HIGH_CONFIDENCE_ZIP3",
+      "renderedMessage": "Happy Mon, Sydney Tilford! Are you still accepting offers for 418 N Centennial St, Indianapolis IN 46222? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "guardEvidence": {
+        "DNC": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_CONTACT_STATUS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "STOP_OPT_OUT": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "WRONG_NUMBER": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PENDING_REPLY": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "ACTIVE_HUMAN_WORK": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PRIOR_OUTREACH": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "DUPLICATE_HISTORY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "WITHIN_PLAN",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PROVIDER_UNCERTAINTY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "blockerDistribution": {},
+  "sourceSnapshot": {
+    "hydrationTimestamp": "2026-08-03T07:12:51.329Z",
+    "pipelineId": "nSf3NXYVkt8X4PgW9aZ3",
+    "locationId": "61XPzSqRy7UKMwW9DeB8",
+    "justcallBlacklistComplete": true,
+    "justcallHistoryComplete": "PARTIAL",
+    "justcallTotalCount": 18,
+    "justcallFetchedCount": 13
+  },
+  "warnings": []
+}

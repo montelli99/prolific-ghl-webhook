@@ -1,8 +1,6 @@
 'use strict';
 
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 const { GhlAuthoritativeHydrator } = require('./ghl-authoritative-pipeline-hydrator');
 const { normalizeOpportunity, classifyRole } = require('./telegram-outreach-dry-run');
 const { derivePropertyTimezone } = require('./property-timezone');
@@ -12,11 +10,11 @@ const { JustCallTextHistoryReadService } = require('./justcall-text-history-read
 const { LocalSuppressionRegistry } = require('./local-suppression-registry');
 const { getTemplate, renderTemplate } = require('./kayla-template-registry');
 const { SELECTED_SENDER_SUFFIX } = require('./kayla-course-spec');
+const { PlanStore } = require('./plan-store');
 
 const POLICY_VERSION = 'OP-2026-08-02-v1';
 const TEMPLATE_ID = 'OWNER_APPROVED_PIPELINE_INT';
 const MAX_CANARY = 3;
-const PLAN_DIR = path.resolve(__dirname, '..', 'data', 'canary-plans');
 
 function stableHash(value) {
   return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -30,6 +28,7 @@ class CanaryPlanBuilder {
     this.suppression = config.suppression || new JustCallSuppressionReadService();
     this.history = config.history || new JustCallTextHistoryReadService({ senderSuffix: SELECTED_SENDER_SUFFIX });
     this.localRegistry = config.localRegistry || new LocalSuppressionRegistry();
+    this.planStore = config.planStore || new PlanStore();
     this.template = getTemplate(TEMPLATE_ID);
   }
 
@@ -142,14 +141,27 @@ class CanaryPlanBuilder {
       });
     }
 
-    const selected = candidates.filter(c => c.passed).slice(0, MAX_CANARY);
+    const selected = rankCandidates(candidates.filter(c => c.passed)).slice(0, MAX_CANARY);
     const blocked = candidates.filter(c => !c.passed);
 
     const planId = `plan_${stableHash({ at: now.toISOString(), policyVersion: POLICY_VERSION, templateId: TEMPLATE_ID }).slice(0, 16)}`;
     const plan = {
       planId,
-      planHash: stableHash({ planId, selected: selected.map(s => s.opportunityId), policyVersion: POLICY_VERSION, templateId: TEMPLATE_ID }),
-      schema: 'canary-plan-v1',
+      planHash: stableHash({
+        planId,
+        items: selected.map(s => ({
+          number: s._rank || 0,
+          opportunityId: s.opportunityId,
+          contactId: s.contactId,
+          renderedMessage: s.renderedMessage,
+        })),
+        policyVersion: POLICY_VERSION,
+        templateId: TEMPLATE_ID,
+        templateVersion: stableHash(this.template?.body || ''),
+        createdAt: now.toISOString(),
+      }),
+      status: 'PREVIEW_PENDING_APPROVAL',
+      schema: 'canary-plan-v2',
       policyVersion: POLICY_VERSION,
       templateId: TEMPLATE_ID,
       templateVersion: stableHash(this.template?.body || ''),
@@ -157,29 +169,83 @@ class CanaryPlanBuilder {
       expiresAt: new Date(now.getTime() + 30 * 60 * 1000).toISOString(),
       executable: false,
       productionEffects: { sends: 0, ghlWrites: 0, stageMovements: 0 },
+      sender: `+*******${SELECTED_SENDER_SUFFIX}`,
+      ownerId: options.ownerId || null,
+      chatId: options.chatId || null,
+      topicId: options.topicId || null,
+      originatingMessageId: options.originatingMessageId || null,
       totalCandidates: candidates.length,
       selectedCount: selected.length,
       blockedCount: blocked.length,
-      selected,
+      items: selected.map((s, i) => ({
+        number: i + 1,
+        opportunityId: s.opportunityId,
+        contactId: s.contactId,
+        propertyAddress: s.propertyAddress,
+        contactName: s.contactName,
+        contactRole: s.contactRole,
+        phone: s.phone,
+        timezone: s.timezone,
+        timezoneConfidence: s.timezoneConfidence,
+        renderedMessage: s.renderedMessage,
+        guardEvidence: Object.fromEntries(
+          Object.entries(s.compliance.guards).map(([name, g]) => [name, { state: g.state, sources: g.sources.map(src => ({ source: src.source, state: src.state })) }])
+        ),
+      })),
       blockerDistribution: buildBlockerDistribution(blocked),
       sourceSnapshot: {
-        hydrationTimestamp: hydration.hydratedAt || now.toISOString(),
+        hydrationTimestamp: hydration.summary?.timestamp || now.toISOString(),
         pipelineId: this.pipelineId,
         locationId: this.locationId,
+        justcallBlacklistComplete: globalBlacklist?.ok || false,
+        justcallHistoryComplete: globalTexts?.paginationCompleteness || 'UNKNOWN',
+        justcallTotalCount: globalTexts?.totalCount || null,
+        justcallFetchedCount: globalTexts?.fetchedCount || null,
       },
+      warnings: [],
     };
 
+    if (plan.expiresAt && new Date(plan.expiresAt) <= now) {
+      plan.warnings.push('PLAN_EXPIRED_AT_CREATION');
+    }
+
+    this.planStore.savePlan(plan);
     return plan;
   }
 
-  savePlan(plan) {
-    fs.mkdirSync(PLAN_DIR, { recursive: true });
-    const filePath = path.join(PLAN_DIR, `${plan.planId}.json`);
-    const tmp = filePath + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(plan, null, 2) + '\n');
-    fs.renameSync(tmp, filePath);
-    return plan;
+  loadPlan(planId) {
+    return this.planStore.loadPlan(planId);
   }
+
+  approvePlan(planId, approvalContext = {}) {
+    const plan = this.planStore.loadPlan(planId);
+    if (!plan) throw new Error(`PLAN_NOT_FOUND: ${planId}`);
+    if (plan.status !== 'PREVIEW_PENDING_APPROVAL') throw new Error(`PLAN_NOT_APPROVABLE: status is ${plan.status}`);
+    if (new Date(plan.expiresAt) <= new Date()) throw new Error('PLAN_EXPIRED');
+    if (plan.executable) throw new Error('PLAN_ALREADY_EXECUTABLE');
+
+    const updated = this.planStore.updateStatus(planId, 'APPROVED_PENDING_EXECUTION', {
+      approvedAt: new Date().toISOString(),
+      approvedBy: approvalContext.ownerUserId || null,
+      approvalChatId: approvalContext.chatId || null,
+      approvalTopicId: approvalContext.topicId || null,
+    });
+
+    return updated;
+  }
+}
+
+function rankCandidates(candidates) {
+  return candidates
+    .map((c, i) => ({ ...c, _sourceIndex: i }))
+    .sort((a, b) => {
+      if (a.contactRole !== b.contactRole) {
+        const roleOrder = { agent: 1, broker: 2, owner: 3 };
+        return (roleOrder[a.contactRole] || 99) - (roleOrder[b.contactRole] || 99);
+      }
+      return (a._sourceIndex || 0) - (b._sourceIndex || 0);
+    })
+    .map((c, i) => ({ ...c, _rank: i + 1 }));
 }
 
 function buildBlockerDistribution(blocked) {

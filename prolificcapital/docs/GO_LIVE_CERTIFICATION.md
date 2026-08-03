@@ -26,7 +26,7 @@
 | R11 | Production configuration | **VERIFIED** | Atlas pipeline `nSf3NXYVkt8X4PgW9aZ3`, location `61XPzSqRy7UKMwW9DeB8`, Lead Entered stage `7067148a-2ee8-4e5b-93c8-31e0253fea68` all configured. |
 | R12 | Journal location | **VERIFIED** | `ghl-automations/data/telegram-outreach-dry-run/journal.jsonl` exists with one session entry. |
 | R13 | Kill switch | **VERIFIED** | `kill-switch.json`: `{"state": "PAUSED"}`. Zero live sends, zero production writes, zero stage movements. |
-| R14 | Live mode configuration | **PENDING** | Kill switch is `PAUSED`. Progression: PAUSED → DRY_RUN_ONLY → CANARY_ALLOWED → MANUAL_LIVE_ALLOWED. |
+| R14 | Live mode configuration | **PENDING** | Kill switch is `PAUSED`. Progression: PAUSED → DRY_RUN_ONLY → CANARY_ALLOWED. |
 | R15 | Operator account | **VERIFIED** | Owner bound: `ProlificInvestments` (ID: 718718959). Recovered from pinned message in Ai Rei supergroup. Verified via live `getChatMember` API (status: creator). |
 | R16 | Admin account | **PENDING** | No additional admins configured. Owner is sole admin. |
 
@@ -56,9 +56,9 @@
 4. Transition to `CANARY_ALLOWED` via `/resume`, generate 3-lead canary plan
 5. Owner approves canary plan conversationally
 6. Execute canary sends (max 3, sequential, immutable plan hash)
-7. After canary success: transition to `MANUAL_LIVE_ALLOWED` via `/resume`
+7. After canary success: system auto-returns to `PAUSED`
 
-The live guards support all four states: `PAUSED`, `DRY_RUN_ONLY`, `CANARY_ALLOWED`, `MANUAL_LIVE_ALLOWED`.
+The live guards support three states: `PAUSED`, `DRY_RUN_ONLY`, `CANARY_ALLOWED`.
 
 ---
 

@@ -1,0 +1,35 @@
+{
+  "instructionId": "runbook_supervised_canary_v1",
+  "canonicalHash": "6bfab428f760065667ad5560fafd56191d5ec077381f6eea38bbc5da7a876a9a",
+  "ownerUserId": "718718959",
+  "groupId": "-1003975794600",
+  "topicId": 389,
+  "createdAt": "2026-08-03T06:55:00Z",
+  "retrievalPhrase": "Begin the first supervised canary.",
+  "status": "PENDING_NOT_EXECUTED",
+  "policyVersion": "OP-2026-08-02-v1",
+  "procedure": [
+    "1. Owner confirms JustCall account is on paid plan with SMS credits.",
+    "2. Owner transitions kill switch: PAUSED → DRY_RUN_ONLY → CANARY_ALLOWED.",
+    "3. Owner requests fresh canary plan during valid business window (Mon-Fri 12PM-6PM property-local).",
+    "4. System generates persisted immutable plan with live hydration, compliance, and guard evidence.",
+    "5. Owner reviews the exact selected candidates and rendered INT messages.",
+    "6. Owner explicitly approves the plan by plan ID and selected item numbers.",
+    "7. System persists approval record tied to plan hash.",
+    "8. System executes executeApprovedPlan() for each approved item sequentially.",
+    "9. System captures provider message ID, polls delivery status, stops on failure.",
+    "10. System auto-returns to PAUSED after completion.",
+    "",
+    "NO autonomous sends. NO GHL writes. NO stage movements. NO retries on uncertainty.",
+    "Maximum 3 sends. Sender: 571-601-2619. Template: OWNER_APPROVED_PIPELINE_INT.",
+    "Business window: Mon-Fri 12:00 PM - 6:00 PM property-local timezone.",
+    "Weekend blocked. No override. No bypass."
+  ],
+  "warnings": [
+    "JustCall account funding not verifiable via API — owner must confirm manually.",
+    "Webhooks not registered — inbound replies must be monitored manually via JustCall app.",
+    "Text history pagination: 13/18 records fetched (5 likely deleted). No candidate match found.",
+    "This runbook contains no embedded candidates, plan IDs, or hydration data.",
+    "All plans must be generated fresh when this runbook is retrieved."
+  ]
+}

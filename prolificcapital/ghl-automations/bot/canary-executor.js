@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const JustCallIntegration = require('../modules/justcall-integration');
 const killSwitch = require('./kill-switch');
+const { PlanStore } = require('../modules/plan-store');
+const { ApprovalStore } = require('../modules/approval-store');
 
 const CANARY_DIR = path.resolve(__dirname, '..', 'data', 'canary');
 const CANARY_MAX_SENDS = 3;
@@ -116,7 +118,7 @@ async function executeCanaryItem(plan, itemNumber, options = {}) {
   });
 
   const to = item.contactId || '';
-  const body = item.renderedPreview || '';
+  const body = item.renderedMessage || item.renderedPreview || '';
 
   appendCanaryJournal(plan, { type: 'CANARY_PRE_SEND', itemNumber, planId: plan.planId, planHash: plan.planHash });
   appendCanaryJournalLine({ type: 'CANARY_PRE_SEND', itemNumber, planId: plan.planId, planHash: plan.planHash });
@@ -166,6 +168,48 @@ async function executeCanaryItem(plan, itemNumber, options = {}) {
   return { ok: true, item, plan };
 }
 
+async function executeApprovedPlan(planId, selectedItems, options = {}) {
+  const planStore = options.planStore || new PlanStore();
+  const approvalStore = options.approvalStore || new ApprovalStore();
+
+  const plan = planStore.loadPlan(planId);
+  if (!plan) return { ok: false, error: `PLAN_NOT_FOUND: ${planId}` };
+  if (plan.status !== 'APPROVED_PENDING_EXECUTION') return { ok: false, error: `PLAN_NOT_APPROVED: status is ${plan.status}` };
+  if (new Date(plan.expiresAt) <= new Date()) return { ok: false, error: 'PLAN_EXPIRED' };
+
+  const approval = approvalStore.findApprovalForPlan(planId);
+  if (!approval) return { ok: false, error: 'NO_APPROVAL_FOUND' };
+  if (approval.status !== 'ACTIVE') return { ok: false, error: `APPROVAL_NOT_ACTIVE: ${approval.status}` };
+
+  const approvedItems = new Set(approval.selectedItems || []);
+  const requestedItems = new Set(selectedItems || []);
+  if (![...requestedItems].every(n => approvedItems.has(n))) {
+    return { ok: false, error: 'SELECTED_ITEMS_MISMATCH' };
+  }
+
+  const ks = killSwitch.readKillSwitch();
+  if (!killSwitch.canSend(ks.state)) {
+    return { ok: false, error: `KILL_SWITCH_BLOCKS_SEND: current state is ${ks.state}` };
+  }
+
+  planStore.updateStatus(planId, 'EXECUTING');
+  const results = [];
+
+  for (const itemNumber of selectedItems.sort((a, b) => a - b)) {
+    const result = await executeCanaryItem(plan, itemNumber, options);
+    results.push(result);
+    if (!result.ok) break;
+  }
+
+  const allOk = results.every(r => r.ok);
+  planStore.updateStatus(planId, allOk ? 'COMPLETED' : 'FAILED', {
+    executionCompletedAt: new Date().toISOString(),
+    executionResults: results.map(r => ({ itemNumber: r.item?.number, ok: r.ok, error: r.error })),
+  });
+
+  return { ok: allOk, results, planId };
+}
+
 function reconcileCanaryPlan(plan) {
   const report = {
     planId: plan.planId,
@@ -201,6 +245,7 @@ module.exports = {
   loadCanaryPlan,
   loadActiveCanaryPlan,
   executeCanaryItem,
+  executeApprovedPlan,
   reconcileCanaryPlan,
   appendCanaryJournal,
   appendCanaryJournalLine,
