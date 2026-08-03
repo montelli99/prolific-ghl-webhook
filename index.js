@@ -27,6 +27,9 @@ const {
 const app = express();
 app.use(express.json());
 
+// Contact-card media route — serves approved vCard for JustCall MMS
+app.use(require('./routes/contact-card-media').router);
+
 const PORT = process.env.PORT || 3000;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || null;
 const DEFAULT_GHL_API_KEY = process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '';
