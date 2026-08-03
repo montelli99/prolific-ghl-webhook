@@ -119,7 +119,34 @@ All compliance guards are HARD_REQUIRED. Unknown state must block, not pass. Abs
 
 ### Compliance State Values
 
-Each guard must return one of: `CLEAR`, `BLOCKED`, or `UNKNOWN`. `UNKNOWN` always blocks. `CLEAR` requires positive evidence from at least one trusted source. `WRONG_NUMBER` additionally supports `NOT_APPLICABLE_NO_PRIOR_CONTACT`.
+Each guard must return one of the following. `UNKNOWN` always blocks. `CLEAR` requires positive evidence from at least one trusted source.
+
+| Guard | Valid States |
+|-------|-------------|
+| DNC | CLEAR, BLOCKED, UNKNOWN |
+| STOP/Opt-out | CLEAR, BLOCKED, UNKNOWN |
+| Wrong number | CLEAR, BLOCKED, UNKNOWN, NOT_APPLICABLE_NO_PRIOR_CONTACT |
+| Pending reply | CLEAR, BLOCKED, UNKNOWN, NOT_APPLICABLE_NO_PRIOR_CONTACT, WAITING_FOR_REPLY |
+| Active human work | CLEAR, BLOCKED, UNKNOWN |
+| Prior outreach | CLEAR, BLOCKED, UNKNOWN, CLEAR_NO_PRIOR_OUTREACH |
+| Duplicate | CLEAR, BLOCKED, UNKNOWN |
+| Provider uncertainty | CLEAR, BLOCKED, UNKNOWN |
+
+### Guard-Specific Owner Policies
+
+**WRONG_NUMBER:** Before first outreach → `NOT_APPLICABLE_NO_PRIOR_CONTACT`. After verified bad number → `BLOCKED`. Source: OWNER_POLICY (COURSE_UNKNOWN).
+
+**PENDING_REPLY:** Before first INT → `NOT_APPLICABLE_NO_PRIOR_CONTACT`. After INT sent → `WAITING_FOR_REPLY` (BLOCK until resolved). Source: OWNER_POLICY (COURSE_UNKNOWN).
+
+**PRIOR_OUTREACH:** Fresh Lead Entered with no evidence of prior contact → `CLEAR_NO_PRIOR_OUTREACH`. Evidence-backed previous outreach → `BLOCKED`. Source: OWNER_POLICY (COURSE_EXPLICIT: Stage 1 = never contacted per KAYLA_CANONICAL_OPERATING_SYSTEM.md:286).
+
+**ACTIVE_HUMAN_WORK:** Manual release only. No automatic timeout. If operator-locked → `BLOCKED`. If not locked → `CLEAR`. Source: OWNER_POLICY (COURSE_UNKNOWN).
+
+**PRODUCTION ELIGIBILITY:** A guard passes if its state is `CLEAR`, `NOT_APPLICABLE_NO_PRIOR_CONTACT`, or `CLEAR_NO_PRIOR_OUTREACH`. `WAITING_FOR_REPLY` blocks. `UNKNOWN` blocks. `BLOCKED` blocks.
+
+### Webhook Policy
+
+**Rule:** Register inbound SMS, delivery success, and delivery failure webhooks for telemetry only. No autonomous actions may be triggered by webhook events. Source: OWNER_POLICY (COURSE_UNKNOWN).
 
 ### Source Precedence for Compliance
 

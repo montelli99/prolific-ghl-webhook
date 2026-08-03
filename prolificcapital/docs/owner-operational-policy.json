@@ -123,36 +123,40 @@
     },
     "PENDING_REPLY": {
       "category": "PENDING_REPLY",
-      "rule": "Contacts with pending replies must not receive additional outreach. Unknown pending-reply state must block.",
+      "rule": "Before first INT: NOT_APPLICABLE_NO_PRIOR_CONTACT. After INT sent: WAITING_FOR_REPLY (BLOCK until resolved). Unknown pending-reply state must block.",
       "enforcementLevel": "HARD_REQUIRED",
       "overrideStatus": "NO_OVERRIDE",
       "authority": "OWNER_POLICY",
-      "complianceStates": ["CLEAR", "BLOCKED", "UNKNOWN"],
+      "courseClassification": "COURSE_UNKNOWN",
+      "complianceStates": ["CLEAR", "BLOCKED", "UNKNOWN", "NOT_APPLICABLE_NO_PRIOR_CONTACT", "WAITING_FOR_REPLY"],
       "unknownBehavior": "BLOCK",
-      "affectedModules": ["atlas-ghl-telegram-live-guards.js"],
-      "testRequirements": ["Missing pending-reply state blocks", "Known pending reply blocks"]
+      "affectedModules": ["atlas-ghl-telegram-live-guards.js", "outreach-compliance-resolver.js"],
+      "testRequirements": ["Before first INT returns NOT_APPLICABLE_NO_PRIOR_CONTACT", "After INT sent returns WAITING_FOR_REPLY", "WAITING_FOR_REPLY blocks", "Missing pending-reply state blocks"]
     },
     "ACTIVE_HUMAN_WORK": {
       "category": "ACTIVE_HUMAN_WORK",
-      "rule": "Contacts with active human work must not receive automated outreach. Unknown active-human-work state must block.",
+      "rule": "Manual release only. No automatic timeout. If operator-locked → BLOCKED. If not locked → CLEAR.",
       "enforcementLevel": "HARD_REQUIRED",
       "overrideStatus": "NO_OVERRIDE",
       "authority": "OWNER_POLICY",
+      "courseClassification": "COURSE_UNKNOWN",
       "complianceStates": ["CLEAR", "BLOCKED", "UNKNOWN"],
       "unknownBehavior": "BLOCK",
-      "affectedModules": ["atlas-ghl-telegram-live-guards.js"],
-      "testRequirements": ["Missing active-human-work state blocks", "Known active human work blocks"]
+      "lockDuration": "MANUAL_RELEASE_ONLY",
+      "affectedModules": ["atlas-ghl-telegram-live-guards.js", "outreach-compliance-resolver.js"],
+      "testRequirements": ["Operator-locked blocks", "Not locked passes", "No automatic timeout"]
     },
     "PRIOR_OUTREACH": {
       "category": "PRIOR_OUTREACH",
-      "rule": "Contacts with unresolved prior outreach must not receive additional outreach. Unknown prior-outreach state must block.",
+      "rule": "Fresh Lead Entered with no evidence of prior contact: CLEAR_NO_PRIOR_OUTREACH. Evidence-backed previous outreach: BLOCKED. Unknown prior-outreach state must block.",
       "enforcementLevel": "HARD_REQUIRED",
       "overrideStatus": "NO_OVERRIDE",
       "authority": "OWNER_POLICY",
-      "complianceStates": ["CLEAR", "BLOCKED", "UNKNOWN"],
+      "courseClassification": "COURSE_EXPLICIT (Stage 1 = never contacted per KAYLA_CANONICAL_OPERATING_SYSTEM.md:286)",
+      "complianceStates": ["CLEAR", "BLOCKED", "UNKNOWN", "CLEAR_NO_PRIOR_OUTREACH"],
       "unknownBehavior": "BLOCK",
-      "affectedModules": ["atlas-ghl-telegram-live-guards.js", "telegram-outreach-dry-run.js"],
-      "testRequirements": ["Missing prior-outreach state blocks", "Known prior outreach blocks"]
+      "affectedModules": ["atlas-ghl-telegram-live-guards.js", "telegram-outreach-dry-run.js", "outreach-compliance-resolver.js"],
+      "testRequirements": ["Fresh Lead Entered returns CLEAR_NO_PRIOR_OUTREACH", "Evidence-backed prior outreach blocks", "Missing prior-outreach state blocks"]
     },
     "DUPLICATE_HISTORY": {
       "category": "DUPLICATE_HISTORY",

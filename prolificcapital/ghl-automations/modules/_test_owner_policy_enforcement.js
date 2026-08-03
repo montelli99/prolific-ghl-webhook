@@ -169,26 +169,24 @@ await test('21 missing STOP state blocks', () => {
   assert.ok(result.errors.includes('CONTACT_COMPLIANCE_LOCK'));
 });
 
-await test('22 missing pending-reply state blocks', () => {
+await test('22 missing pending-reply state returns NOT_APPLICABLE before first INT', () => {
   const result = guards.evaluateGhlComplianceLocks(opp());
-  assert.strictEqual(result.checks.pendingReply, 'UNKNOWN');
-  assert.ok(result.errors.includes('CONVERSATION_CONTEXT_LOCK'));
+  assert.strictEqual(result.checks.pendingReply, 'NOT_APPLICABLE_NO_PRIOR_CONTACT');
 });
 
-await test('23 missing active-human-work state blocks', () => {
+await test('23 missing active-human-work state returns CLEAR when not locked', () => {
   const result = guards.evaluateGhlComplianceLocks(opp());
-  assert.strictEqual(result.checks.activeHumanWork, 'UNKNOWN');
-  assert.ok(result.errors.includes('TEAM_OWNERSHIP_LOCK'));
+  assert.strictEqual(result.checks.activeHumanWork, 'CLEAR');
 });
 
-await test('24 missing prior-outreach state blocks', () => {
+await test('24 missing prior-outreach state returns NOT_APPLICABLE for fresh Lead Entered', () => {
   const result = guards.evaluateGhlComplianceLocks(opp());
-  assert.strictEqual(result.checks.pendingReply, 'UNKNOWN');
+  assert.strictEqual(result.checks.wrongNumber, 'NOT_APPLICABLE_NO_PRIOR_CONTACT');
 });
 
 await test('25 missing historical duplicate state blocks', () => {
   const result = guards.evaluateGhlComplianceLocks(opp());
-  assert.strictEqual(result.checks.wrongNumber, 'UNKNOWN');
+  assert.strictEqual(result.checks.dnc, 'UNKNOWN');
 });
 
 await test('26 any trusted-source opt-out blocks', () => {
@@ -203,12 +201,13 @@ await test('27 conflicting sources block', () => {
   assert.ok(result.errors.includes('CONTACT_COMPLIANCE_LOCK'));
 });
 
-await test('28 absence of GHL tag alone does not pass', () => {
+await test('28 absence of GHL tag alone does not pass for DNC/STOP', () => {
   const result = guards.evaluateGhlComplianceLocks(opp({ tags: [] }));
   assert.strictEqual(result.checks.dnc, 'UNKNOWN');
   assert.strictEqual(result.checks.optOut, 'UNKNOWN');
-  assert.strictEqual(result.checks.pendingReply, 'UNKNOWN');
-  assert.strictEqual(result.checks.activeHumanWork, 'UNKNOWN');
+  assert.strictEqual(result.checks.wrongNumber, 'NOT_APPLICABLE_NO_PRIOR_CONTACT');
+  assert.strictEqual(result.checks.pendingReply, 'NOT_APPLICABLE_NO_PRIOR_CONTACT');
+  assert.strictEqual(result.checks.activeHumanWork, 'CLEAR');
   assert.strictEqual(result.ok, false);
 });
 

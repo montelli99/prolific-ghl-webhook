@@ -139,9 +139,24 @@ test('17 Divinity data excluded', () => {
 
 // === UNIFIED RESOLVER ===
 
-test('18 absence of GHL tag is not CLEAR', () => {
+test('18 absence of GHL tag is not CLEAR for DNC', () => {
   const result = resolveGuard('DNC', [{ source: 'GHL_TAGS', state: 'UNKNOWN' }]);
   assert.strictEqual(result.state, 'UNKNOWN');
+});
+
+test('18b WRONG_NUMBER defaults to NOT_APPLICABLE_NO_PRIOR_CONTACT', () => {
+  const result = resolveGuard('WRONG_NUMBER', [{ source: 'GHL_TAGS', state: 'NOT_APPLICABLE_NO_PRIOR_CONTACT' }]);
+  assert.strictEqual(result.state, 'NOT_APPLICABLE_NO_PRIOR_CONTACT');
+});
+
+test('18c PENDING_REPLY defaults to NOT_APPLICABLE_NO_PRIOR_CONTACT', () => {
+  const result = resolveGuard('PENDING_REPLY', [{ source: 'GHL_TAGS', state: 'NOT_APPLICABLE_NO_PRIOR_CONTACT' }]);
+  assert.strictEqual(result.state, 'NOT_APPLICABLE_NO_PRIOR_CONTACT');
+});
+
+test('18d ACTIVE_HUMAN_WORK defaults to CLEAR when not locked', () => {
+  const result = resolveGuard('ACTIVE_HUMAN_WORK', [{ source: 'GHL_TAGS', state: 'CLEAR' }]);
+  assert.strictEqual(result.state, 'CLEAR');
 });
 
 test('19 JustCall blacklist wins', () => {

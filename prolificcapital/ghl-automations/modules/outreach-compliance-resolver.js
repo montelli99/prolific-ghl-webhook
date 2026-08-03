@@ -12,6 +12,9 @@ const GUARD_NAMES = Object.freeze([
   'ACTIVE_HUMAN_WORK', 'PRIOR_OUTREACH', 'DUPLICATE_HISTORY', 'PROVIDER_UNCERTAINTY',
 ]);
 
+const PASSING_STATES = new Set(['CLEAR', 'NOT_APPLICABLE_NO_PRIOR_CONTACT', 'CLEAR_NO_PRIOR_OUTREACH']);
+const BLOCKING_STATES = new Set(['BLOCKED', 'UNKNOWN', 'WAITING_FOR_REPLY']);
+
 function resolveCompliance(record, context = {}) {
   const {
     justcallSuppression,
@@ -79,8 +82,8 @@ function resolveCompliance(record, context = {}) {
     localRegistry ? { source: 'LOCAL_REGISTRY', state: localRegistry.providerUncertain || 'UNKNOWN' } : null,
   ]);
 
-  const allPassed = GUARD_NAMES.every(name => guards[name].state === 'CLEAR');
-  const anyBlocked = GUARD_NAMES.some(name => guards[name].state === 'BLOCKED');
+  const allPassed = GUARD_NAMES.every(name => PASSING_STATES.has(guards[name].state));
+  const anyBlocked = GUARD_NAMES.some(name => BLOCKING_STATES.has(guards[name].state));
   const anyUnknown = GUARD_NAMES.some(name => guards[name].state === 'UNKNOWN');
 
   return {
@@ -102,16 +105,17 @@ function resolveGuard(name, sources) {
   const states = validSources.map(s => s.state);
   const uniqueStates = [...new Set(states)];
 
-  if (uniqueStates.includes('BLOCKED')) {
-    return { state: 'BLOCKED', sources: validSources, evidence: validSources.filter(s => s.state === 'BLOCKED'), blockerCode: `${name}_BLOCKED` };
+  if (uniqueStates.includes('BLOCKED') || uniqueStates.includes('WAITING_FOR_REPLY')) {
+    const blockedSources = validSources.filter(s => s.state === 'BLOCKED' || s.state === 'WAITING_FOR_REPLY');
+    return { state: 'BLOCKED', sources: validSources, evidence: blockedSources, blockerCode: `${name}_BLOCKED` };
   }
 
   if (uniqueStates.length > 1) {
     return { state: 'UNKNOWN', sources: validSources, evidence: validSources, blockerCode: `${name}_CONFLICTING_SOURCES` };
   }
 
-  if (uniqueStates[0] === 'CLEAR') {
-    return { state: 'CLEAR', sources: validSources, evidence: validSources, blockerCode: null };
+  if (PASSING_STATES.has(uniqueStates[0])) {
+    return { state: uniqueStates[0], sources: validSources, evidence: validSources, blockerCode: null };
   }
 
   return { state: 'UNKNOWN', sources: validSources, evidence: [], blockerCode: `${name}_UNKNOWN` };

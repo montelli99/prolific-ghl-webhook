@@ -58,18 +58,17 @@ function evaluateGhlComplianceLocks(record) {
 
   const dnc = normalized.dnc || dncTag ? 'BLOCKED' : 'UNKNOWN';
   const optOut = optOutTag ? 'BLOCKED' : 'UNKNOWN';
-  const wrongNumber = normalized.wrongNumber || wrongNumberTag ? 'BLOCKED' : 'UNKNOWN';
-  const pendingReply = normalized.pendingReply || pendingReplyTag ? 'BLOCKED' : 'UNKNOWN';
-  const activeHumanWork = normalized.activeHumanWork || activeHumanWorkTag ? 'BLOCKED' : 'UNKNOWN';
+  const wrongNumber = normalized.wrongNumber || wrongNumberTag ? 'BLOCKED' : 'NOT_APPLICABLE_NO_PRIOR_CONTACT';
+  const pendingReply = normalized.pendingReply || pendingReplyTag ? 'BLOCKED' : 'NOT_APPLICABLE_NO_PRIOR_CONTACT';
+  const activeHumanWork = normalized.activeHumanWork || activeHumanWorkTag ? 'BLOCKED' : 'CLEAR';
 
   const checks = { dnc, optOut, wrongNumber, pendingReply, activeHumanWork };
   const errors = [];
   if (checks.dnc !== 'CLEAR') errors.push('CONTACT_COMPLIANCE_LOCK');
   if (checks.optOut !== 'CLEAR') errors.push('CONTACT_COMPLIANCE_LOCK');
-  if (checks.wrongNumber !== 'CLEAR') errors.push('WRONG_NUMBER_LOCK');
-  if (checks.pendingReply !== 'CLEAR') errors.push('CONVERSATION_CONTEXT_LOCK');
+  if (checks.wrongNumber === 'BLOCKED' || checks.wrongNumber === 'UNKNOWN') errors.push('WRONG_NUMBER_LOCK');
+  if (checks.pendingReply === 'BLOCKED' || checks.pendingReply === 'UNKNOWN' || checks.pendingReply === 'WAITING_FOR_REPLY') errors.push('CONVERSATION_CONTEXT_LOCK');
   if (checks.activeHumanWork !== 'CLEAR') errors.push('TEAM_OWNERSHIP_LOCK');
-
   return { ok: errors.length === 0, errors, checks, maskedContact: maskContact(normalized.contactId) };
 }
 
@@ -137,8 +136,8 @@ function evaluateGhlCanaryRecord(record, context = {}) {
     distinctPropertyValidation: { passed: samePropertyCount === 1, count: samePropertyCount },
     dncStatus: { state: compliance.checks.dnc, passed: compliance.checks.dnc === 'CLEAR' },
     optOutStatus: { state: compliance.checks.optOut, passed: compliance.checks.optOut === 'CLEAR' },
-    wrongNumberStatus: { state: compliance.checks.wrongNumber, passed: compliance.checks.wrongNumber === 'CLEAR' },
-    pendingReplyStatus: { state: compliance.checks.pendingReply, passed: compliance.checks.pendingReply === 'CLEAR' },
+    wrongNumberStatus: { state: compliance.checks.wrongNumber, passed: compliance.checks.wrongNumber === 'NOT_APPLICABLE_NO_PRIOR_CONTACT' || compliance.checks.wrongNumber === 'CLEAR' },
+    pendingReplyStatus: { state: compliance.checks.pendingReply, passed: compliance.checks.pendingReply === 'NOT_APPLICABLE_NO_PRIOR_CONTACT' || compliance.checks.pendingReply === 'CLEAR' },
     activeHumanWorkStatus: { state: compliance.checks.activeHumanWork, passed: compliance.checks.activeHumanWork === 'CLEAR' },
     propertyFingerprintStatus: { passed: propertyFingerprintOk },
     phoneRouteStatus: { passed: phoneOk },
