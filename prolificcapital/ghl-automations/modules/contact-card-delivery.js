@@ -17,8 +17,8 @@ const CARD_STATES = Object.freeze({
 const CARD_SPEC_PATH = path.resolve(__dirname, '..', '..', 'docs', 'montelli-contact-card.json');
 const VCF_ASSET_PATH = path.resolve(__dirname, '..', 'data', 'runtime', 'montelli-scott-divinity-aligned.vcf');
 const EXPECTED_VCF_HASH = '77bbcbdab80a604d3161d0a898fd92e1832d258c7c91a41349a86a5d18f60065';
-const PUBLIC_MEDIA_BASE_URL = process.env.CONTACT_CARD_MEDIA_BASE_URL || 'https://raw.githubusercontent.com';
-const PUBLIC_VCF_PATH = '/montelli99/prolific-ghl-webhook/master/public/assets/contact-cards/montelli-scott-divinity-aligned-v2.vcf';
+const PUBLIC_MEDIA_BASE_URL = process.env.CONTACT_CARD_MEDIA_BASE_URL || 'https://prolific-ghl-webhook-0b16.onrender.com';
+const PUBLIC_VCF_PATH = '/assets/contact-cards/montelli-scott-divinity-aligned-v2.vcf';
 
 class ContactCardDelivery {
   constructor(config = {}) {

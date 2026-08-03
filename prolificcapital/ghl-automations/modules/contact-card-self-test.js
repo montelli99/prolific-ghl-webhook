@@ -16,8 +16,8 @@ const APPROVED_SENDER = '+15716012619';
 const EXPECTED_CARD_HASH = '77bbcbdab80a604d3161d0a898fd92e1832d258c7c91a41349a86a5d18f60065';
 const EXPECTED_SPEC_HASH = 'da4d29b570bab1e455527b2478c710a92110fe95c8c400ff49a1b8233093a247';
 const PREVIEW_EXPIRY_MS = 5 * 60 * 1000;
-const PUBLIC_MEDIA_BASE_URL = process.env.CONTACT_CARD_MEDIA_BASE_URL || 'https://raw.githubusercontent.com';
-const PUBLIC_VCF_PATH = '/montelli99/prolific-ghl-webhook/master/public/assets/contact-cards/montelli-scott-divinity-aligned-v2.vcf';
+const PUBLIC_MEDIA_BASE_URL = process.env.CONTACT_CARD_MEDIA_BASE_URL || 'https://prolific-ghl-webhook-0b16.onrender.com';
+const PUBLIC_VCF_PATH = '/assets/contact-cards/montelli-scott-divinity-aligned-v2.vcf';
 const PUBLIC_MEDIA_URL = `${PUBLIC_MEDIA_BASE_URL}${PUBLIC_VCF_PATH}`;
 const TEST_BODY = 'Montelli contact card — tap the attached file to add my contact.';
 
