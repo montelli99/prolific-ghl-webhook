@@ -383,10 +383,11 @@ class JustCallIntegration {
       contact_number: to.replace(/\+/g, ''),
       body: filledBody,
       media_url: mediaUrl,
-      restrict_once: options.restrictOnce || 'Yes',
+      restrict_once: options.restrictOnce || 'No',
     };
     const raw = await this._justcallRequest('POST', `/${JUSTCALL_API_VERSION}/texts/new`, payload, { retried: 0 });
-    return { messageId: raw?.data?.id || raw?.id, body: filledBody, to, from, mediaUrl, raw };
+    const firstItem = Array.isArray(raw?.data) ? raw.data[0] : raw?.data;
+    return { messageId: firstItem?.id || raw?.id, body: filledBody, to, from, mediaUrl, raw };
   }
 
   /**
