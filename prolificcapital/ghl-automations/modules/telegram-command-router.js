@@ -471,6 +471,7 @@ async function _handleContract(args) {
 
 function _handleContactCard(args, ctx) {
   const { ContactCardDelivery } = require(path.join(__dirname, 'contact-card-delivery'));
+  const { buildSelfTestPreview, loadSelfTestPreview, approveSelfTest, formatPreviewText, verifyCard } = require(path.join(__dirname, 'contact-card-self-test'));
   const delivery = new ContactCardDelivery();
   const readiness = delivery.getReadiness();
   const spec = delivery.loadCardSpec();
@@ -479,11 +480,41 @@ function _handleContactCard(args, ctx) {
     return { reply: 'Contact card specification not found. The card has not been created yet.' };
   }
 
-  const lines = ['*Montelli Contact Card*', ''];
-  for (const [key, field] of Object.entries(spec.fields || {})) {
-    const status = field.value ? field.value : field.status || 'MISSING';
-    lines.push(`${key}: ${status} (${field.classification})`);
+  const text = (args || '').toLowerCase().trim();
+
+  // Self-test approval
+  if (/\b(?:send the contact card test|send it to my test phone|approve the card self-test)\b/i.test(text)) {
+    const ownerId = ctx?.telegramUserId || '';
+    const approval = approveSelfTest(ownerId, text);
+    if (approval.error) {
+      return { reply: `Cannot approve: ${approval.message || approval.error}` };
+    }
+    return {
+      reply: 'Contact card self-test approved. The card is ready to send.\n\n' +
+             'To execute: the provider must be invoked with the exact approved parameters.\n' +
+             'This requires a provider send operation which is not available in this preview context.',
+    };
   }
+
+  // Self-test preview
+  if (/\b(?:test my.*card|card.*test|send.*card.*test|test.*to my phone)\b/i.test(text)) {
+    const ownerId = ctx?.telegramUserId || '';
+    const result = buildSelfTestPreview(ownerId);
+    if (result.error) {
+      return { reply: `Cannot create self-test preview: ${result.message || result.error}` };
+    }
+    return { reply: formatPreviewText(result.preview) };
+  }
+
+  // Show current card
+  const f = spec.fields || {};
+  const lines = ['*Montelli Contact Card*', ''];
+  lines.push(`Name: ${f.fullName?.value || 'N/A'}`);
+  lines.push(`Title: ${f.title?.value || 'N/A'}`);
+  lines.push(`Company: ${f.company?.value || 'N/A'}`);
+  lines.push(`Phone: ${f.primaryPhone?.value || 'N/A'}`);
+  lines.push(`Email: ${f.email?.value || 'N/A'}`);
+  lines.push(`Website: ${f.website?.value || 'N/A'}`);
   lines.push('');
   lines.push(`Card hash: \`${spec.cardHash || 'N/A'}\``);
   lines.push(`Ready for self-test: ${readiness.readyForSelfTest ? 'Yes' : 'No'}`);

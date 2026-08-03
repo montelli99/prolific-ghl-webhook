@@ -1,37 +1,37 @@
 # Montelli Contact Card Specification
 
-**Version:** 1.0.0
-**Card Hash:** `c566de3c5f7cad1f1490981b5dc91613aee05f786f47a731541a7dbf06e813e3`
-**VCF Asset:** `ghl-automations/data/runtime/montelli-scott-prolific-capital.vcf`
+**Version:** 2.0.0
+**Card Hash:** `77bbcbdab80a604d3161d0a898fd92e1832d258c7c91a41349a86a5d18f60065`
+**VCF Asset:** `ghl-automations/data/runtime/montelli-scott-divinity-aligned.vcf`
 
-## Course Requirements
-
-The Kayla course explicitly requires the contact card to contain:
+## Owner-Approved Identity (2026-08-03)
 
 | Field | Classification | Value | Status |
 |-------|---------------|-------|--------|
-| Full Name | COURSE_EXPLICIT_REQUIRED | Montelli Scott | VERIFIED |
-| Title | COURSE_EXPLICIT_REQUIRED | Real Estate Investor \| Multifamily | VERIFIED |
-| Company | COURSE_EXPLICIT_REQUIRED | Prolific Capital | VERIFIED |
-| Phone | COURSE_EXPLICIT_REQUIRED | +15716012619 | VERIFIED |
-| Email | COURSE_VISIBLE_IN_EXAMPLE | montelliscottrei@gmail.com | VERIFIED |
-| Headshot | COURSE_EXPLICIT_REQUIRED | — | MISSING |
-| Recent Closings | COURSE_EXPLICIT_REQUIRED | — | MISSING |
-| Website | COURSE_VISIBLE_IN_EXAMPLE | — | OPTIONAL |
-| Business Address | COURSE_UNKNOWN | — | OPTIONAL |
-| Logo | COURSE_UNKNOWN | — | OPTIONAL |
-| Social Links | COURSE_UNKNOWN | — | OPTIONAL |
+| Full Name | OWNER_APPROVED | Montelli Scott | VERIFIED |
+| Title | OWNER_APPROVED | Property Outreach | VERIFIED |
+| Company | OWNER_APPROVED | Divinity Aligned LLC | VERIFIED |
+| Phone | OWNER_APPROVED | +15716012619 | VERIFIED |
+| Email | OWNER_APPROVED | montelliscottrei@gmail.com | VERIFIED |
+| Website | OWNER_APPROVED | https://www.divinityaligned.net/ | VERIFIED |
+| Headshot | OWNER_NOT_SUPPLIED | — | NOT INCLUDED |
+| Business Address | OWNER_EXCLUDED | — | NOT INCLUDED |
+| Logo | OWNER_EXCLUDED | — | NOT INCLUDED |
+| Social Links | OWNER_EXCLUDED | — | NOT INCLUDED |
+| Recent Closings | OWNER_NOT_SUPPLIED | — | NOT INCLUDED |
 
-**Course sources:**
-- `AIREI_MASTER_PLAYBOOK.md:18` — "Set up contact card on phone with headshot"
-- `AIREI_MASTER_PLAYBOOK.md:19-27` — Recent closings in notes section
-- `AIREI_MASTER_PLAYBOOK.md:8-17` — Email signature format (name, title, company, phone, website)
-- `AIREI_MASTER_PLAYBOOK.md:373` — "first name + company name + property address"
-- `KAYLA_COACHING_REFERENCE.md:30-31` — "Sends contact card + website (credibility)"
+**Owner decisions (2026-08-03):**
+- Do not use CEO, Co-Founder, Chief Investment Officer, Acquisitions, or any other executive title.
+- Do not use Prolific Capital on this contact card.
+- Do not use Kayla's email.
+- Do not use the website's 513 number.
+- Do not include a street address.
+- Do not invent a logo, photo, social profile, or additional field.
+- "Property Outreach" is the final approved title because it covers both listing-agent outreach and future off-market seller outreach without implying underwriting or negotiation authority.
 
 ## Current Card
 
-The minimum verified card contains 6 fields (FN, N, ORG, TITLE, TEL, EMAIL). It is functional for self-testing. Two COURSE_EXPLICIT_REQUIRED fields are missing (headshot, recent closings) and must be supplied by the owner before production use.
+The card contains 7 fields (FN, N, ORG, TITLE, TEL, EMAIL, URL). All fields are owner-approved. No fields are missing. The card is ready for self-test and production use.
 
 ## VCF Format
 
@@ -58,4 +58,4 @@ The minimum verified card contains 6 fields (FN, N, ORG, TITLE, TEL, EMAIL). It 
 - Contact card delivery requires explicit operator approval
 - No automatic retry after uncertain result
 - Missing optional fields do NOT block the card
-- Missing COURSE_EXPLICIT_REQUIRED fields block production use but not self-testing
+- No fields are currently missing; card is production-ready

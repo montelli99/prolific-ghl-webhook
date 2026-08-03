@@ -33,15 +33,8 @@ class ContactCardDelivery {
     try {
       const spec = JSON.parse(fs.readFileSync(this.cardSpecPath, 'utf8'));
       const missing = this._missingFields(spec);
-      const missingRequired = (spec.missingRequiredFields || []).filter(f => {
-        const field = spec.fields?.[f];
-        return field && field.classification === 'COURSE_EXPLICIT_REQUIRED';
-      });
       if (missing.length > 0) {
         return { ...spec, _incomplete: true, _missingFields: missing };
-      }
-      if (missingRequired.length > 0) {
-        return { ...spec, _incomplete: true, _missingRequiredFields: missingRequired, _readyForSelfTest: true };
       }
       return spec;
     } catch (e) {
@@ -50,7 +43,7 @@ class ContactCardDelivery {
   }
 
   _missingFields(spec) {
-    const required = ['fullName', 'title', 'company', 'primaryPhone'];
+    const required = ['fullName', 'title', 'company', 'primaryPhone', 'email', 'website'];
     return required.filter(f => !spec.fields[f] || !spec.fields[f].value);
   }
 
@@ -58,14 +51,18 @@ class ContactCardDelivery {
     if (!spec || spec._incomplete) throw new Error('CONTACT_CARD_SPEC_INCOMPLETE');
     const f = spec.fields;
     const lines = ['BEGIN:VCARD', 'VERSION:3.0'];
-    if (f.fullName) lines.push(`FN:${f.fullName}`);
-    if (f.title) lines.push(`TITLE:${f.title}`);
-    if (f.company) lines.push(`ORG:${f.company}`);
-    if (f.primaryPhone) lines.push(`TEL;TYPE=CELL:${f.primaryPhone}`);
-    if (f.email) lines.push(`EMAIL:${f.email}`);
-    if (f.website) lines.push(`URL:${f.website}`);
-    if (f.businessAddress) lines.push(`ADR:;;${f.businessAddress}`);
-    if (f.notes) lines.push(`NOTE:${f.notes}`);
+    if (f.fullName) {
+      const nameParts = String(f.fullName.value).trim().split(/\s+/);
+      const lastName = nameParts.pop() || '';
+      const firstName = nameParts.join(' ') || '';
+      lines.push(`N:${lastName};${firstName};;;`);
+      lines.push(`FN:${f.fullName.value}`);
+    }
+    if (f.company) lines.push(`ORG:${f.company.value}`);
+    if (f.title) lines.push(`TITLE:${f.title.value}`);
+    if (f.primaryPhone) lines.push(`TEL;TYPE=CELL,VOICE:${f.primaryPhone.value}`);
+    if (f.email) lines.push(`EMAIL;TYPE=INTERNET,WORK:${f.email.value}`);
+    if (f.website) lines.push(`URL:${f.website.value}`);
     lines.push('END:VCARD');
     return lines.join('\n');
   }
@@ -131,7 +128,7 @@ class ContactCardDelivery {
         cardHash: spec.cardHash,
       };
     }
-    return { ready: true, reason: 'CARD_SPEC_COMPLETE', state: 'CONTACT_CARD_REQUIRED', cardHash: spec.cardHash };
+    return { ready: true, readyForSelfTest: true, reason: 'CARD_SPEC_COMPLETE', state: 'CONTACT_CARD_REQUIRED', cardHash: spec.cardHash };
   }
 }
 

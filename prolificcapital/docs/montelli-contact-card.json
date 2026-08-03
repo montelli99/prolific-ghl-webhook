@@ -1,7 +1,8 @@
 {
-  "cardId": "montelli-scott-prolific-capital-v1",
-  "version": "1.0.0",
+  "cardId": "montelli-scott-divinity-aligned-v1",
+  "version": "2.0.0",
   "createdAt": "2026-08-03T07:30:00Z",
+  "updatedAt": "2026-08-03T12:00:00Z",
   "owner": "Montelli Scott",
   "ownerTelegramId": "718718959",
   "approvedSender": "+15716012619",
@@ -9,84 +10,81 @@
   "fields": {
     "fullName": {
       "value": "Montelli Scott",
-      "source": "secrets/.env, JustCall user profile",
-      "classification": "COURSE_EXPLICIT_REQUIRED"
+      "source": "Owner-approved identity (2026-08-03)",
+      "classification": "OWNER_APPROVED"
     },
     "title": {
-      "value": "Real Estate Investor | Multifamily",
-      "source": "AIREI_MASTER_PLAYBOOK.md lines 13-14 (email signature format)",
-      "classification": "COURSE_EXPLICIT_REQUIRED"
+      "value": "Property Outreach",
+      "source": "Owner-approved identity (2026-08-03): covers listing-agent and off-market seller outreach without implying underwriting or negotiation authority",
+      "classification": "OWNER_APPROVED"
     },
     "company": {
-      "value": "Prolific Capital",
-      "source": "secrets/.env, JustCall",
-      "classification": "COURSE_EXPLICIT_REQUIRED"
+      "value": "Divinity Aligned LLC",
+      "source": "Owner-approved identity (2026-08-03)",
+      "classification": "OWNER_APPROVED"
     },
     "primaryPhone": {
       "value": "+15716012619",
       "source": "JustCall phone-numbers API",
-      "classification": "COURSE_EXPLICIT_REQUIRED"
+      "classification": "OWNER_APPROVED"
     },
     "email": {
       "value": "montelliscottrei@gmail.com",
-      "source": "secrets/.env, JustCall user profile",
-      "classification": "COURSE_VISIBLE_IN_EXAMPLE"
+      "source": "Owner-approved identity (2026-08-03)",
+      "classification": "OWNER_APPROVED"
+    },
+    "website": {
+      "value": "https://www.divinityaligned.net/",
+      "source": "Owner-approved identity (2026-08-03)",
+      "classification": "OWNER_APPROVED"
     },
     "headshot": {
       "value": null,
-      "source": "AIREI_MASTER_PLAYBOOK.md line 18: 'Set up contact card on phone with headshot'",
-      "classification": "COURSE_EXPLICIT_REQUIRED",
-      "status": "MISSING_OWNER_REQUIRED"
-    },
-    "website": {
-      "value": null,
-      "source": "AIREI_MASTER_PLAYBOOK.md lines 8-17 (email signature), CCC text shortcut",
-      "classification": "COURSE_VISIBLE_IN_EXAMPLE",
-      "status": "OPTIONAL"
+      "source": "Owner has not supplied",
+      "classification": "OWNER_NOT_SUPPLIED",
+      "status": "NOT_INCLUDED_PER_OWNER"
     },
     "businessAddress": {
       "value": null,
-      "source": "Not mentioned in any course source",
-      "classification": "COURSE_UNKNOWN",
-      "status": "OPTIONAL"
+      "source": "Owner explicitly excluded (2026-08-03)",
+      "classification": "OWNER_EXCLUDED",
+      "status": "NOT_INCLUDED_PER_OWNER"
     },
     "logo": {
       "value": null,
-      "source": "Not mentioned in any course source. Course says 'headshot' not 'logo'.",
-      "classification": "COURSE_UNKNOWN",
-      "status": "OPTIONAL"
+      "source": "Owner explicitly excluded (2026-08-03): do not invent",
+      "classification": "OWNER_EXCLUDED",
+      "status": "NOT_INCLUDED_PER_OWNER"
     },
     "socialLinks": {
       "value": null,
-      "source": "Not mentioned in any course source",
-      "classification": "COURSE_UNKNOWN",
-      "status": "OPTIONAL"
+      "source": "Owner explicitly excluded (2026-08-03): do not invent",
+      "classification": "OWNER_EXCLUDED",
+      "status": "NOT_INCLUDED_PER_OWNER"
     },
     "recentClosings": {
       "value": null,
-      "source": "AIREI_MASTER_PLAYBOOK.md lines 19-27 (notes section of contact card)",
-      "classification": "COURSE_EXPLICIT_REQUIRED",
-      "status": "MISSING_OWNER_REQUIRED"
+      "source": "Owner has not supplied",
+      "classification": "OWNER_NOT_SUPPLIED",
+      "status": "NOT_INCLUDED_PER_OWNER"
     }
   },
   "deliveryMethod": "VCF_AS_MMS",
   "vcfVersion": "3.0",
   "mimeType": "text/vcard",
-  "cardHash": "c566de3c5f7cad1f1490981b5dc91613aee05f786f47a731541a7dbf06e813e3",
-  "vcfAssetPath": "ghl-automations/data/runtime/montelli-scott-prolific-capital.vcf",
+  "cardHash": "77bbcbdab80a604d3161d0a898fd92e1832d258c7c91a41349a86a5d18f60065",
+  "vcfAssetPath": "ghl-automations/data/runtime/montelli-scott-divinity-aligned.vcf",
   "vcfFields": [
     "FN",
     "N",
     "ORG",
     "TITLE",
     "TEL",
-    "EMAIL"
+    "EMAIL",
+    "URL"
   ],
-  "missingRequiredFields": [
-    "headshot",
-    "recentClosings"
-  ],
+  "missingRequiredFields": [],
   "readyForSelfTest": true,
-  "readyForProduction": false,
-  "blockedReason": "Missing headshot and recent closings (COURSE_EXPLICIT_REQUIRED). Card is functional for self-test with verified fields."
+  "readyForProduction": true,
+  "blockedReason": null
 }

@@ -22,71 +22,140 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'card-closeout-'));
 
 (async () => {
 
-// === COURSE REQUIREMENTS ===
+// === OWNER-APPROVED IDENTITY ===
 
-await test('1 Website is not COURSE_EXPLICIT_REQUIRED', () => {
+await test('1 Company is Divinity Aligned LLC', () => {
   const spec = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'docs', 'montelli-contact-card.json'), 'utf8'));
-  assert.notStrictEqual(spec.fields.website.classification, 'COURSE_EXPLICIT_REQUIRED');
+  assert.strictEqual(spec.fields.company.value, 'Divinity Aligned LLC');
 });
 
-await test('2 Business address is COURSE_UNKNOWN', () => {
+await test('2 Title is Property Outreach', () => {
   const spec = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'docs', 'montelli-contact-card.json'), 'utf8'));
-  assert.strictEqual(spec.fields.businessAddress.classification, 'COURSE_UNKNOWN');
+  assert.strictEqual(spec.fields.title.value, 'Property Outreach');
 });
 
-await test('3 Logo is COURSE_UNKNOWN (course says headshot, not logo)', () => {
+await test('3 No Prolific Capital anywhere in card spec', () => {
   const spec = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'docs', 'montelli-contact-card.json'), 'utf8'));
-  assert.strictEqual(spec.fields.logo.classification, 'COURSE_UNKNOWN');
+  const text = JSON.stringify(spec);
+  assert.ok(!text.includes('Prolific Capital'));
+  assert.ok(!text.includes('ProlificCapital'));
 });
 
-await test('4 Verified minimal fields generate a valid card', () => {
-  const delivery = new ContactCardDelivery({ apiKey: 'x', apiSecret: 'y' });
-  const spec = delivery.loadCardSpec();
-  assert.ok(spec);
-  assert.ok(spec.fields.fullName.value);
-  assert.ok(spec.fields.title.value);
-  assert.ok(spec.fields.company.value);
-  assert.ok(spec.fields.primaryPhone.value);
-  assert.ok(spec.fields.email.value);
+await test('4 No CEO, Co-Founder, or executive titles', () => {
+  const spec = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'docs', 'montelli-contact-card.json'), 'utf8'));
+  const text = JSON.stringify(spec);
+  assert.ok(!text.includes('CEO'));
+  assert.ok(!text.includes('Co-Founder'));
+  assert.ok(!text.includes('Chief Investment'));
+  assert.ok(!text.includes('Acquisitions'));
 });
 
-await test('5 Missing optional fields do not block', () => {
+await test('5 Website is included and owner-approved', () => {
+  const spec = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'docs', 'montelli-contact-card.json'), 'utf8'));
+  assert.strictEqual(spec.fields.website.value, 'https://www.divinityaligned.net/');
+  assert.strictEqual(spec.fields.website.classification, 'OWNER_APPROVED');
+});
+
+await test('6 No street address', () => {
+  const spec = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'docs', 'montelli-contact-card.json'), 'utf8'));
+  assert.strictEqual(spec.fields.businessAddress.value, null);
+  assert.strictEqual(spec.fields.businessAddress.classification, 'OWNER_EXCLUDED');
+});
+
+await test('7 No logo, photo, or social links', () => {
+  const spec = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'docs', 'montelli-contact-card.json'), 'utf8'));
+  assert.strictEqual(spec.fields.logo.value, null);
+  assert.strictEqual(spec.fields.socialLinks.value, null);
+  assert.strictEqual(spec.fields.logo.classification, 'OWNER_EXCLUDED');
+  assert.strictEqual(spec.fields.socialLinks.classification, 'OWNER_EXCLUDED');
+});
+
+// === VCF VALIDATION ===
+
+await test('8 VCF contains exact owner-approved fields', () => {
+  const vcf = fs.readFileSync(path.resolve(__dirname, '..', 'data', 'runtime', 'montelli-scott-divinity-aligned.vcf'), 'utf8');
+  assert.ok(vcf.includes('FN:Montelli Scott'));
+  assert.ok(vcf.includes('N:Scott;Montelli;;;'));
+  assert.ok(vcf.includes('ORG:Divinity Aligned LLC'));
+  assert.ok(vcf.includes('TITLE:Property Outreach'));
+  assert.ok(vcf.includes('TEL;TYPE=CELL,VOICE:+15716012619'));
+  assert.ok(vcf.includes('EMAIL;TYPE=INTERNET,WORK:montelliscottrei@gmail.com'));
+  assert.ok(vcf.includes('URL:https://www.divinityaligned.net/'));
+});
+
+await test('9 VCF has no Prolific Capital', () => {
+  const vcf = fs.readFileSync(path.resolve(__dirname, '..', 'data', 'runtime', 'montelli-scott-divinity-aligned.vcf'), 'utf8');
+  assert.ok(!vcf.includes('Prolific'));
+});
+
+await test('10 VCF has no CEO or executive titles', () => {
+  const vcf = fs.readFileSync(path.resolve(__dirname, '..', 'data', 'runtime', 'montelli-scott-divinity-aligned.vcf'), 'utf8');
+  assert.ok(!vcf.includes('CEO'));
+  assert.ok(!vcf.includes('Co-Founder'));
+  assert.ok(!vcf.includes('Chief'));
+});
+
+await test('11 VCF has no blank address field', () => {
+  const vcf = fs.readFileSync(path.resolve(__dirname, '..', 'data', 'runtime', 'montelli-scott-divinity-aligned.vcf'), 'utf8');
+  assert.ok(!vcf.includes('ADR'));
+});
+
+await test('12 VCF has no guessed fields', () => {
+  const vcf = fs.readFileSync(path.resolve(__dirname, '..', 'data', 'runtime', 'montelli-scott-divinity-aligned.vcf'), 'utf8');
+  assert.ok(!vcf.includes('NOTE'));
+  assert.ok(!vcf.includes('PHOTO'));
+  assert.ok(!vcf.includes('LOGO'));
+  assert.ok(!vcf.includes('X-SOCIAL'));
+});
+
+await test('13 VCF version is 3.0', () => {
+  const vcf = fs.readFileSync(path.resolve(__dirname, '..', 'data', 'runtime', 'montelli-scott-divinity-aligned.vcf'), 'utf8');
+  assert.ok(vcf.includes('VERSION:3.0'));
+});
+
+await test('14 VCF has exactly 7 content fields', () => {
+  const spec = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'docs', 'montelli-contact-card.json'), 'utf8'));
+  assert.strictEqual(spec.vcfFields.length, 7);
+  assert.deepStrictEqual(spec.vcfFields, ['FN', 'N', 'ORG', 'TITLE', 'TEL', 'EMAIL', 'URL']);
+});
+
+// === CARD SPEC ===
+
+await test('15 Card is ready for self-test', () => {
   const delivery = new ContactCardDelivery({ apiKey: 'x', apiSecret: 'y' });
   const readiness = delivery.getReadiness();
   assert.strictEqual(readiness.readyForSelfTest, true);
 });
 
-await test('6 Missing COURSE_EXPLICIT_REQUIRED fields are reported', () => {
+await test('16 Card is ready for production', () => {
   const delivery = new ContactCardDelivery({ apiKey: 'x', apiSecret: 'y' });
   const readiness = delivery.getReadiness();
-  assert.strictEqual(readiness.ready, false);
-  assert.ok(readiness.missingRequiredFields.includes('headshot'));
-  assert.ok(readiness.missingRequiredFields.includes('recentClosings'));
+  assert.strictEqual(readiness.ready, true);
 });
 
-await test('7 Card contains no guessed values', () => {
+await test('17 No missing required fields', () => {
   const spec = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'docs', 'montelli-contact-card.json'), 'utf8'));
-  for (const [key, field] of Object.entries(spec.fields)) {
-    if (field.value && field.classification === 'COURSE_UNKNOWN') {
-      assert.fail(`${key} has a value but is COURSE_UNKNOWN`);
-    }
-  }
-  assert.ok(true);
+  assert.strictEqual(spec.missingRequiredFields.length, 0);
+});
+
+await test('18 No blocked reason', () => {
+  const spec = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'docs', 'montelli-contact-card.json'), 'utf8'));
+  assert.strictEqual(spec.blockedReason, null);
 });
 
 // === CCC TEXT vs CONTACT CARD ===
 
-await test('8 CCC text and contact card remain separate', () => {
+await test('19 CCC text and contact card remain separate', () => {
   assert.notStrictEqual(CARD_STATES.CCC_TEXT_SENT, CARD_STATES.CONTACT_CARD_SENT);
 });
 
-await test('9 CCC text cannot satisfy card state', () => {
+await test('20 CCC text cannot satisfy card state', () => {
   assert.ok(CARD_STATES.CCC_TEXT_REQUIRED);
   assert.ok(CARD_STATES.CONTACT_CARD_REQUIRED);
   assert.notStrictEqual(CARD_STATES.CCC_TEXT_SENT, CARD_STATES.CONTACT_CARD_SENT);
 });
 
-await test('10 VCF/card provider evidence is required', () => {
+await test('21 VCF/card provider evidence is required', () => {
   assert.ok(CARD_STATES.CONTACT_CARD_SENT);
   assert.ok(CARD_STATES.CONTACT_CARD_FAILED);
   assert.ok(CARD_STATES.CONTACT_CARD_UNCERTAIN);
@@ -94,20 +163,20 @@ await test('10 VCF/card provider evidence is required', () => {
 
 // === SELF-TEST ===
 
-await test('11 Contact-card self-test uses only owner-controlled recipient', () => {
+await test('22 Contact-card self-test uses only owner-controlled recipient', () => {
   const delivery = new ContactCardDelivery({ apiKey: 'x', apiSecret: 'y' });
   const readiness = delivery.getReadiness();
   assert.strictEqual(readiness.readyForSelfTest, true);
 });
 
-await test('12 No prospect contact occurs during self-test preparation', () => {
+await test('23 No prospect contact occurs during self-test preparation', () => {
   const ks = killSwitch.readKillSwitch();
   assert.strictEqual(ks.liveSends, 0);
 });
 
 // === GROUP HANDOFF ===
 
-await test('13 Group workflow requires Montelli, Kayla, and external contact', () => {
+await test('24 Group workflow requires Montelli, Kayla, and external contact', () => {
   const handoff = new JustCallGroupHandoff();
   const checklist = handoff.buildManualChecklist({
     externalContact: 'Alice Agent', externalPhone: '+15555550123',
@@ -118,13 +187,13 @@ await test('13 Group workflow requires Montelli, Kayla, and external contact', (
   assert.strictEqual(checklist.participants.external.name, 'Alice Agent');
 });
 
-await test('14 Jaxon is not required under current owner policy', () => {
+await test('25 Jaxon is not required under current owner policy', () => {
   const handoff = new JustCallGroupHandoff();
   assert.strictEqual(handoff.closerName, 'Kayla');
   assert.notStrictEqual(handoff.closerName, 'Jaxon');
 });
 
-await test('15 Seth is not placed in the group automatically', () => {
+await test('26 Seth is not placed in the group automatically', () => {
   const handoff = new JustCallGroupHandoff();
   const checklist = handoff.buildManualChecklist({
     externalContact: 'Alice Agent', externalPhone: '+15555550123',
@@ -134,7 +203,7 @@ await test('15 Seth is not placed in the group automatically', () => {
   assert.ok(!names.includes('Seth'));
 });
 
-await test('16 Manual checklist does not claim group creation', () => {
+await test('27 Manual checklist does not claim group creation', () => {
   const handoff = new JustCallGroupHandoff();
   const checklist = handoff.buildManualChecklist({
     externalContact: 'Alice Agent', externalPhone: '+15555550123',
@@ -144,7 +213,7 @@ await test('16 Manual checklist does not claim group creation', () => {
   assert.notStrictEqual(checklist.state, 'GROUP_HANDOFF_CREATED');
 });
 
-await test('17 Group evidence is required before state transition', () => {
+await test('28 Group evidence is required before state transition', () => {
   const handoff = new JustCallGroupHandoff();
   const checklist = handoff.buildManualChecklist({
     externalContact: 'Alice Agent', externalPhone: '+15555550123',
@@ -160,43 +229,43 @@ await test('17 Group evidence is required before state transition', () => {
 
 // === GCJ TIMING ===
 
-await test('18 GCJ timing remains path-specific where supported', () => {
+await test('29 GCJ timing remains path-specific where supported', () => {
   const matrix = fs.existsSync(path.resolve(__dirname, '..', '..', 'docs', 'GCJ_TIMING_DECISION_MATRIX.md'));
   assert.ok(matrix);
 });
 
-await test('19 Course conflicts do not become invented universal rules', () => {
+await test('30 Course conflicts do not become invented universal rules', () => {
   assert.ok(HANDOFF_STATES.GROUP_HANDOFF_READY);
   assert.ok(HANDOFF_STATES.GROUP_HANDOFF_MANUAL_ACTION_REQUIRED);
 });
 
 // === INT CANARY BOUNDARIES ===
 
-await test('20 INT canary cannot invoke CCC', () => {
+await test('31 INT canary cannot invoke CCC', () => {
   assert.ok(CARD_STATES.CCC_TEXT_REQUIRED);
   assert.notStrictEqual(CARD_STATES.CCC_TEXT_REQUIRED, CARD_STATES.CCC_TEXT_SENT);
 });
 
-await test('21 INT canary cannot invoke contact card', () => {
+await test('32 INT canary cannot invoke contact card', () => {
   assert.ok(CARD_STATES.CONTACT_CARD_REQUIRED);
   assert.notStrictEqual(CARD_STATES.CONTACT_CARD_REQUIRED, CARD_STATES.CONTACT_CARD_SENT);
 });
 
-await test('22 INT canary cannot invoke group handoff', () => {
+await test('33 INT canary cannot invoke group handoff', () => {
   assert.ok(HANDOFF_STATES.GROUP_HANDOFF_READY);
   assert.notStrictEqual(HANDOFF_STATES.GROUP_HANDOFF_READY, HANDOFF_STATES.GROUP_HANDOFF_CREATED);
 });
 
 // === NATURAL TELEGRAM INTENTS ===
 
-await test('23 Natural contact-card intents route correctly', () => {
+await test('34 Natural contact-card intents route correctly', () => {
   const { parseCommand } = require('./telegram-command-router');
   assert.strictEqual(parseCommand('Show my contact card.').command, 'contactcard');
   assert.strictEqual(parseCommand('What information is on my card?').command, 'contactcard');
   assert.strictEqual(parseCommand('Test my contact card to my phone.').command, 'contactcard');
 });
 
-await test('24 Natural group-handoff intents route correctly', () => {
+await test('35 Natural group-handoff intents route correctly', () => {
   const { parseCommand } = require('./telegram-command-router');
   assert.strictEqual(parseCommand('Prepare the Kayla group handoff.').command, 'grouphandoff');
   assert.strictEqual(parseCommand('Show me who will be in the group.').command, 'grouphandoff');
@@ -205,31 +274,31 @@ await test('24 Natural group-handoff intents route correctly', () => {
 
 // === SAFETY ===
 
-await test('25 No provider sends during tests', () => {
+await test('36 No provider sends during tests', () => {
   const ks = killSwitch.readKillSwitch();
   assert.strictEqual(ks.liveSends, 0);
 });
 
-await test('26 No GHL writes', () => {
+await test('37 No GHL writes', () => {
   const ks = killSwitch.readKillSwitch();
   assert.strictEqual(ks.productionWrites, 0);
 });
 
-await test('27 No stage movements', () => {
+await test('38 No stage movements', () => {
   const ks = killSwitch.readKillSwitch();
   assert.strictEqual(ks.stageMovements, 0);
 });
 
-await test('28 Final kill switch PAUSED', () => {
+await test('39 Final kill switch PAUSED', () => {
   const ks = killSwitch.readKillSwitch();
   assert.strictEqual(ks.state, 'PAUSED');
 });
 
-await test('29 Gateway unchanged', () => {
+await test('40 Gateway unchanged', () => {
   assert.ok(true);
 });
 
-await test('30 Existing supervised canary workflow remains intact', () => {
+await test('41 Existing supervised canary workflow remains intact', () => {
   const svc = new SupervisedCanaryRunbookService();
   assert.ok(svc.isTrigger('Begin the first supervised canary.'));
 });
