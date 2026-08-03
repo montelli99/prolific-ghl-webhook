@@ -41,6 +41,57 @@ class JustCallTextHistoryReadService {
     return digits;
   }
 
+  async fetchAllTexts(options = {}) {
+    if (!this.isConfigured()) {
+      return { ok: false, reason: 'NOT_CONFIGURED', allTexts: [] };
+    }
+    try {
+      const maxPages = options.maxPages || 20;
+      const perPage = options.perPage || 5;
+
+      const allTexts = [];
+      const seenIds = new Set();
+      let page = 1;
+      let hasMore = true;
+      let totalCount = null;
+
+      while (hasMore && page <= maxPages) {
+        const result = await this._request('GET', `/${JUSTCALL_API_VERSION}/texts?per_page=${perPage}&page=${page}&order=desc`);
+        if (result.status !== 200) {
+          return { ok: false, reason: `API_ERROR_${result.status}`, allTexts };
+        }
+        if (totalCount === null && result.body?.total_count !== undefined) {
+          totalCount = result.body.total_count;
+        }
+        const data = result.body?.data || [];
+        for (const t of data) {
+          if (seenIds.has(t.id)) continue;
+          seenIds.add(t.id);
+          allTexts.push(t);
+        }
+        hasMore = data.length === perPage && page < maxPages;
+        page++;
+      }
+
+      const fetchedCount = seenIds.size;
+      const paginationCompleteness = totalCount !== null
+        ? (fetchedCount >= totalCount ? 'COMPLETE' : fetchedCount > 0 ? 'PARTIAL' : 'INCONSISTENT')
+        : (hasMore ? 'PARTIAL' : 'COMPLETE');
+
+      return {
+        ok: true,
+        reason: paginationCompleteness,
+        allTexts,
+        totalCount,
+        fetchedCount,
+        paginationCompleteness,
+        checkedAt: new Date().toISOString(),
+      };
+    } catch (e) {
+      return { ok: false, reason: `REQUEST_ERROR: ${e.message}`, allTexts: [] };
+    }
+  }
+
   async fetchTextHistory(phone, options = {}) {
     if (!this.isConfigured()) {
       return { ok: false, reason: 'NOT_CONFIGURED', outboundHistory: 'UNKNOWN', pendingReply: 'UNKNOWN', deliveryState: 'UNKNOWN' };
@@ -49,28 +100,41 @@ class JustCallTextHistoryReadService {
       const normalized = this.normalizePhone(phone);
       const digits = normalized.replace(/\D/g, '');
       const searchNumber = digits.length >= 10 ? `+${digits.slice(-11)}` : normalized;
-      const maxPages = options.maxPages || 5;
-      const perPage = options.perPage || 100;
+      const maxPages = options.maxPages || 20;
+      const perPage = options.perPage || 5;
 
       const allTexts = [];
+      const seenIds = new Set();
       let page = 1;
       let hasMore = true;
+      let totalCount = null;
 
       while (hasMore && page <= maxPages) {
         const result = await this._request('GET', `/${JUSTCALL_API_VERSION}/texts?per_page=${perPage}&page=${page}&order=desc`);
         if (result.status !== 200) {
           return { ok: false, reason: `API_ERROR_${result.status}`, outboundHistory: 'UNKNOWN', pendingReply: 'UNKNOWN', deliveryState: 'UNKNOWN', texts: allTexts };
         }
+        if (totalCount === null && result.body?.total_count !== undefined) {
+          totalCount = result.body.total_count;
+        }
         const data = result.body?.data || [];
-        const relevant = data.filter(t => {
+        for (const t of data) {
+          if (seenIds.has(t.id)) continue;
+          seenIds.add(t.id);
           const contactNum = this.normalizePhone(t.contact_number || '');
           const justcallNum = this.normalizePhone(t.justcall_number || '');
-          return contactNum === normalized || justcallNum === normalized;
-        });
-        allTexts.push(...relevant);
+          if (contactNum === normalized || justcallNum === normalized) {
+            allTexts.push(t);
+          }
+        }
         hasMore = data.length === perPage && page < maxPages;
         page++;
       }
+
+      const fetchedCount = seenIds.size;
+      const paginationCompleteness = totalCount !== null
+        ? (fetchedCount >= totalCount ? 'COMPLETE' : fetchedCount > 0 ? 'PARTIAL' : 'INCONSISTENT')
+        : (hasMore ? 'PARTIAL' : 'COMPLETE');
 
       const outbound = allTexts.filter(t => String(t.direction || '').toLowerCase() === 'outgoing');
       const inbound = allTexts.filter(t => String(t.direction || '').toLowerCase() === 'incoming');
@@ -94,7 +158,7 @@ class JustCallTextHistoryReadService {
 
       return {
         ok: true,
-        reason: 'COMPLETE',
+        reason: paginationCompleteness,
         outboundHistory,
         pendingReply,
         deliveryState,
@@ -103,7 +167,10 @@ class JustCallTextHistoryReadService {
         senderOutboundCount: senderTexts.length,
         latestOutboundAt: senderTexts[0] ? `${senderTexts[0].sms_date}T${senderTexts[0].sms_time}` : null,
         latestInboundAt: inbound[0] ? `${inbound[0].sms_date}T${inbound[0].sms_time}` : null,
-        paginationComplete: !hasMore,
+        paginationComplete: paginationCompleteness === 'COMPLETE',
+        paginationCompleteness,
+        totalCount,
+        fetchedCount,
         checkedAt: new Date().toISOString(),
       };
     } catch (e) {

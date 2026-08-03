@@ -6,7 +6,7 @@ const path = require('path');
 const { GhlAuthoritativeHydrator } = require('./ghl-authoritative-pipeline-hydrator');
 const { normalizeOpportunity, classifyRole } = require('./telegram-outreach-dry-run');
 const { derivePropertyTimezone } = require('./property-timezone');
-const { resolveCompliance } = require('./outreach-compliance-resolver');
+const { resolveCompliance, PASSING_STATES } = require('./outreach-compliance-resolver');
 const { JustCallSuppressionReadService } = require('./justcall-suppression-read-service');
 const { JustCallTextHistoryReadService } = require('./justcall-text-history-read-service');
 const { LocalSuppressionRegistry } = require('./local-suppression-registry');
@@ -49,6 +49,15 @@ class CanaryPlanBuilder {
       return cls.recordClass === 'PRODUCTION';
     });
 
+    let globalBlacklist = null;
+    let globalTexts = null;
+    if (this.suppression.isConfigured()) {
+      globalBlacklist = await this.suppression.fetchBlacklist();
+    }
+    if (this.history.isConfigured()) {
+      globalTexts = await this.history.fetchAllTexts({ perPage: 5, maxPages: 20 });
+    }
+
     const candidates = [];
     for (const record of production) {
       const normalized = normalizeOpportunity(record);
@@ -62,27 +71,35 @@ class CanaryPlanBuilder {
       if (!['agent', 'owner', 'broker'].includes(roleEvidence.role)) continue;
 
       const phone = normalized.phone;
-      let jcSuppression = null;
-      let jcHistory = null;
+      const normalizedPhone = this.suppression.normalizePhone(phone);
 
-      if (this.suppression.isConfigured()) {
-        const [blacklist, contactStatus] = await Promise.all([
-          this.suppression.checkPhone(phone),
-          this.suppression.checkContactStatus(phone),
-        ]);
+      let jcSuppression = null;
+      if (globalBlacklist && globalBlacklist.ok) {
+        const inBlacklist = globalBlacklist.blacklistedPhones.has(normalizedPhone);
         jcSuppression = {
-          dnc: blacklist.state === 'BLOCKED' ? 'BLOCKED' : blacklist.state,
-          optOut: blacklist.state === 'BLOCKED' ? 'BLOCKED' : blacklist.state,
-          contactDnd: contactStatus.state === 'BLOCKED' ? 'BLOCKED' : contactStatus.state,
+          dnc: inBlacklist ? 'BLOCKED' : 'CLEAR',
+          optOut: inBlacklist ? 'BLOCKED' : 'CLEAR',
+          contactDnd: 'UNKNOWN',
         };
       }
 
-      if (this.history.isConfigured()) {
-        const history = await this.history.fetchTextHistory(phone);
+      let jcHistory = null;
+      if (globalTexts && globalTexts.ok) {
+        const candidateTexts = (globalTexts.allTexts || []).filter(t => {
+          const contactNum = this.history.normalizePhone(t.contact_number || '');
+          const justcallNum = this.history.normalizePhone(t.justcall_number || '');
+          return contactNum === normalizedPhone || justcallNum === normalizedPhone;
+        });
+        const outbound = candidateTexts.filter(t => String(t.direction || '').toLowerCase() === 'outgoing');
+        const inbound = candidateTexts.filter(t => String(t.direction || '').toLowerCase() === 'incoming');
+        const senderTexts = outbound.filter(t => {
+          const num = this.history.normalizePhone(t.justcall_number || '');
+          return num.includes(SELECTED_SENDER_SUFFIX);
+        });
         jcHistory = {
-          outboundHistory: history.outboundHistory,
-          pendingReply: history.pendingReply,
-          deliveryState: history.deliveryState,
+          outboundHistory: senderTexts.length > 0 ? 'PRIOR_SEND_FOUND' : outbound.length > 0 ? 'PRIOR_SEND_FOUND' : 'CLEAR_NO_PRIOR_SEND',
+          pendingReply: inbound.length > 0 ? 'INBOUND_REPLY_REQUIRES_HUMAN' : 'CLEAR',
+          deliveryState: senderTexts.length > 0 ? 'NOT_APPLICABLE' : 'NOT_APPLICABLE',
         };
       }
 
@@ -120,7 +137,7 @@ class CanaryPlanBuilder {
         compliance,
         passed: compliance.passed,
         blockedReasons: Object.entries(compliance.guards)
-          .filter(([, g]) => g.state !== 'CLEAR')
+          .filter(([, g]) => !PASSING_STATES.has(g.state))
           .map(([name, g]) => ({ guard: name, state: g.state, blockerCode: g.blockerCode })),
       });
     }

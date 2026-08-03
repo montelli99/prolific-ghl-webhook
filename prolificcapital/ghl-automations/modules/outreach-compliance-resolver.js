@@ -12,7 +12,7 @@ const GUARD_NAMES = Object.freeze([
   'ACTIVE_HUMAN_WORK', 'PRIOR_OUTREACH', 'DUPLICATE_HISTORY', 'PROVIDER_UNCERTAINTY',
 ]);
 
-const PASSING_STATES = new Set(['CLEAR', 'NOT_APPLICABLE_NO_PRIOR_CONTACT', 'CLEAR_NO_PRIOR_OUTREACH']);
+const PASSING_STATES = new Set(['CLEAR', 'NOT_APPLICABLE_NO_PRIOR_CONTACT', 'CLEAR_NO_PRIOR_OUTREACH', 'CLEAR_NO_PRIOR_SEND']);
 const BLOCKING_STATES = new Set(['BLOCKED', 'UNKNOWN', 'WAITING_FOR_REPLY']);
 
 function resolveCompliance(record, context = {}) {
@@ -38,31 +38,31 @@ function resolveCompliance(record, context = {}) {
   const guards = {};
 
   guards.DNC = resolveGuard('DNC', [
-    { source: 'GHL_TAGS', state: ghlLocks.checks.dnc === 'BLOCKED' ? 'BLOCKED' : ghlLocks.checks.dnc === 'CLEAR' ? 'CLEAR' : 'UNKNOWN' },
+    { source: 'GHL_TAGS', state: ghlLocks.checks.dnc },
     justcallSuppression ? { source: 'JUSTCALL_BLACKLIST', state: justcallSuppression.dnc || 'UNKNOWN' } : null,
     justcallSuppression ? { source: 'JUSTCALL_CONTACT_STATUS', state: justcallSuppression.contactDnd || 'UNKNOWN' } : null,
     localRegistry ? { source: 'LOCAL_REGISTRY', state: localRegistry.dnc || 'UNKNOWN' } : null,
   ]);
 
   guards.STOP_OPT_OUT = resolveGuard('STOP_OPT_OUT', [
-    { source: 'GHL_TAGS', state: ghlLocks.checks.optOut === 'BLOCKED' ? 'BLOCKED' : ghlLocks.checks.optOut === 'CLEAR' ? 'CLEAR' : 'UNKNOWN' },
+    { source: 'GHL_TAGS', state: ghlLocks.checks.optOut },
     justcallSuppression ? { source: 'JUSTCALL_BLACKLIST', state: justcallSuppression.optOut || 'UNKNOWN' } : null,
     localRegistry ? { source: 'LOCAL_REGISTRY', state: localRegistry.optOut || 'UNKNOWN' } : null,
   ]);
 
   guards.WRONG_NUMBER = resolveGuard('WRONG_NUMBER', [
-    { source: 'GHL_TAGS', state: ghlLocks.checks.wrongNumber === 'BLOCKED' ? 'BLOCKED' : ghlLocks.checks.wrongNumber === 'CLEAR' ? 'CLEAR' : 'UNKNOWN' },
+    { source: 'GHL_TAGS', state: ghlLocks.checks.wrongNumber },
     localRegistry ? { source: 'LOCAL_REGISTRY', state: localRegistry.wrongNumber || 'UNKNOWN' } : null,
   ]);
 
   guards.PENDING_REPLY = resolveGuard('PENDING_REPLY', [
-    { source: 'GHL_TAGS', state: ghlLocks.checks.pendingReply === 'BLOCKED' ? 'BLOCKED' : ghlLocks.checks.pendingReply === 'CLEAR' ? 'CLEAR' : 'UNKNOWN' },
+    { source: 'GHL_TAGS', state: ghlLocks.checks.pendingReply },
     justcallHistory ? { source: 'JUSTCALL_HISTORY', state: justcallHistory.pendingReply || 'UNKNOWN' } : null,
     localRegistry ? { source: 'LOCAL_REGISTRY', state: localRegistry.pendingReply || 'UNKNOWN' } : null,
   ]);
 
   guards.ACTIVE_HUMAN_WORK = resolveGuard('ACTIVE_HUMAN_WORK', [
-    { source: 'GHL_TAGS', state: ghlLocks.checks.activeHumanWork === 'BLOCKED' ? 'BLOCKED' : ghlLocks.checks.activeHumanWork === 'CLEAR' ? 'CLEAR' : 'UNKNOWN' },
+    { source: 'GHL_TAGS', state: ghlLocks.checks.activeHumanWork },
     localRegistry ? { source: 'LOCAL_REGISTRY', state: localRegistry.activeHumanWork || 'UNKNOWN' } : null,
   ]);
 
@@ -73,6 +73,8 @@ function resolveCompliance(record, context = {}) {
   ]);
 
   guards.DUPLICATE_HISTORY = resolveGuard('DUPLICATE_HISTORY', [
+    { source: 'WITHIN_PLAN', state: withinPlanDuplicate(record, allRecords) ? 'BLOCKED' : 'CLEAR' },
+    justcallHistory ? { source: 'JUSTCALL_HISTORY', state: justcallHistory.outboundHistory === 'PRIOR_SEND_FOUND' ? 'BLOCKED' : 'CLEAR' } : null,
     executionJournal ? { source: 'EXECUTION_JOURNAL', state: executionJournal.duplicate || 'UNKNOWN' } : null,
     localRegistry ? { source: 'LOCAL_REGISTRY', state: localRegistry.duplicate || 'UNKNOWN' } : null,
   ]);
@@ -110,15 +112,29 @@ function resolveGuard(name, sources) {
     return { state: 'BLOCKED', sources: validSources, evidence: blockedSources, blockerCode: `${name}_BLOCKED` };
   }
 
-  if (uniqueStates.length > 1) {
-    return { state: 'UNKNOWN', sources: validSources, evidence: validSources, blockerCode: `${name}_CONFLICTING_SOURCES` };
+  const nonUnknown = uniqueStates.filter(s => s !== 'UNKNOWN');
+  if (nonUnknown.length === 0) {
+    return { state: 'UNKNOWN', sources: validSources, evidence: [], blockerCode: `${name}_UNKNOWN` };
   }
 
-  if (PASSING_STATES.has(uniqueStates[0])) {
-    return { state: uniqueStates[0], sources: validSources, evidence: validSources, blockerCode: null };
+  if (nonUnknown.every(s => PASSING_STATES.has(s))) {
+    return { state: nonUnknown[0], sources: validSources, evidence: validSources, blockerCode: null };
   }
 
-  return { state: 'UNKNOWN', sources: validSources, evidence: [], blockerCode: `${name}_UNKNOWN` };
+  return { state: 'UNKNOWN', sources: validSources, evidence: validSources, blockerCode: `${name}_CONFLICTING_SOURCES` };
 }
 
-module.exports = { GUARD_NAMES, resolveCompliance, resolveGuard };
+function withinPlanDuplicate(record, allRecords) {
+  const normalized = normalizeOpportunity(record);
+  const sameContact = allRecords.filter(r => {
+    const n = normalizeOpportunity(r);
+    return n.contactId && n.contactId === normalized.contactId && n.opportunityId !== normalized.opportunityId;
+  });
+  const sameProperty = allRecords.filter(r => {
+    const n = normalizeOpportunity(r);
+    return n.propertyAddress && n.propertyAddress === normalized.propertyAddress && n.opportunityId !== normalized.opportunityId;
+  });
+  return sameContact.length > 0 || sameProperty.length > 0;
+}
+
+module.exports = { GUARD_NAMES, PASSING_STATES, BLOCKING_STATES, resolveCompliance, resolveGuard };
