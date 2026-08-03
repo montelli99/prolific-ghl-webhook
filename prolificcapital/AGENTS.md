@@ -63,6 +63,41 @@ Before non-trivial work, inspect the current local operating files first:
 
 Do not ask the user what tools, skills, or abilities are available until those current local sources have been checked.
 
+## Contact Card
+
+The Montelli contact card is a production-ready vCard 3.0 asset. When the owner asks about the contact card, use the CLI tool:
+
+```
+node ghl-automations/openclaw/pipeline-contact-card.cjs status
+```
+
+This returns the current card status, fields, hashes, and readiness. Do not answer contact-card questions from memory or audit files — always run the CLI tool first.
+
+**Current card identity (v2.0.0):**
+- Company: Divinity Aligned LLC (NOT Prolific Capital)
+- Title: Property Outreach (NOT CEO, Co-Founder, or any executive title)
+- Phone: ending 2619
+- Email: montelliscottrei@gmail.com
+- Website: https://www.divinityaligned.net/
+- VCF: ghl-automations/data/runtime/montelli-scott-divinity-aligned.vcf
+- VCF hash: 77bbcbdab80a604d
+
+**Self-test workflow:**
+- Trigger: "Test my Montelli contact card to my phone."
+- Run: `node ghl-automations/openclaw/pipeline-contact-card.cjs preview`
+- This creates a persisted preview. Nothing is sent.
+- Owner approves with: "Send the contact card test"
+- Self-test is separate from production canary. No prospect, no GHL write, no stage movement.
+- Owner-controlled test recipient: ending 0891
+- 10DLC verified, MMS enabled, business approved.
+
+**Stale claims to reject:**
+- "Prolific Capital" on the contact card → WRONG. Company is Divinity Aligned LLC.
+- "CEO & Co-Founder" → WRONG. Title is Property Outreach.
+- "No VCF exists" → WRONG. VCF exists and hash verifies.
+- "10DLC unverified" → WRONG. 10DLC verified, MMS enabled.
+- "Contact card requires production canary" → WRONG. Self-test is separate.
+
 ## Memory
 
 - Use `BUSINESS_MEMORY.md` for durable cross-channel business memory.
