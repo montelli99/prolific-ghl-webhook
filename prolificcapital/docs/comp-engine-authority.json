@@ -1,0 +1,85 @@
+{
+  "engine": "comp-engine-authority",
+  "version": "1.0",
+  "date": "2026-08-03T15:11:50.513Z",
+  "domains": {
+    "compEvidence": {
+      "authority": "comps.js",
+      "function": "finalizeCompReport",
+      "classification": "ACTIVE_ADVISORY",
+      "writes": false
+    },
+    "underwriting": {
+      "authority": "cash-offer-underwriter.js",
+      "function": "runAllStrategies",
+      "classification": "AUTHORITATIVE_ACTIVE",
+      "writes": false,
+      "formulas": {
+        "cash": "ARV x 0.70 - repairs - fee",
+        "f50": "50% down + 50% carryback 72mo",
+        "f10": "10% down + 90% in 24mo",
+        "subTo": "ARV - repairs - existing loan",
+        "midTerm": "ARV x 1.2% rule"
+      }
+    },
+    "ghlWrapper": {
+      "authority": "offer-calculator.js",
+      "functions": {
+        "runAllStrategies": "ROUTE_TO_AUTHORITATIVE_ENGINE",
+        "runAllStrategiesLocal": "ROUTE_TO_AUTHORITATIVE_ENGINE",
+        "formatAllStrategies": "KEEP_FORMATTING",
+        "fetchOpportunity": "KEEP_READ_ONLY",
+        "fetchContactNotes": "KEEP_READ_ONLY",
+        "recommendStrategy": "ACTIVE_ADVISORY",
+        "midTermPivot": "ACTIVE_ADVISORY",
+        "calculate": "DEPRECATED",
+        "formatOutput": "DEPRECATED",
+        "handleOfferCalculated": "OWNER_APPROVAL_REQUIRED_WRITE"
+      }
+    },
+    "compEvidenceModel": {
+      "authority": "comp-evidence-model.js",
+      "classification": "ACTIVE_ADVISORY",
+      "writes": false
+    }
+  },
+  "defaults": {
+    "wholesaleFee": {
+      "value": 20000,
+      "classification": "OWNER_APPROVED_DEFAULT"
+    },
+    "arvMultiplier": {
+      "value": 0.7,
+      "classification": "COURSE_EXPLICIT"
+    },
+    "repairTiers": {
+      "light": 30,
+      "mid": 45,
+      "full": 60,
+      "classification": "COURSE_EXPLICIT"
+    },
+    "midtermRule": {
+      "value": 0.012,
+      "classification": "COURSE_EXPLICIT"
+    }
+  },
+  "deprecated": {
+    "calculate": "offer-calculator.js calculate() - throws LEGACY_CALCULATOR_DISABLED",
+    "formatOutput": "offer-calculator.js formatOutput() - mojibake, not routed",
+    "desiredProfit15000": "UNSOURCED_DEFAULT - removed from active path",
+    "insurance120": "UNSOURCED_DEFAULT - removed from active path"
+  },
+  "liveData": {
+    "resideline": "NOT_CONNECTED",
+    "mls": "NOT_CONNECTED",
+    "zillow": "NOT_CONNECTED",
+    "redfin": "NOT_CONNECTED",
+    "propwire": "NOT_CONNECTED"
+  },
+  "writeSafety": {
+    "noteWrite": "GATED_OWNER_APPROVAL",
+    "fieldWrite": "NOT_CONNECTED",
+    "stageMovement": "GATED_OWNER_APPROVAL",
+    "offerSend": "GATED_OWNER_APPROVAL"
+  }
+}
