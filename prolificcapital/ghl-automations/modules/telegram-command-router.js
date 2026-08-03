@@ -482,18 +482,23 @@ function _handleContactCard(args, ctx) {
 
   const text = (args || '').toLowerCase().trim();
 
-  // Self-test approval
+  // Self-test approval + execution
   if (/\b(?:send the contact card test|send it to my test phone|approve the card self-test)\b/i.test(text)) {
     const ownerId = ctx?.telegramUserId || '';
     const approval = approveSelfTest(ownerId, text);
     if (approval.error) {
       return { reply: `Cannot approve: ${approval.message || approval.error}` };
     }
-    return {
-      reply: 'Contact card self-test approved. The card is ready to send.\n\n' +
-             'To execute: the provider must be invoked with the exact approved parameters.\n' +
-             'This requires a provider send operation which is not available in this preview context.',
-    };
+
+    const result = await delivery.sendContactCard('+15718140891', {
+      body: 'Montelli contact card — tap the attached file to add my contact.',
+    });
+
+    if (result.ok) {
+      return { reply: `Contact card sent as MMS to your test phone ending 0891.\n\nProvider message ID: \`${result.providerMessageId}\`\nState: ${result.state}\n\nTap the attachment on your phone to add the contact, then confirm the fields look correct.` };
+    }
+
+    return { reply: `Contact card send failed: ${result.reason}\nState: ${result.state}` };
   }
 
   // Self-test preview

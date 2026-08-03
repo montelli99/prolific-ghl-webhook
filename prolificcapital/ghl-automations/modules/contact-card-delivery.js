@@ -68,7 +68,7 @@ class ContactCardDelivery {
     if (f.email) lines.push(`EMAIL;TYPE=INTERNET,WORK:${f.email.value}`);
     if (f.website) lines.push(`URL:${f.website.value}`);
     lines.push('END:VCARD');
-    return lines.join('\n');
+    return lines.join('\n') + '\n';
   }
 
   async sendContactCard(recipientPhone, options = {}) {
