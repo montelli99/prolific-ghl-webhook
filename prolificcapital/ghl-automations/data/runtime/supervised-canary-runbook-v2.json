@@ -1,0 +1,170 @@
+{
+  "instructionId": "runbook_supervised_canary_v2",
+  "canonicalHash": "63b1a67b1ab1418ba1fb68624ccde4dc5a34f281154f0c119c3aadbf3fbf0966",
+  "version": 2,
+  "supersedes": "runbook_supervised_canary_v1",
+  "ownerUserId": "718718959",
+  "groupId": "-1003975794600",
+  "topicId": 389,
+  "createdAt": "2026-08-03T07:10:00Z",
+  "retrievalPhrase": "Begin the first supervised canary.",
+  "status": "PENDING_NOT_EXECUTED",
+  "policyVersion": "OP-2026-08-02-v1",
+  "naturalTriggers": [
+    "Begin the first supervised canary.",
+    "Start the supervised canary.",
+    "Let's begin the canary.",
+    "Get the first canary ready.",
+    "Prepare the canary.",
+    "Start preparing the first three.",
+    "Let's go live with the canary."
+  ],
+  "automaticPreparationFlow": [
+    "1. Load and verify saved runbook (hash check).",
+    "2. Verify owner ID 718718959, chat -1003975794600, topic 389.",
+    "3. Verify frozen baseline compatibility (policy OP-2026-08-02-v1).",
+    "4. Verify business window (Mon-Fri 12PM-6PM property-local).",
+    "5. Verify template OWNER_APPROVED_PIPELINE_INT.",
+    "6. Verify sender 571-601-2619.",
+    "7. Verify kill switch PAUSED.",
+    "8. Supersede any stale/expired plans.",
+    "9. Run fresh authoritative CANARY hydration.",
+    "10. Exclude 7 historical test records.",
+    "11. Load JustCall blacklist and text history.",
+    "12. Load local suppression registry.",
+    "13. Run contact-role and contact-path validation.",
+    "14. Run property-local timezone validation.",
+    "15. Run all 8 compliance and history guards.",
+    "16. Select no more than 3 deterministic candidates.",
+    "17. Render exact owner-approved INT messages.",
+    "18. Persist immutable plan with hash verification.",
+    "19. Post preview in Pipeline topic 389.",
+    "20. Remain PAUSED. Wait for explicit approval."
+  ],
+  "providerReadinessConfirmation": {
+    "required": true,
+    "naturalConfirmations": [
+      "My JustCall account is paid and active.",
+      "JustCall is funded.",
+      "The account is good.",
+      "Yes, the SMS account is active."
+    ],
+    "validityWindow": "current supervised canary session only",
+    "persistFields": [
+      "ownerId",
+      "messageId",
+      "timestamp",
+      "confirmationHash"
+    ]
+  },
+  "reviewFlow": {
+    "supportedQuestions": [
+      "Why did you select number 1?",
+      "Show me more about number 2.",
+      "Is number 3 really the listing agent?",
+      "Show the full text again.",
+      "Remove number 2.",
+      "Replace number 1.",
+      "What number is this sending from?",
+      "When does this expire?",
+      "Don't send anything.",
+      "Cancel the plan."
+    ],
+    "rules": [
+      "Any candidate or message change supersedes old plan, creates new ID/hash.",
+      "Never edit a persisted plan in place.",
+      "New plan requires new approval."
+    ]
+  },
+  "approvalFlow": {
+    "naturalApprovals": [
+      "Send all three.",
+      "Send items 1 and 3.",
+      "Approve number 2 only.",
+      "Send the three shown.",
+      "I approve items 1, 2, and 3."
+    ],
+    "validationRequirements": [
+      "Trusted owner ID 718718959",
+      "Trusted group/topic",
+      "Active persisted plan with PREVIEW_PENDING_APPROVAL status",
+      "Exact plan hash match",
+      "Exact selected item numbers",
+      "Unexpired plan",
+      "Unchanged policy and template",
+      "Explicit send action",
+      "No contradiction or cancellation language"
+    ],
+    "ambiguousMessagesBlocked": [
+      "yes",
+      "looks good",
+      "okay",
+      "fine",
+      "go ahead"
+    ]
+  },
+  "executionFlow": [
+    "1. Load persisted plan.",
+    "2. Load persisted approval.",
+    "3. Revalidate all live guards.",
+    "4. Verify valid property-local time.",
+    "5. Verify provider readiness.",
+    "6. Transition PAUSED to CANARY_ALLOWED.",
+    "7. Execute first approved item exactly once.",
+    "8. Capture provider message ID.",
+    "9. Poll provider status.",
+    "10. Reconcile result.",
+    "11. Continue only after acceptable reconciliation.",
+    "12. Stop immediately on failure or uncertainty.",
+    "13. Never substitute another candidate.",
+    "14. Never alter approved message text.",
+    "15. Never retry an uncertain send.",
+    "16. Maximum 3 sends.",
+    "17. Return automatically to PAUSED.",
+    "18. Post concise completion report."
+  ],
+  "prohibitions": [
+    "No GHL writes",
+    "No stage movements",
+    "No notes, tasks, or tags",
+    "No automatic follow-up",
+    "No automatic call",
+    "No automatic reply handling",
+    "No autonomous sends"
+  ],
+  "cancellationBehavior": {
+    "triggers": [
+      "stop",
+      "pause",
+      "cancel",
+      "don't send",
+      "do not send",
+      "never mind",
+      "abort"
+    ],
+    "actions": [
+      "Mark pending plan CANCELLED or SUPERSEDED",
+      "Revoke approval if present",
+      "Return PAUSED",
+      "No additional provider action",
+      "Confirm cancellation concisely"
+    ]
+  },
+  "recoveryBehavior": {
+    "onRestart": [
+      "Recover active pending preview",
+      "Recover approved-but-not-executed plan",
+      "Recover partially executed plan",
+      "No startup catch-up sends",
+      "No automatic resume of execution",
+      "Interrupted execution requires owner review"
+    ]
+  },
+  "warnings": [
+    "JustCall account funding not verifiable via API — owner must confirm manually.",
+    "Webhooks not registered — inbound replies must be monitored manually via JustCall app.",
+    "Text history pagination: 13/18 records fetched (5 likely deleted). No candidate match found.",
+    "This runbook contains no embedded candidates, plan IDs, or hydration data.",
+    "All plans must be generated fresh when this runbook is retrieved."
+  ]
+}

@@ -52,6 +52,7 @@ function _getOffer()     { return require(path.join(__dirname, 'offer-calculator
 function _getContracts() { return require(path.join(__dirname, 'contract-templates.js')); }
 function _getPipelineReview() { return require(path.join(__dirname, 'pipeline-telegram-review.js')); }
 function _getKaylaOutreach() { return require(path.join(__dirname, 'kayla-telegram-outreach.js')); }
+function _getCanaryRunbook() { return require(path.join(__dirname, 'supervised-canary-runbook-service.js')); }
 
 /**
  * Parse a message into { command, args }.
@@ -76,6 +77,11 @@ function parseCommand(text) {
   }
   if (/\b(?:kayla|untouched leads|agents due|owners due|show me \d+ agents|show me \d+ owners|who should i call|preview the first|hold \d+|skip \d+|select \d+|approve these|pause outreach|resume outreach|contact made)\b/i.test(trimmed)) {
     return { command: 'outreach', args: trimmed };
+  }
+  const canary = _getCanaryRunbook();
+  const svc = canary.SupervisedCanaryRunbookService ? new canary.SupervisedCanaryRunbookService() : null;
+  if (svc && (svc.isTrigger(trimmed) || svc.isReviewQuestion(trimmed) || svc.parseApproval(trimmed) || svc.isSafetyCommand(trimmed) || svc.isProviderConfirmation(trimmed))) {
+    return { command: 'canary', args: trimmed };
   }
   return null;
 }
@@ -106,6 +112,8 @@ async function routeCommand({ command, args, sourceTopicId, targetTopicId, oppId
     case 'outreach':
     case 'kayla':
       return _handleKaylaOutreach(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env });
+    case 'canary':
+      return _handleCanary(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env, messageId: sourceMessageId });
     case 'atlas':
     case 'creative':
       return _handleAtlasDeals(args, sourceTopicId, env);
@@ -124,6 +132,43 @@ async function routeCommand({ command, args, sourceTopicId, targetTopicId, oppId
 
 function _handleKaylaOutreach(args, ctx) {
   return _getKaylaOutreach().handleKaylaOutreachCommand(ctx, args || 'show outreach state');
+}
+
+async function _handleCanary(args, ctx) {
+  const service = new (_getCanaryRunbook().SupervisedCanaryRunbookService)();
+  const text = args || '';
+
+  if (service.isSafetyCommand(text)) {
+    const planId = service.getActivePlanId();
+    if (planId) {
+      const result = await service.handleCancel(planId);
+      return { reply: result.reply };
+    }
+    return { reply: 'No active plan to cancel. Remaining PAUSED.' };
+  }
+
+  const review = service.isReviewQuestion(text);
+  if (review) {
+    const planId = service.getActivePlanId();
+    if (!planId) return { reply: 'No active plan to review. Start by saying "Begin the first supervised canary."' };
+    const result = await service.handleReview(planId, text);
+    return { reply: result.reply };
+  }
+
+  const approval = service.parseApproval(text);
+  if (approval && approval.approved) {
+    const planId = service.getActivePlanId();
+    if (!planId) return { reply: 'No active plan to approve. Start by saying "Begin the first supervised canary."' };
+    const result = await service.handleApproval(planId, text, ctx);
+    return { reply: result.reply };
+  }
+
+  if (service.isProviderConfirmation(text)) {
+    return { reply: 'JustCall account confirmed as active and funded. Proceeding with preparation.' };
+  }
+
+  const result = await service.beginPreparation(ctx);
+  return { reply: result.reply };
 }
 
 function _handlePipelineReview(args, ctx) {
