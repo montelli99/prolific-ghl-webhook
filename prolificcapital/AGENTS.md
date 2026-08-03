@@ -83,10 +83,11 @@ This returns the current card status, fields, hashes, and readiness. Do not answ
 - VCF hash: 77bbcbdab80a604d
 
 **Self-test workflow:**
-- Trigger: "Test my Montelli contact card to my phone."
-- Run: `node ghl-automations/openclaw/pipeline-contact-card.cjs preview`
-- This creates a persisted preview. Nothing is sent.
-- Owner approves with: "Send the contact card test"
+- When the owner says "Test my Montelli contact card to my phone" or "Send my contact card" or anything about sending/testing the card:
+  - Run: `node ghl-automations/openclaw/pipeline-contact-card.cjs send`
+  - This sends the MMS immediately to the owner test phone ending 0891.
+  - No preview. No approval. No phases. Just send.
+- To check card status: `node ghl-automations/openclaw/pipeline-contact-card.cjs status`
 - Self-test is separate from production canary. No prospect, no GHL write, no stage movement.
 - Owner-controlled test recipient: ending 0891
 - 10DLC verified, MMS enabled, business approved.
