@@ -75,6 +75,12 @@ function parseCommand(text) {
   if (mentionMatch) {
     return { command: mentionMatch[1].toLowerCase(), args: mentionMatch[2].trim() };
   }
+  if (/\b(?:contact card|my card|send.*card|test.*card|card.*test|card.*deliver|what.*on my card|show.*card)\b/i.test(trimmed)) {
+    return { command: 'contactcard', args: trimmed };
+  }
+  if (/\b(?:group handoff|kayla group|prepare.*group|create.*group|walk.*through.*group|group.*created|handoff.*confirm|gcj|group chat|who will be in the group|show.*group)\b/i.test(trimmed)) {
+    return { command: 'grouphandoff', args: trimmed };
+  }
   if (/\b(?:kayla|untouched leads|agents due|owners due|show me \d+ agents|show me \d+ owners|who should i call|preview the first|hold \d+|skip \d+|select \d+|approve these|pause outreach|resume outreach|contact made)\b/i.test(trimmed)) {
     return { command: 'outreach', args: trimmed };
   }
@@ -101,7 +107,7 @@ function parseCommand(text) {
  * @param {object} [input.env] - Optional env override for tests
  * @returns {Promise<{reply: string, postToTopicId?: string, replyMarkup?: object}>}
  */
-async function routeCommand({ command, args, sourceTopicId, targetTopicId, oppId, telegramUserId, chatId, env }) {
+async function routeCommand({ command, args, sourceTopicId, targetTopicId, oppId, telegramUserId, chatId, env, sourceMessageId }) {
   switch (command) {
     case 'help':
       return _handleHelp();
@@ -114,6 +120,10 @@ async function routeCommand({ command, args, sourceTopicId, targetTopicId, oppId
       return _handleKaylaOutreach(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env });
     case 'canary':
       return _handleCanary(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env, messageId: sourceMessageId });
+    case 'contactcard':
+      return _handleContactCard(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env });
+    case 'grouphandoff':
+      return _handleGroupHandoff(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env });
     case 'atlas':
     case 'creative':
       return _handleAtlasDeals(args, sourceTopicId, env);
@@ -452,13 +462,60 @@ async function _handleContract(args) {
   if (!args) {
     return { reply: 'Usage: /contract <opportunityId>\nLooks up the opp in the Montelli pipeline and routes to the right PSA template + addenda.' };
   }
-  // We don't actually fetch the opp here (that needs safePatchOpportunity + GHL auth);
-  // just confirm the command reached the router and explain what it would do.
   return {
     reply: `Contract routing for opportunity \`${args}\` is queued.\n` +
            `To complete this, I need to be invoked with access to \`safePatchOpportunity\` from the integration layer.\n` +
            `For now, this confirms the router received your request. The full route logic lives in \`fillContractForStage12\`.`,
   };
+}
+
+function _handleContactCard(args, ctx) {
+  const { ContactCardDelivery } = require(path.join(__dirname, 'contact-card-delivery'));
+  const delivery = new ContactCardDelivery();
+  const readiness = delivery.getReadiness();
+  const spec = delivery.loadCardSpec();
+
+  if (!spec) {
+    return { reply: 'Contact card specification not found. The card has not been created yet.' };
+  }
+
+  const lines = ['*Montelli Contact Card*', ''];
+  for (const [key, field] of Object.entries(spec.fields || {})) {
+    const status = field.value ? field.value : field.status || 'MISSING';
+    lines.push(`${key}: ${status} (${field.classification})`);
+  }
+  lines.push('');
+  lines.push(`Card hash: \`${spec.cardHash || 'N/A'}\``);
+  lines.push(`Ready for self-test: ${readiness.readyForSelfTest ? 'Yes' : 'No'}`);
+  lines.push(`Ready for production: ${readiness.ready ? 'Yes' : 'No'}`);
+  if (readiness.reason) lines.push(`Status: ${readiness.reason}`);
+  lines.push('');
+  lines.push('To test: "Test my Montelli contact card to my phone."');
+
+  return { reply: lines.join('\n') };
+}
+
+function _handleGroupHandoff(args, ctx) {
+  const { JustCallGroupHandoff } = require(path.join(__dirname, 'justcall-group-handoff'));
+  const handoff = new JustCallGroupHandoff();
+  const cap = handoff.getCapability();
+
+  const lines = ['*Kayla Group Handoff*', ''];
+  lines.push(`Status: ${cap.classification}`);
+  lines.push(`API: ${cap.apiSupported ? 'Available' : 'Not supported'}`);
+  lines.push(`App: ${cap.appSupported ? 'Available' : 'Unknown'}`);
+  lines.push('');
+  lines.push('*Required Participants:*');
+  lines.push(`- Montelli Scott (571-601-2619)`);
+  lines.push(`- Kayla Mauser (904-447-2520)`);
+  lines.push(`- Seller or listing agent (from GHL)`);
+  lines.push('');
+  lines.push('Seth (LOI) and Jaxon are not group participants.');
+  lines.push('');
+  lines.push('To prepare: "Prepare the Kayla group handoff."');
+  lines.push('To walk through: "Walk me through creating the group."');
+
+  return { reply: lines.join('\n') };
 }
 
 module.exports = {

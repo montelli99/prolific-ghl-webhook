@@ -32,8 +32,16 @@ class ContactCardDelivery {
     if (!fs.existsSync(this.cardSpecPath)) return null;
     try {
       const spec = JSON.parse(fs.readFileSync(this.cardSpecPath, 'utf8'));
-      if (!spec.fields || !spec.fields.fullName || !spec.fields.primaryPhone) {
-        return { ...spec, _incomplete: true, _missingFields: this._missingFields(spec) };
+      const missing = this._missingFields(spec);
+      const missingRequired = (spec.missingRequiredFields || []).filter(f => {
+        const field = spec.fields?.[f];
+        return field && field.classification === 'COURSE_EXPLICIT_REQUIRED';
+      });
+      if (missing.length > 0) {
+        return { ...spec, _incomplete: true, _missingFields: missing };
+      }
+      if (missingRequired.length > 0) {
+        return { ...spec, _incomplete: true, _missingRequiredFields: missingRequired, _readyForSelfTest: true };
       }
       return spec;
     } catch (e) {
@@ -42,8 +50,8 @@ class ContactCardDelivery {
   }
 
   _missingFields(spec) {
-    const required = ['fullName', 'title', 'company', 'primaryPhone', 'email'];
-    return required.filter(f => !spec.fields[f]);
+    const required = ['fullName', 'title', 'company', 'primaryPhone'];
+    return required.filter(f => !spec.fields[f] || !spec.fields[f].value);
   }
 
   generateVCF(spec) {
@@ -110,8 +118,20 @@ class ContactCardDelivery {
   getReadiness() {
     const spec = this.loadCardSpec();
     if (!spec) return { ready: false, reason: 'CARD_SPEC_NOT_FOUND', state: 'CONTACT_CARD_REQUIRED' };
-    if (spec._incomplete) return { ready: false, reason: `CARD_SPEC_INCOMPLETE: missing ${spec._missingFields.join(', ')}`, state: 'CONTACT_CARD_REQUIRED', missingFields: spec._missingFields };
-    return { ready: true, reason: 'CARD_SPEC_COMPLETE', state: 'CONTACT_CARD_REQUIRED', cardHash: crypto.createHash('sha256').update(JSON.stringify(spec)).digest('hex').slice(0, 16) };
+    if (spec._incomplete && spec._missingFields) {
+      return { ready: false, reason: `CARD_SPEC_INCOMPLETE: missing ${spec._missingFields.join(', ')}`, state: 'CONTACT_CARD_REQUIRED', missingFields: spec._missingFields };
+    }
+    if (spec._incomplete && spec._missingRequiredFields) {
+      return {
+        ready: false,
+        readyForSelfTest: true,
+        reason: `MISSING_COURSE_REQUIRED: ${spec._missingRequiredFields.join(', ')}`,
+        state: 'CONTACT_CARD_REQUIRED',
+        missingRequiredFields: spec._missingRequiredFields,
+        cardHash: spec.cardHash,
+      };
+    }
+    return { ready: true, reason: 'CARD_SPEC_COMPLETE', state: 'CONTACT_CARD_REQUIRED', cardHash: spec.cardHash };
   }
 }
 

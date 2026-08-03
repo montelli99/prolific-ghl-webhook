@@ -1,0 +1,92 @@
+{
+  "cardId": "montelli-scott-prolific-capital-v1",
+  "version": "1.0.0",
+  "createdAt": "2026-08-03T07:30:00Z",
+  "owner": "Montelli Scott",
+  "ownerTelegramId": "718718959",
+  "approvedSender": "+15716012619",
+  "intendedUse": "Post-call contact card delivery per Kayla course CCC process",
+  "fields": {
+    "fullName": {
+      "value": "Montelli Scott",
+      "source": "secrets/.env, JustCall user profile",
+      "classification": "COURSE_EXPLICIT_REQUIRED"
+    },
+    "title": {
+      "value": "Real Estate Investor | Multifamily",
+      "source": "AIREI_MASTER_PLAYBOOK.md lines 13-14 (email signature format)",
+      "classification": "COURSE_EXPLICIT_REQUIRED"
+    },
+    "company": {
+      "value": "Prolific Capital",
+      "source": "secrets/.env, JustCall",
+      "classification": "COURSE_EXPLICIT_REQUIRED"
+    },
+    "primaryPhone": {
+      "value": "+15716012619",
+      "source": "JustCall phone-numbers API",
+      "classification": "COURSE_EXPLICIT_REQUIRED"
+    },
+    "email": {
+      "value": "montelliscottrei@gmail.com",
+      "source": "secrets/.env, JustCall user profile",
+      "classification": "COURSE_VISIBLE_IN_EXAMPLE"
+    },
+    "headshot": {
+      "value": null,
+      "source": "AIREI_MASTER_PLAYBOOK.md line 18: 'Set up contact card on phone with headshot'",
+      "classification": "COURSE_EXPLICIT_REQUIRED",
+      "status": "MISSING_OWNER_REQUIRED"
+    },
+    "website": {
+      "value": null,
+      "source": "AIREI_MASTER_PLAYBOOK.md lines 8-17 (email signature), CCC text shortcut",
+      "classification": "COURSE_VISIBLE_IN_EXAMPLE",
+      "status": "OPTIONAL"
+    },
+    "businessAddress": {
+      "value": null,
+      "source": "Not mentioned in any course source",
+      "classification": "COURSE_UNKNOWN",
+      "status": "OPTIONAL"
+    },
+    "logo": {
+      "value": null,
+      "source": "Not mentioned in any course source. Course says 'headshot' not 'logo'.",
+      "classification": "COURSE_UNKNOWN",
+      "status": "OPTIONAL"
+    },
+    "socialLinks": {
+      "value": null,
+      "source": "Not mentioned in any course source",
+      "classification": "COURSE_UNKNOWN",
+      "status": "OPTIONAL"
+    },
+    "recentClosings": {
+      "value": null,
+      "source": "AIREI_MASTER_PLAYBOOK.md lines 19-27 (notes section of contact card)",
+      "classification": "COURSE_EXPLICIT_REQUIRED",
+      "status": "MISSING_OWNER_REQUIRED"
+    }
+  },
+  "deliveryMethod": "VCF_AS_MMS",
+  "vcfVersion": "3.0",
+  "mimeType": "text/vcard",
+  "cardHash": "c566de3c5f7cad1f1490981b5dc91613aee05f786f47a731541a7dbf06e813e3",
+  "vcfAssetPath": "ghl-automations/data/runtime/montelli-scott-prolific-capital.vcf",
+  "vcfFields": [
+    "FN",
+    "N",
+    "ORG",
+    "TITLE",
+    "TEL",
+    "EMAIL"
+  ],
+  "missingRequiredFields": [
+    "headshot",
+    "recentClosings"
+  ],
+  "readyForSelfTest": true,
+  "readyForProduction": false,
+  "blockedReason": "Missing headshot and recent closings (COURSE_EXPLICIT_REQUIRED). Card is functional for self-test with verified fields."
+}
