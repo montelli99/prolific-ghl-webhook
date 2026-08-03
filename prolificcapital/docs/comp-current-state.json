@@ -1,0 +1,46 @@
+{
+  "version": "1.0",
+  "date": "2026-08-03",
+  "status": "COMP_CHANNEL_READY_ADVISORY_ONLY",
+  "routing": {
+    "group": "-1003975794600",
+    "topic": 733,
+    "agent": "app-prolific-eng"
+  },
+  "modules": {
+    "cash-offer-underwriter.js": "AUTHORITATIVE_ACTIVE",
+    "comps.js": "ACTIVE_ADVISORY",
+    "offer-calculator.js (runAllStrategies)": "ACTIVE",
+    "offer-calculator.js (calculate)": "DEPRECATED",
+    "offer-calculator.js (formatOutput)": "DEPRECATED",
+    "offer-calculator.js (handleOfferCalculated)": "OWNER_APPROVAL_REQUIRED_WRITE",
+    "comp-evidence-model.js": "ACTIVE_ADVISORY"
+  },
+  "formulas": {
+    "cash": "ARV × 0.70 − repairs − $20K fee",
+    "f50": "50% down + 50% carryback 72mo",
+    "f10": "10% down + 90% in 24mo",
+    "subTo": "ARV − repairs − existing loan",
+    "midTerm": "ARV × 1.2% rule",
+    "repairTiers": "30/45/60 $/sqft"
+  },
+  "wholesaleFee": 20000,
+  "arvMultiplier": 0.70,
+  "liveDataProviders": {
+    "resideline": "NOT_CONNECTED",
+    "zillow": "NOT_CONNECTED",
+    "mls": "NOT_CONNECTED",
+    "propwire": "NOT_CONNECTED",
+    "redfin": "NOT_CONNECTED"
+  },
+  "ghlWriteSafety": {
+    "noteWrite": "GATED_OWNER_APPROVAL",
+    "fieldWrite": "NOT_CONNECTED",
+    "stageMovement": "GATED_OWNER_APPROVAL",
+    "offerSend": "GATED_OWNER_APPROVAL"
+  },
+  "killSwitch": "PAUSED",
+  "providerSends": 0,
+  "ghlWrites": 0,
+  "stageMovements": 0
+}
