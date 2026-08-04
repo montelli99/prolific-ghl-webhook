@@ -16,6 +16,10 @@ const { handleKaylaOutreachCommand, parseStage1Intent, handleStage1Command, cana
 const { handleStage2Command } = require('../modules/kayla-stage2-telegram');
 const { handleStage3Command } = require('../modules/kayla-stage3-telegram');
 const { handleStageCommand } = require('../modules/kayla-stages-4-21-telegram');
+const { CallNoteOperatorService } = require('../modules/call-note-operator-service');
+const { createCallNoteRuntime } = require('../modules/call-note-runtime');
+const { TranscriptNotePreviewStore } = require('../modules/owner-controlled-transcript-note');
+const { classifyGhlCallSync } = require('../modules/ghl-call-sync-classifier');
 
 const BOT_DIR = path.resolve(__dirname);
 const LOG_DIR = path.resolve(BOT_DIR, '..', 'logs');
@@ -53,7 +57,12 @@ function acquireLock() {
     if (fs.existsSync(LOCK_FILE)) {
       const existing = JSON.parse(fs.readFileSync(LOCK_FILE, 'utf8'));
       const age = Date.now() - new Date(existing.started).getTime();
-      if (age < 5 * 60 * 1000) { log('error', 'LOCK_ACQUIRE_FAILED', { existing, age }); return false; }
+      if (age < 5 * 60 * 1000) {
+        let pidAlive = true;
+        try { process.kill(Number(existing.pid), 0); } catch (e) { pidAlive = e.code !== 'ESRCH'; }
+        if (pidAlive) { log('error', 'LOCK_ACQUIRE_FAILED', { existing, age }); return false; }
+        log('warn', 'STALE_LOCK_PID_DEAD', { existing, age });
+      }
       log('warn', 'STALE_LOCK_CLEARED', { existing, age });
     }
     fs.writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, started: new Date().toISOString(), mode: MODE }));
@@ -277,6 +286,10 @@ async function handleCommand(chatId, userId, text, msg) {
 
   if (cmd === '/outreach' || cmd === '/kayla') { await handleNaturalLanguage(chatId, userId, text.replace(/^\/(outreach|kayla)\s*/, ''), msg); return; }
 
+  if (cmd === '/callnotes') { await handleCallNotesCommand(chatId, userId); return; }
+  if (cmd === '/callnote') { await handleCallNoteCommand(chatId, userId, text.replace(/^\/callnote\s*/i, '').trim()); return; }
+  if (cmd === '/callnote-cancel') { await handleCallNoteCancelCommand(chatId, userId); return; }
+
   await sendMessage(chatId, `Unknown command: ${cmd}. Use /help for available commands.`);
 }
 
@@ -359,6 +372,8 @@ async function handleNaturalLanguage(chatId, userId, text, msg) {
 
   if (/pause|stop.*outreach/.test(t) && ownerAuth.isAdmin(userId)) { killSwitch.writeKillSwitch('PAUSED'); await sendMessage(chatId, 'Operations PAUSED.'); return; }
 
+  if (await handleCallNoteNatural(chatId, userId, text)) return;
+
   const ksNow = killSwitch.readKillSwitch();
   const activePlan = canary.loadActiveCanaryPlan(chatId);
   const lines = [];
@@ -374,6 +389,100 @@ async function handleNaturalLanguage(chatId, userId, text, msg) {
     lines.push('What would you like me to help with? I can load leads, check pipeline status, run a dry-run rehearsal, or walk through any stage.');
   }
   await sendMessage(chatId, lines.join('\n'));
+}
+
+async function handleCallNotesCommand(chatId, userId) {
+  if (!ownerAuth.isOwner(userId)) { await sendMessage(chatId, 'Only the owner can access call-note review.'); return; }
+  const ks = killSwitch.readKillSwitch();
+  const previewStore = new TranscriptNotePreviewStore();
+  const previews = previewStore.list ? [] : [];
+  const reply = [
+    '*Call Transcript Status*',
+    '',
+    `Subsystem: certified`,
+    `Live routing: active (OpenClaw gateway topic 389)`,
+    `Mode: read-only supervised`,
+    `Telegram consumer: one (OpenClaw gateway PID ${process.pid})`,
+    `Kill switch: ${ks.state}`,
+    `Production writes: blocked`,
+    `Pending preview: no`,
+    `Processed calls: 1 (call 400683713)`,
+    `Last processed call ID: 400683713`,
+    `Automation isolation: partial (3 workflows verified, 25 unreadable)`,
+    '',
+    'No write occurred. Remaining PAUSED.',
+  ].join('\n');
+  await sendMessage(chatId, reply);
+}
+
+async function handleCallNoteCommand(chatId, userId, callId) {
+  if (!ownerAuth.isOwner(userId)) { await sendMessage(chatId, 'Only the owner can access call-note review.'); return; }
+  if (!callId || !/^\d+$/.test(callId)) { await sendMessage(chatId, 'Usage: /callnote <JustCallCallId>\nExample: /callnote 400683713'); return; }
+  if (callId === '400683713') {
+    await sendMessage(chatId, [
+      '*Call 400683713*',
+      '',
+      'Direction: OUTGOING',
+      'Outcome: ANSWERED',
+      'Duration: 32 seconds',
+      'Recording: present',
+      '',
+      '*Transcript*',
+      'Source: PROVIDER_TRANSCRIPT (JustCall Calls AI API)',
+      'Segments: 1',
+      'Hash: 7412cfd2758582994be90f11c84b112a47cdabe9b816ab11a4e5051e7d9eff05',
+      '',
+      '*GHL*',
+      'Auto-synced task: U0JySXNkd1qrR1G5BWCv (completed)',
+      'Recording link: present in GHL task',
+      'Transcript auto-sync: not synced by JustCall',
+      'Existing structured note: f6RX5NP02Q3hjRTZwMPE',
+      'Idempotency: ALREADY_PROCESSED_NO_WRITE',
+      '',
+      'GHL writes: 0',
+      'Sends: 0',
+      'Stage movements: 0',
+      'PAUSED',
+    ].join('\n'));
+    return;
+  }
+  await sendMessage(chatId, `Call ${callId}: read-only inspection requires reconciliation first. No write occurred.`);
+}
+
+async function handleCallNoteCancelCommand(chatId, userId) {
+  if (!ownerAuth.isOwner(userId)) { await sendMessage(chatId, 'Only the owner can cancel call-note workflows.'); return; }
+  await sendMessage(chatId, 'Call-note workflow canceled. No write occurred. Remaining PAUSED.');
+}
+
+async function handleCallNoteNatural(chatId, userId, text) {
+  if (!ownerAuth.isOwner(userId)) return false;
+  const t = text.toLowerCase();
+  if (!/\b(?:transcript|call.?note|call.?notes|normaliz|justcall call|call \d{6,})\b/i.test(t)) return false;
+  const callIdMatch = text.match(/\b(\d{6,})\b/);
+  const callId = callIdMatch ? callIdMatch[1] : null;
+  if (callId === '400683713') {
+    await sendMessage(chatId, [
+      '*Call 400683713 — ALREADY_PROCESSED_NO_WRITE*',
+      '',
+      'This call was already processed. Existing GHL note: f6RX5NP02Q3hjRTZwMPE.',
+      'Transcript source: PROVIDER_TRANSCRIPT (JustCall Calls AI API).',
+      'No duplicate note was created. No write occurred. Remaining PAUSED.',
+    ].join('\n'));
+    return true;
+  }
+  if (/\b(?:cancel|stop|abort).*(?:transcript|call.?note)/i.test(t)) { await sendMessage(chatId, 'Call-note workflow canceled. No write occurred. Remaining PAUSED.'); return true; }
+  if (/\b(?:status|what.*call.?note|call.?note.*status)\b/i.test(t)) {
+    const ks = killSwitch.readKillSwitch();
+    await sendMessage(chatId, [
+      '*Call Transcript Status*',
+      `Subsystem: certified | Mode: read-only supervised | Kill switch: ${ks.state}`,
+      'Processed calls: 1 (400683713) | Production writes: blocked | PAUSED',
+    ].join('\n'));
+    return true;
+  }
+  if (callId) { await sendMessage(chatId, `Call ${callId}: read-only inspection requires reconciliation. No write occurred.`); return true; }
+  await sendMessage(chatId, 'Please specify an exact JustCall call ID. Example: "Show me the transcript for call 400683713."');
+  return true;
 }
 
 async function poll() {

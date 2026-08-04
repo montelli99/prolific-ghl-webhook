@@ -182,7 +182,7 @@ class JustCallGhlCallNoteProcessor {
   }
 
   async reconcileRecentCalls(options = {}) {
-    const response = await this.justcall.listCalls({ from_datetime: options.from, to_datetime: options.to, order: 'desc', per_page: Math.min(100, options.limit || 100), fetch_ai_data: true });
+    const response = await this.justcall.listCalls({ from_datetime: options.from, to_datetime: options.to, order: 'desc', per_page: Math.min(100, options.limit || 100) });
     const calls = response?.data || [];
     const results = [];
     for (const callRecord of calls) {
