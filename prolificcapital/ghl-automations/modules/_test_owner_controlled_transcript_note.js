@@ -78,7 +78,7 @@ function harness(options = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'owner-call-note-'));
   tempDirs.push(dir);
   const previewStore = new TranscriptNotePreviewStore({ dir: path.join(dir, 'previews') });
-  const approvalStore = new TranscriptNoteApprovalStore({ dir: path.join(dir, 'approvals'), signingSecret: 'test-secret', ownerId: OWNER_ID, verifyOwnerContext: context => context.testAuthenticatedOwner === true });
+  const approvalStore = new TranscriptNoteApprovalStore({ dir: path.join(dir, 'approvals'), signingSecret: 'test-secret', ownerId: OWNER_ID, previewStore, verifyOwnerContext: context => context.testAuthenticatedOwner === true });
   const preview = options.preview || makePreview();
   if (options.persistPreview !== false) previewStore.persist(preview);
   const counters = { notes: 0, fields: 0, tags: 0, opportunities: 0, stages: 0, sms: 0, calls: 0, tasks: 0, workflows: 0 };
