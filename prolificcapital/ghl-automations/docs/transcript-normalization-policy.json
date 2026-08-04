@@ -1,0 +1,42 @@
+{
+  "contextVersion": "CALL-TRANSCRIPT-CONTEXT-2026-08-04-V1",
+  "principles": {
+    "rawPreserved": "Provider transcript stored verbatim; never discarded",
+    "markersOnly": "Normalization adds [UNCLEAR] markers; never removes words",
+    "errorsFlagged": "Probable transcription errors annotated but wording preserved",
+    "noSilentCorrection": "Never fix wording, grammar, or facts without owner review",
+    "ownerCorrectionsNewPreview": "Any owner change creates new preview with new ID, hash, and approval"
+  },
+  "annotationTypes": {
+    "UNCLEAR": {
+      "meaning": "Phrase is nonsensical or incomplete; must not drive actions",
+      "example": "request to leave information in utility [UNCLEAR]"
+    },
+    "PROBABLE_TRANSCRIPTION_ERROR": {
+      "meaning": "Likely provider transcription artifact; preserved exactly",
+      "example": "The roof is the ten years old"
+    }
+  },
+  "normalizationDiff": {
+    "records": [
+      "Removed empty transport segments (if any)",
+      "Every annotation with type, phrase, and reason",
+      "Statement that no wording changes were applied (if none)"
+    ]
+  },
+  "hashProvenance": {
+    "providerTranscriptHash": "SHA-256 of raw provider segments",
+    "normalizedTranscriptHash": "SHA-256 of normalized segments",
+    "bothRecorded": true
+  },
+  "normalizationDoesNot": [
+    "Summarize or paraphrase",
+    "Correct grammar or spelling",
+    "Fill in missing words",
+    "Resolve ambiguous pronouns",
+    "Translate or localize",
+    "Redact or omit content (except empty transport segments)",
+    "Infer speaker intent",
+    "Assign sentiment or tone"
+  ]
+}

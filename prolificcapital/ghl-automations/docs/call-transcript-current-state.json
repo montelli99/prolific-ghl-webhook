@@ -1,0 +1,83 @@
+{
+  "contextVersion": "CALL-TRANSCRIPT-CONTEXT-2026-08-04-V1",
+  "authoritativeAsOf": "2026-08-04",
+  "transcriptRetrieval": {
+    "endpoint": "GET /v2.1/calls_ai/{id}",
+    "queryFlags": {
+      "fetch_transcription": true,
+      "fetch_summary": false,
+      "fetch_ai_insights": false,
+      "fetch_action_items": false,
+      "fetch_smart_chapters": false
+    },
+    "auth": "Raw api_key:api_secret in Authorization header",
+    "planRequirement": "Team plan includes transcript-only retrieval. AI Review Assist not required when paid fields are explicitly disabled.",
+    "identityVerification": {
+      "topLevelCallId": "required, unique, exact",
+      "aiCallId": "required, unique, exact",
+      "callSid": "must match across call and AI records",
+      "conflictingOrMissing": "fails closed"
+    }
+  },
+  "ghlAutoSync": {
+    "observedForCall": "400683713",
+    "plan": "Team",
+    "autoSynced": {
+      "callActivity": true,
+      "callId": true,
+      "timestamp": true,
+      "duration": true,
+      "recordingLink": true,
+      "transcriptText": false,
+      "transcriptLink": false,
+      "callSummary": false,
+      "aiAnalysis": false,
+      "dispositionTag": false,
+      "lastCallOutcome": false
+    },
+    "storageLocation": "Completed contact task",
+    "caveat": "Do not overgeneralize beyond this test."
+  },
+  "transcriptNormalization": {
+    "rawPreserved": true,
+    "unclearMarkers": true,
+    "probableErrorsFlagged": true,
+    "silentCorrection": false,
+    "ownerCorrections": "require new preview with new ID and hash",
+    "normalizationDiff": "recorded for every preview"
+  },
+  "noteSchema": {
+    "version": "owner-controlled-transcript-note-v2-sync-aware",
+    "avoidsDuplicatingAutoSyncedMetadata": true,
+    "contains": ["normalizedTranscript", "verifiedFacts", "riskFlags", "provenance", "productionEffects"],
+    "idempotencyKey": "SHA-256(callId, transcriptHash, contactId, schemaVersion)"
+  },
+  "approvalBinding": {
+    "fields": ["ownerTelegramId", "chatId", "topicId", "originatingMessageId", "previewId", "previewHash", "noteBodyHash", "callId", "transcriptHash", "contactId"],
+    "expiration": "15 minutes",
+    "schemaVersion": "included",
+    "signing": "HMAC-SHA256",
+    "consumed": "exactly once"
+  },
+  "writeGateway": {
+    "permittedOperation": "CREATE_APPROVED_CALL_TRANSCRIPT_NOTE",
+    "genericWritesUnreachable": true,
+    "blockedOperations": ["fields", "tags", "tasks", "opportunities", "stages", "SMS", "calls", "appointments", "documents", "workflows"],
+    "requiresPaused": true,
+    "uncertainRetry": "never automatic"
+  },
+  "productionPolicy": {
+    "testContactCertified": "PSVc2FuuA0dqyaQPXqOE",
+    "productionContactsBlocked": true,
+    "unresolvedOwnerDecisions": ["eligibleRoles", "eligibleStages", "fullTranscriptVsSummary", "corrections", "retention", "approvalAuthority", "consentCompliance", "sensitiveInformation"]
+  },
+  "currentEffects": {
+    "providerSends": 0,
+    "automaticCalls": 0,
+    "sms": 0,
+    "ghlWrites": 1,
+    "productionGhlWrites": 0,
+    "stageMovements": 0,
+    "state": "PAUSED"
+  }
+}

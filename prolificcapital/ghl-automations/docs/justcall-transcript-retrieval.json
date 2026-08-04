@@ -1,0 +1,50 @@
+{
+  "contextVersion": "CALL-TRANSCRIPT-CONTEXT-2026-08-04-V1",
+  "endpoint": {
+    "method": "GET",
+    "url": "https://api.justcall.io/v2.1/calls_ai/{id}",
+    "apiVersion": "v2.1"
+  },
+  "queryFlags": {
+    "fetch_transcription": { "value": true, "required": true },
+    "fetch_summary": { "value": false, "required": true, "reason": "Defaults to true; requires AI Review Assist on Team/Pro" },
+    "fetch_ai_insights": { "value": false, "required": true, "reason": "Defaults to true; requires AI Review Assist on Team/Pro" },
+    "fetch_action_items": { "value": false, "required": true, "reason": "Defaults to true; requires AI Review Assist on Team/Pro" },
+    "fetch_smart_chapters": { "value": false, "required": true, "reason": "Defaults to true; requires AI Review Assist on Team/Pro" }
+  },
+  "authentication": {
+    "method": "Raw api_key:api_secret in Authorization header",
+    "notBase64": true
+  },
+  "responseShape": {
+    "wrapper": "data",
+    "transcriptField": "call_transcription",
+    "segmentFields": ["speaker_id", "speaker_name", "sentence", "timestamp.starttime", "timestamp.endtime"],
+    "identityFields": ["id", "call_sid", "platform"]
+  },
+  "identityVerification": {
+    "topLevelIdRequired": true,
+    "conflictingAliasesRejected": true,
+    "callSidCrossValidation": true,
+    "transcriptNonEmpty": true,
+    "timestampWithinDuration": true
+  },
+  "planRequirements": {
+    "team": "Transcript-only retrieval works. AI Review Assist not required when paid fields disabled.",
+    "pro": "Same as Team.",
+    "proPlus": "AI Review Assist included; false flags harmless.",
+    "business": "AI Review Assist included; false flags harmless."
+  },
+  "errorResponses": {
+    "200": "Success",
+    "401": "Authentication failure",
+    "403": "Access denied or AI Review Assist required",
+    "404": "Call not found or AI data not generated"
+  },
+  "relatedEndpoints": {
+    "callDetail": "GET /v2.1/calls/{id}",
+    "callDetailWithAi": "GET /v2.1/calls/{id}?fetch_ai_data=true",
+    "recordingDownload": "GET /v2.1/calls/{id}/recording/download",
+    "callJourney": "GET /v2.1/calls/{id}/journey"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "contextVersion": "CALL-TRANSCRIPT-CONTEXT-2026-08-04-V1",
+  "observedCall": "400683713",
+  "observedPlan": "Team",
+  "observedContact": "PSVc2FuuA0dqyaQPXqOE",
+  "autoSyncStatus": {
+    "callActivity": { "synced": true, "location": "Completed contact task", "notes": "Title: Outgoing call to Montelli Call Note Test" },
+    "callId": { "synced": true, "location": "Task body", "notes": "Call ID: 400683713" },
+    "timestamp": { "synced": true, "location": "Task due date", "notes": "2026-08-04T13:59:48.000Z" },
+    "duration": { "synced": true, "location": "Task body", "notes": "Call Duration: 00h 00m 32s" },
+    "recordingLink": { "synced": true, "location": "Task body", "notes": "Shortened URL present" },
+    "transcriptText": { "synced": false, "location": null, "notes": "Not present in any GHL surface" },
+    "transcriptLink": { "synced": false, "location": null, "notes": "Not present in any GHL surface" },
+    "callSummary": { "synced": false, "location": null, "notes": "Not present in any GHL surface" },
+    "aiAnalysis": { "synced": false, "location": null, "notes": "Not present in any GHL surface" },
+    "dispositionTag": { "synced": false, "location": null, "notes": "Not present in any GHL surface" },
+    "lastCallOutcome": { "synced": false, "location": null, "notes": "Not present in any GHL surface" },
+    "voicemailData": { "synced": false, "location": null, "notes": "Not applicable (answered call)" }
+  },
+  "inspectedSurfaces": {
+    "contactNotes": { "status": 200, "totalRecords": 30, "callMatches": 1, "matchType": "test note only" },
+    "contactTasks": { "status": 200, "totalRecords": 2, "callMatches": 1, "matchType": "auto-synced" },
+    "conversations": { "status": 200, "totalRecords": 0, "callMatches": 0 },
+    "customFields": { "status": 200, "totalValues": 0, "callMatches": 0 },
+    "appointments": { "status": 200, "totalRecords": 0, "callMatches": 0 },
+    "opportunities": { "status": 200, "totalRecords": 0, "callMatches": 0 },
+    "timeline": { "status": 404, "supported": false },
+    "workflowEnrollment": { "status": 404, "supported": false }
+  },
+  "duplicationRules": {
+    "equivalentIdempotentNoteExists": "WRITE_NOT_NEEDED_EQUIVALENT_STRUCTURED_NOTE_EXISTS",
+    "completeTranscriptPresent": "WRITE_NOT_NEEDED_TRANSCRIPT_ALREADY_PRESENT",
+    "metadataOnlyActivityExists": "WRITE_SHOULD_BE_REDUCED",
+    "noMatchingRecords": "WRITE_NEEDED",
+    "ghlVisibilityIncomplete": "WRITE_BLOCKED_UNCERTAIN_EXISTING_DATA"
+  },
+  "caveats": [
+    "Observed for one call on one Team-plan account. Do not overgeneralize.",
+    "GHL integration settings may affect sync behavior; these were not API-readable.",
+    "Browser-based timeline inspection was unavailable.",
+    "Conversation API was readable and complete."
+  ]
+}

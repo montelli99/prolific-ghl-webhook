@@ -1,0 +1,81 @@
+{
+  "contextVersion": "CALL-TRANSCRIPT-CONTEXT-2026-08-04-V1",
+  "capabilities": {
+    "transcriptRetrieval": {
+      "status": "VERIFIED",
+      "endpoint": "GET /v2.1/calls_ai/{id}",
+      "plan": "Team",
+      "aiReviewAssistRequired": false,
+      "exactIdentityVerification": true,
+      "conflictingIdRejection": true,
+      "boundedPolling": true
+    },
+    "ghlAutoSyncClassification": {
+      "status": "VERIFIED",
+      "surfacesInspected": ["notes", "tasks", "conversations", "customFields", "appointments", "opportunities"],
+      "autoSyncedItems": ["callActivity", "callId", "timestamp", "duration", "recordingLink"],
+      "notAutoSyncedItems": ["transcriptText", "transcriptLink", "callSummary", "aiAnalysis", "dispositionTag", "lastCallOutcome"]
+    },
+    "transcriptNormalization": {
+      "status": "VERIFIED",
+      "rawPreserved": true,
+      "unclearMarkers": true,
+      "probableErrorsFlagged": true,
+      "silentCorrection": false,
+      "normalizationDiffRecorded": true
+    },
+    "notePreview": {
+      "status": "VERIFIED",
+      "schemaVersions": ["owner-controlled-transcript-note-v1", "owner-controlled-transcript-note-v2-sync-aware"],
+      "avoidsDuplicatingAutoSyncedMetadata": true,
+      "containsTranscript": true,
+      "containsVerifiedFacts": true,
+      "containsRiskFlags": true,
+      "containsProvenance": true,
+      "containsProductionEffects": true
+    },
+    "approval": {
+      "status": "VERIFIED",
+      "exactLanguageRequired": true,
+      "hmacSigned": true,
+      "ownerIdentityVerified": true,
+      "expirationEnforced": true,
+      "consumedExactlyOnce": true,
+      "supersededPreviewRevokesApproval": true
+    },
+    "writeGateway": {
+      "status": "VERIFIED",
+      "singlePermittedOperation": "CREATE_APPROVED_CALL_TRANSCRIPT_NOTE",
+      "genericWritesBlocked": true,
+      "requiresPaused": true,
+      "narrowContactOnly": true,
+      "preWriteChecks": 12,
+      "postWriteReadback": true,
+      "uncertainRetryBlocked": true
+    },
+    "idempotency": {
+      "status": "VERIFIED",
+      "deterministicKey": "SHA-256(callId, transcriptHash, contactId, schemaVersion)",
+      "duplicateRerunBlocked": true,
+      "concurrentWriteLocked": true
+    },
+    "automationIsolation": {
+      "status": "VERIFIED_FOR_TEST_CONTACT",
+      "noteWriteDidNotTrigger": ["tasks", "conversations", "appointments", "opportunities", "stageMovements", "contactFieldChanges", "tagChanges"],
+      "caveat": "Verified for test contact only. Production workflow isolation requires separate audit."
+    },
+    "telegramRouting": {
+      "status": "IMPLEMENTED_NOT_PRODUCTION_WIRED",
+      "commandParsing": true,
+      "topicIsolation": "configurable",
+      "naturalIntents": ["prepare", "review", "correct", "cancel", "approve"],
+      "previewOnlyOnPrepare": true
+    },
+    "productionPolicy": {
+      "status": "TEST_CONTACT_ONLY",
+      "testContactCertified": "PSVc2FuuA0dqyaQPXqOE",
+      "productionContactsBlocked": true,
+      "unresolvedDecisions": ["eligibleRoles", "eligibleStages", "fullTranscriptVsSummary", "corrections", "retention", "approvalAuthority", "consentCompliance", "sensitiveInformation"]
+    }
+  }
+}

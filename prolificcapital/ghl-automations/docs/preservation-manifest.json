@@ -1,0 +1,82 @@
+{
+  "contextVersion": "CALL-TRANSCRIPT-CONTEXT-2026-08-04-V1",
+  "createdAt": "2026-08-04T18:23:10.654Z",
+  "files": [
+    {
+      "file": "CALL_TRANSCRIPT_AGENT_START_HERE.md",
+      "sha256": "d716e5c28bda86e4a6bedf345b2ebbcc6c20c8d72c55901da2c782f7d79517ac",
+      "bytes": 2783
+    },
+    {
+      "file": "CALL_TRANSCRIPT_CURRENT_STATE.md",
+      "sha256": "b424468ff729371c7bb562953cc40404f9aeeaf45c78196956f946b35b3cbd41",
+      "bytes": 3167
+    },
+    {
+      "file": "CALL_TRANSCRIPT_INCIDENTS.md",
+      "sha256": "2c1b79afa73ece0afc8dbc42579ac010aa93366be18c9883bcd8024dbb820e93",
+      "bytes": 2279
+    },
+    {
+      "file": "CALL_TRANSCRIPT_PRODUCTION_POLICY.md",
+      "sha256": "58d25b2cea5c70468fbf256f1c7c2f4df986014b3939b75155815d54433292e6",
+      "bytes": 2527
+    },
+    {
+      "file": "GHL_CALL_TRANSCRIPT_NOTE_SCHEMA.md",
+      "sha256": "5b8d0649c89f503672eead1f71c4ca068dc511d888b374d29fe2c08138dba0a7",
+      "bytes": 2391
+    },
+    {
+      "file": "JUSTCALL_GHL_SYNC_MATRIX.md",
+      "sha256": "84257cc4a33500cbc4c9b643e33bad8a545218457cc1f41b2d7210bb6ece03c7",
+      "bytes": 2338
+    },
+    {
+      "file": "JUSTCALL_TRANSCRIPT_RETRIEVAL.md",
+      "sha256": "1ad8d74a921bc0be0c970cf22e603367151ff222980d8030d0f5aa19be230589",
+      "bytes": 2628
+    },
+    {
+      "file": "TRANSCRIPT_NORMALIZATION_POLICY.md",
+      "sha256": "df3198fa9d9a9a688c420a5f270357223767feb4215cafc2796abdfa0f108469",
+      "bytes": 2044
+    },
+    {
+      "file": "call-transcript-capabilities.json",
+      "sha256": "959be25564af489ca98f2c0149b0716603f0f3fde95b3c6d061056b9a6c091e5",
+      "bytes": 3176
+    },
+    {
+      "file": "call-transcript-current-state.json",
+      "sha256": "8e405a720c98272eeacabb68704ce615f7a4937ab93bf5852cf2214e4fa9cd4a",
+      "bytes": 3088
+    },
+    {
+      "file": "call-transcript-production-policy.json",
+      "sha256": "4f419be7b059e8da89aff1474feb600c3b3f242d2c7b16aeb0a02ab5a52118f7",
+      "bytes": 2147
+    },
+    {
+      "file": "ghl-call-transcript-note-schema.json",
+      "sha256": "112ee3cc537999ae7cf4cc2faba6851f64e067cb8a157512f2916e09b5557a75",
+      "bytes": 1485
+    },
+    {
+      "file": "justcall-ghl-sync-matrix.json",
+      "sha256": "ac2fb2f3099911b8b7767804726b1e606a2fef3ec113f94253e61107907108c2",
+      "bytes": 2777
+    },
+    {
+      "file": "justcall-transcript-retrieval.json",
+      "sha256": "3a9dda84b860da22a6d0c347818dadf2606ccb8fefe002c6fc11d4258310f3d6",
+      "bytes": 2128
+    },
+    {
+      "file": "transcript-normalization-policy.json",
+      "sha256": "c345d56d66c60b648bdb8e0e2568df8922e398ffd09c1b84a951be763a9f8ee0",
+      "bytes": 1616
+    }
+  ],
+  "manifestHash": "8a6670629df578414f2f7f1a33361768ae00436ca4edef3934762bffaa5f6d4c"
+}

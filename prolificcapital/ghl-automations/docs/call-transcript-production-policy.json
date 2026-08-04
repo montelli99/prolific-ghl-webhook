@@ -1,0 +1,62 @@
+{
+  "contextVersion": "CALL-TRANSCRIPT-CONTEXT-2026-08-04-V1",
+  "status": "TEST_CONTACT_ONLY",
+  "currentState": {
+    "testContactCertified": "PSVc2FuuA0dqyaQPXqOE",
+    "productionContactsBlocked": true,
+    "killSwitch": "PAUSED",
+    "ghlWrites": 1,
+    "productionGhlWrites": 0
+  },
+  "unresolvedOwnerDecisions": {
+    "eligibility": {
+      "eligibleContactRoles": "undecided",
+      "eligiblePipelineStages": "undecided",
+      "requireActiveOpportunity": "undecided"
+    },
+    "content": {
+      "fullTranscriptOrSummary": "undecided",
+      "includeUnclearMarkers": "undecided",
+      "flagTranscriptionErrors": "undecided"
+    },
+    "corrections": {
+      "whoCanRequest": "undecided",
+      "requiresReapproval": "undecided",
+      "supersedeOrAnnotate": "undecided"
+    },
+    "retention": {
+      "previewArtifactRetention": "undecided",
+      "approvalArtifactRetention": "undecided",
+      "consumedApprovalDisposition": "undecided"
+    },
+    "approvalAuthority": {
+      "soleApprover": "undecided",
+      "operatorPreviewPermission": "undecided",
+      "operatorApprovalPermission": "undecided"
+    },
+    "consentCompliance": {
+      "transcriptStorageCovered": "undecided",
+      "recordingConsentCoversTranscription": "undecided",
+      "jurisdictionRequirements": "undecided"
+    },
+    "sensitiveInformation": {
+      "redactPhoneNumbers": "undecided",
+      "redactAddresses": "undecided",
+      "redactFinancialFigures": "undecided",
+      "blockSensitiveTopics": "undecided"
+    }
+  },
+  "automationIsolation": {
+    "testContactVerified": true,
+    "noteWriteDidNotTrigger": ["tasks", "conversations", "appointments", "opportunities", "stageMovements", "contactFieldChanges", "tagChanges"],
+    "productionAuditRequired": true,
+    "blockIfWorkflowTriggered": true
+  },
+  "writeGatewayConstraints": {
+    "permittedOperation": "CREATE_APPROVED_CALL_TRANSCRIPT_NOTE",
+    "genericWritesUnreachable": true,
+    "blockedOperations": ["fields", "tags", "tasks", "opportunities", "stages", "SMS", "calls", "appointments", "documents", "workflows"],
+    "requiresPaused": true,
+    "requiresExactOwnerApproval": true
+  }
+}

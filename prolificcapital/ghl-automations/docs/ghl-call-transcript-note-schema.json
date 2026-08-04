@@ -1,0 +1,42 @@
+{
+  "contextVersion": "CALL-TRANSCRIPT-CONTEXT-2026-08-04-V1",
+  "currentSchemaVersion": "owner-controlled-transcript-note-v2-sync-aware",
+  "schemaEvolution": [
+    {
+      "version": "owner-controlled-transcript-note-v1",
+      "changes": "Initial schema with call metadata, transcript, facts, risks, provenance"
+    },
+    {
+      "version": "owner-controlled-transcript-note-v2-sync-aware",
+      "changes": "Removes duplicated auto-synced metadata; adds ALREADY/NOT AUTO-SYNCED sections; references GHL task ID"
+    }
+  ],
+  "noteStructure": {
+    "sections": [
+      "title",
+      "idempotencyKey",
+      "testDisclaimer",
+      "transcriptProvenance",
+      "alreadyAutoSynced",
+      "notAutoSynced",
+      "transcript",
+      "structuredFacts",
+      "riskFlags",
+      "provenance",
+      "productionEffects"
+    ]
+  },
+  "idempotencyKey": {
+    "algorithm": "SHA-256",
+    "components": ["callId", "transcriptHash", "contactId", "noteSchemaVersion"],
+    "embeddedInNote": "owner_controlled_transcript_note_key:{key}"
+  },
+  "designRules": [
+    "Never duplicate call metadata already auto-synced by JustCall to GHL",
+    "Always include the normalized transcript (not raw, not summarized)",
+    "Facts must be directly supported by transcript evidence",
+    "Risk flags must be explicit and actionable",
+    "Provenance must include provider transcript hash for auditability",
+    "Production effects block must always state zero for all categories before approval"
+  ]
+}
