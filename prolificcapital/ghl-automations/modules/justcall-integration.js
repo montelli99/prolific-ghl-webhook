@@ -12,7 +12,7 @@
 // IMPORTANT (corrected 2026-06-05 07:14 EDT):
 //   The current JustCall REST API is v2.1, not v1. Base URL is
 //   `https://api.justcall.io/v2.1/`. The earlier v1 endpoints return
-//   404. Auth format is HTTP Basic with `api_key:api_secret` base64.
+//   404. Auth uses the raw `api_key:api_secret` value in Authorization.
 //   (Verified live: GET /v2.1/users returns Montelli Scott account.)
 //
 // Purpose: The JustCall ↔ GHL native integration auto-syncs calls, SMS,
@@ -20,10 +20,8 @@
 // That is the OFFICIAL, DOCUMENTED path and is what JustCall recommends.
 //
 // What this module DOES add (what JustCall's native integration does not):
-//   - On-demand fetch of JustCall's AI coaching report (via /v2.1/call-ai-data)
-//     and write it to the OPPORTUNITY timeline (not the contact) so
-//     Montelli/Kayla see coaching scores and the call summary alongside
-//     the deal.
+//   - Read-only fetch of JustCall AI data. GHL call-note writes are handled only
+//     by justcall-ghl-call-note-processor after exact matching and approval.
 //
 // Pipeline: nSf3NXYVkt8X4PgW9aZ3 (Montelli / Atlas-Managed) — only
 //
@@ -45,6 +43,23 @@ const JUSTCALL_BASE = 'api.justcall.io';
 const JUSTCALL_API_VERSION = 'v2.1';
 const MAX_RETRIES = parseInt(process.env.JUSTCALL_MAX_RETRIES || '3', 10);
 const SIGNATURE_VERSION = 'v1';
+const TRANSCRIPT_CERTIFICATION_STATES = Object.freeze([
+  'CALL_FOUND',
+  'RECORDING_FOUND',
+  'TRANSCRIPT_VISIBLE_IN_UI',
+  'TRANSCRIPT_PROVIDER_API',
+  'TRANSCRIPT_BROWSER_READ',
+  'TRANSCRIPT_SYSTEM_GENERATED',
+]);
+const TRANSCRIPT_OPERATIONAL_STATES = Object.freeze([
+  'PROVIDER_TRANSCRIPT_PENDING',
+  'PROVIDER_TRANSCRIPT_AVAILABLE',
+  'PROVIDER_TRANSCRIPT_NOT_GENERATED',
+  'PROVIDER_TRANSCRIPT_NOT_API_ACCESSIBLE',
+  'NOTE_PREVIEW_PENDING_APPROVAL',
+  'NOTE_WRITTEN',
+  'TRANSCRIPT_CERTIFICATION_BLOCKED',
+]);
 
 // In-memory dedupe
 const _seenEventKeys = new Set();
@@ -52,7 +67,8 @@ const DEDUPE_MAX = 10000;
 function _dedupeKey(payload) {
   const type = payload?.type || 'unknown';
   const id = payload?.data?.id || payload?.data?.call_sid || payload?.data?.sid || null;
-  return id ? `${type}:${id}` : `${type}:${payload?.request_id || Math.random()}`;
+  const fallback = payload?.request_id || crypto.createHash('sha256').update(JSON.stringify(payload || {})).digest('hex');
+  return `${type}:${id || fallback}`;
 }
 function _alreadyProcessed(key) {
   if (_seenEventKeys.has(key)) return true;
@@ -85,10 +101,13 @@ class JustCallIntegration {
     this.apiSecret = config.apiSecret || process.env.JUSTCALL_API_SECRET || '';
     this.webhookUrl = config.webhookUrl || process.env.JUSTCALL_WEBHOOK_URL || '';
     this.fromNumber = config.fromNumber || process.env.JUSTCALL_FROM_NUMBER || '';
-    this.whitelistedEvents = new Set(config.whitelistedEvents || ['call.ai_report']);
+    this.whitelistedEvents = new Set(config.whitelistedEvents || ['call.completed', 'call.updated', 'jc.call_ai_generated', 'call.ai_report']);
     this.addNote = config.addNote || (async () => {});
     this.findOpportunityByCallId = config.findOpportunityByCallId || (async () => null);
     this.templateContext = config.templateContext || {};
+    this.webhookMaxAgeMs = config.webhookMaxAgeMs ?? 5 * 60 * 1000;
+    this.allowHistoricalWebhookSignatures = config.allowHistoricalWebhookSignatures === true;
+    this.now = config.now || (() => new Date());
   }
 
   isConfigured() {
@@ -142,6 +161,9 @@ class JustCallIntegration {
     const versionHeader = headers['x-justcall-signature-version'];
     if (!sigHeader || !tsHeader || !body?.type) return false;
     if (versionHeader && versionHeader !== SIGNATURE_VERSION) return false;
+    const timestamp = Date.parse(tsHeader);
+    if (!Number.isFinite(timestamp)) return false;
+    if (!this.allowHistoricalWebhookSignatures && Math.abs(this.now().getTime() - timestamp) > this.webhookMaxAgeMs) return false;
 
     const encodedUrl = encodeURIComponent(this.webhookUrl);
     const payloadStr = `${this.apiSecret}|${encodedUrl}|${body.type}|${tsHeader}`;
@@ -198,9 +220,8 @@ class JustCallIntegration {
       return { ...report, action: 'logged (no matching opportunity)' };
     }
 
-    await this.addNote(opp.opportunityId, this._formatAiReportNote(report, opp));
     this.templateContext.lastAiReport = report;
-    return { ...report, opportunityId: opp.opportunityId, action: 'logged' };
+    return { ...report, opportunityId: opp.opportunityId, preparedNote: this._formatAiReportNote(report, opp), action: 'prepared for guarded call-note processor; no GHL write' };
   }
 
   // -------------------------------------------------------------
@@ -213,17 +234,19 @@ class JustCallIntegration {
    * @param {string|number} callId
    * @returns {Promise<object>}
    */
-  async fetchCallDetails(callId) {
+  async fetchCallDetails(callId, options = {}) {
     if (!this.isConfigured()) {
       throw new Error('JustCallIntegration.fetchCallDetails: API key/secret not configured');
     }
-    const raw = await this._justcallRequest('GET', `/${JUSTCALL_API_VERSION}/calls/${encodeURIComponent(callId)}?fetch_ai_data=true`, null, { retried: 0 });
+    const suffix = options.includeAi === true ? '?fetch_ai_data=true' : '';
+    const raw = await this._justcallRequest('GET', `/${JUSTCALL_API_VERSION}/calls/${encodeURIComponent(callId)}${suffix}`, null, { retried: 0 });
     return raw?.data || raw;
   }
 
   /**
-   * Fetch a call's AI coaching data from the v2.1 AI endpoint.
-   * v2.1 endpoint: GET /v2.1/call-ai-data/get/{id}
+   * Fetch only a call's transcript from the v2.1 Calls AI endpoint.
+   * Non-transcription fields default to true and require AI Review Assist on
+   * Team/Pro, so each must be disabled explicitly.
    * @param {string|number} callId
    * @returns {Promise<object>}
    */
@@ -231,8 +254,67 @@ class JustCallIntegration {
     if (!this.isConfigured()) {
       throw new Error('JustCallIntegration.fetchCallAiData: API key/secret not configured');
     }
-    const raw = await this._justcallRequest('GET', `/${JUSTCALL_API_VERSION}/call-ai-data/get/${encodeURIComponent(callId)}`, null, { retried: 0 });
+    const query = 'fetch_transcription=true&fetch_summary=false&fetch_ai_insights=false&fetch_action_items=false&fetch_smart_chapters=false';
+    const raw = await this._justcallRequest('GET', `/${JUSTCALL_API_VERSION}/calls_ai/${encodeURIComponent(callId)}?${query}`, null, { retried: 0 });
     return raw?.data || raw;
+  }
+
+  async fetchCallCoachingData(callId) {
+    if (!this.isConfigured()) {
+      throw new Error('JustCallIntegration.fetchCallCoachingData: API key/secret not configured');
+    }
+    const query = 'fetch_transcription=false&fetch_summary=true&fetch_ai_insights=true&fetch_action_items=true&fetch_smart_chapters=true';
+    const raw = await this._justcallRequest('GET', `/${JUSTCALL_API_VERSION}/calls_ai/${encodeURIComponent(callId)}?${query}`, null, { retried: 0 });
+    return raw?.data || raw;
+  }
+
+  async pollCallTranscript(callId, options = {}) {
+    const scheduleMs = options.scheduleMs || [0, 5 * 60 * 1000, 10 * 60 * 1000, 15 * 60 * 1000, 30 * 60 * 1000];
+    const sleep = options.sleep || (ms => new Promise(resolve => setTimeout(resolve, ms)));
+    const checked = [];
+    let call;
+    try {
+      call = await this.fetchCallDetails(callId);
+    } catch (error) {
+      if (error.status === 401 || error.status === 403) return { state: 'PROVIDER_TRANSCRIPT_NOT_API_ACCESSIBLE', reason: 'CALL_DETAIL_AUTH_FAILED', callId: String(callId), checked };
+      return { state: 'TRANSCRIPT_CERTIFICATION_BLOCKED', reason: 'CALL_DETAIL_READ_FAILED', callId: String(callId), checked };
+    }
+    const callIds = [call?.id, call?.call_id, call?.callId].filter(value => value !== undefined && value !== null && String(value) !== '').map(String);
+    if (new Set(callIds).size > 1) return { state: 'TRANSCRIPT_CERTIFICATION_BLOCKED', reason: 'CALL_ID_CONFLICT', callId: String(callId), checked };
+    if (callIds.length === 0 || callIds[0] !== String(callId)) return { state: 'TRANSCRIPT_CERTIFICATION_BLOCKED', reason: callIds.length ? 'CALL_ID_MISMATCH' : 'CALL_ID_MISSING', callId: String(callId), checked };
+    const recordingAvailable = Boolean(call?.call_info?.recording || call?.recording_url || call?.recordingUrl);
+    const certifications = ['CALL_FOUND', ...(recordingAvailable ? ['RECORDING_FOUND'] : [])];
+    for (const delayMs of scheduleMs) {
+      if (delayMs > 0) await sleep(delayMs);
+      const checkedAt = new Date().toISOString();
+      try {
+        const ai = await this.fetchCallAiData(callId);
+        const nestedAi = ai?.justcall_ai;
+        const nestedSegments = nestedAi?.call_transcription;
+        const nestedCallIds = [nestedAi?.id, nestedAi?.call_id, nestedAi?.callId].filter(value => value !== undefined && value !== null && String(value) !== '').map(String);
+        if (Array.isArray(nestedSegments) && nestedSegments.length && nestedCallIds.length === 0) {
+          return { state: 'TRANSCRIPT_CERTIFICATION_BLOCKED', reason: 'AI_CALL_ID_MISSING', callId: String(callId), recordingAvailable, certifications, endpointClass: 'CALLS_AI_API', checked };
+        }
+        const aiCallIds = [ai?.id, ai?.call_id, ai?.callId, ...nestedCallIds].filter(value => value !== undefined && value !== null && String(value) !== '').map(String);
+        const aiCallId = aiCallIds[0];
+        if (new Set(aiCallIds).size > 1) return { state: 'TRANSCRIPT_CERTIFICATION_BLOCKED', reason: 'AI_CALL_ID_CONFLICT', callId: String(callId), recordingAvailable, certifications, endpointClass: 'CALLS_AI_API', checked };
+        if (!aiCallId || aiCallId !== String(callId)) return { state: 'TRANSCRIPT_CERTIFICATION_BLOCKED', reason: aiCallId ? 'AI_CALL_ID_MISMATCH' : 'AI_CALL_ID_MISSING', callId: String(callId), recordingAvailable, certifications, endpointClass: 'CALLS_AI_API', checked };
+        const segments = ai?.call_transcription || nestedSegments || [];
+        checked.push({ checkedAt, state: segments.length ? 'PROVIDER_TRANSCRIPT_AVAILABLE' : 'PROVIDER_TRANSCRIPT_PENDING', segmentCount: segments.length });
+        if (segments.length) return { state: 'PROVIDER_TRANSCRIPT_AVAILABLE', callId: String(callId), recordingAvailable, certifications: [...certifications, 'TRANSCRIPT_PROVIDER_API'], endpointClass: 'CALLS_AI_API', segments, checked };
+      } catch (error) {
+        const message = String(error.message || '');
+        if (error.status === 403 && /AI Review Assist add-on/i.test(message)) {
+          checked.push({ checkedAt, state: 'TRANSCRIPT_CERTIFICATION_BLOCKED', segmentCount: 0 });
+          return { state: 'PROVIDER_TRANSCRIPT_NOT_API_ACCESSIBLE', reason: 'CALLS_AI_TRANSCRIPT_ACCESS_DENIED', callId: String(callId), recordingAvailable, certifications, endpointClass: 'CALLS_AI_API', checked };
+        }
+        if (error.status === 401) return { state: 'PROVIDER_TRANSCRIPT_NOT_API_ACCESSIBLE', reason: 'AUTH_FAILED', callId: String(callId), recordingAvailable, checked };
+        if (error.status === 403) return { state: 'PROVIDER_TRANSCRIPT_NOT_API_ACCESSIBLE', reason: 'RESOURCE_ACCESS_OR_VALIDATION_DENIED', callId: String(callId), recordingAvailable, checked };
+        if (error.status !== 404) return { state: 'TRANSCRIPT_CERTIFICATION_BLOCKED', reason: 'TRANSCRIPT_READ_FAILED', callId: String(callId), recordingAvailable, checked };
+        checked.push({ checkedAt, state: 'PROVIDER_TRANSCRIPT_PENDING', segmentCount: 0 });
+      }
+    }
+    return { state: 'PROVIDER_TRANSCRIPT_NOT_GENERATED', reason: 'BOUNDED_POLLING_EXHAUSTED', callId: String(callId), recordingAvailable, checked };
   }
 
   /**
@@ -247,10 +329,10 @@ class JustCallIntegration {
     let ai = null;
     let callMeta = null;
     try {
-      ai = await this.fetchCallAiData(callId);
+      ai = await this.fetchCallCoachingData(callId);
     } catch (e) {
       // Fallback: try fetching the call itself with fetch_ai_data=true
-      callMeta = await this.fetchCallDetails(callId);
+      callMeta = await this.fetchCallDetails(callId, { includeAi: true });
       ai = callMeta?.justcall_ai || callMeta?.ai_data || null;
     }
     if (!ai) {
@@ -270,14 +352,14 @@ class JustCallIntegration {
       },
       { name: callMeta?.contact_name, opportunityId }
     );
-    await this.addNote(opportunityId, note);
     return {
       callId,
       opportunityId,
       score: ai.call_score,
       summary: ai.call_summary,
       segments: (ai.call_transcription || []).length,
-      action: 'logged',
+      preparedNote: note,
+      action: 'prepared for guarded call-note processor; no GHL write',
     };
   }
 
@@ -430,6 +512,7 @@ class JustCallIntegration {
           host: JUSTCALL_BASE,
           method,
           path,
+          timeout: 20000,
           headers: {
             'Authorization': this._basicAuthHeader(),
             'Content-Type': 'application/json',
@@ -451,7 +534,9 @@ class JustCallIntegration {
               return;
             }
             if (res.statusCode >= 400) {
-              return reject(new Error(`JustCall ${method} ${path} → ${res.statusCode}: ${text}`));
+              const error = new Error(`JustCall ${method} ${path} → ${res.statusCode}: ${text}`);
+              error.status = res.statusCode;
+              return reject(error);
             }
             try { resolve(text ? JSON.parse(text) : {}); }
             catch (e) { reject(new Error(`JustCall ${method} ${path}: invalid JSON: ${text}`)); }
@@ -459,6 +544,7 @@ class JustCallIntegration {
         }
       );
       req.on('error', reject);
+      req.on('timeout', () => req.destroy(new Error(`JustCall ${method} ${path}: timeout`)));
       if (data) req.write(data);
       req.end();
     });
@@ -486,8 +572,8 @@ class JustCallIntegration {
       `Etiquette: ${params.call_etiquette || 0}/5 | Customer sentiment: ${params.customer_sentiment_score || 0}/5`,
       ``,
       report.callSummary ? `--- AI Summary ---\n${report.callSummary}\n` : '',
-      `--- Transcript (${(report.transcriptSegments || []).length} segments) ---`,
-      this._flattenTranscript(report.transcriptSegments),
+      `Transcript segments available: ${(report.transcriptSegments || []).length}`,
+      `Raw transcript omitted by policy.`,
       ``,
       `Opportunity: ${opp.name || opp.opportunityId || 'unknown'}`,
     ].filter(Boolean).join('\n');
@@ -519,13 +605,13 @@ function createJustCallWebhookHandler(deps) {
       return res.status(202).json({ ok: true, action: 'skipped (event not whitelisted)', event });
     }
     try {
-      const result = event === 'call.ai_report'
+      const result = event === 'call.ai_report' || event === 'jc.call_ai_generated'
         ? await jc.handleCallAiReport(req.body)
         : { action: 'no handler for event', event };
       return res.status(200).json({ ok: true, event, result });
     } catch (err) {
       console.error('[JustCall] Webhook handler error:', err);
-      return res.status(200).json({ ok: false, error: err.message });
+      return res.status(503).json({ ok: false, error: err.message });
     }
   };
 }
@@ -535,6 +621,8 @@ module.exports = {
   createJustCallWebhookHandler,
   SIGNATURE_VERSION,
   JUSTCALL_API_VERSION,
+  TRANSCRIPT_CERTIFICATION_STATES,
+  TRANSCRIPT_OPERATIONAL_STATES,
   _dedupeKey,
   _alreadyProcessed,
 };

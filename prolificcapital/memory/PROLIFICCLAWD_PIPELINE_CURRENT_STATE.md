@@ -120,6 +120,16 @@ GHL pipeline: `nSf3NXYVkt8X4PgW9aZ3`
 - **Production send count:** 0
 - **Required controls:** Owner approval, immutable plan, exact selected records, DNC/STOP, duplicate checks, sender lock, business-time validation, provider reconciliation, automatic PAUSED state
 
+### JustCall transcript certification
+
+- **Verified owner-controlled call:** Call ID `400683713`; outbound, answered, 32 seconds, recording present.
+- **Transcript source:** `TRANSCRIPT_PROVIDER_API` from the official Calls AI endpoint.
+- **Transcript-only query requirement:** `fetch_transcription=true`; `fetch_summary=false`; `fetch_ai_insights=false`; `fetch_action_items=false`; `fetch_smart_chapters=false`.
+- **Team-plan behavior:** Transcript-only retrieval succeeds without AI Review Assist. Omitted paid-field flags default to enabled and caused the superseded `403` diagnosis.
+- **GHL test-note state:** Exact owner-controlled preview is required before approval. No automatic note, contact, opportunity, stage, task, SMS, call, or workflow write is permitted.
+- **GHL AI export:** Separately locked; it does not change provider transcript API availability.
+- **Current effects:** Provider sends 0, automatic calls 0, SMS 0, GHL writes 0, production GHL writes 0, stage movements 0; `PAUSED`.
+
 ---
 
 ## Production Safety
@@ -158,3 +168,6 @@ The following prior claims are superseded by this document:
 | All 21 stages fully implemented | Stages 1–3 accepted, 4–21 shared/manual | Honest assessment |
 | Raw env-toggle live activation | Multi-gate controls required | Safety architecture |
 | July 22 readiness as current | This document (2026-08-01) | Import completed, stages accepted, runtime restored |
+| `JUSTCALL_TRANSCRIPT_FEATURE_NOT_ENABLED` | Transcript-only official API succeeds on Team when all paid AI fields are explicitly disabled | Live read-only API verification on 2026-08-04 |
+| Transcript not generated or UI-only | Provider transcript exists in UI and official transcript-only API | Exact call-ID and transcript-hash verification |
+| AI Review Assist required for transcript-only retrieval | AI Review Assist is required only for the separately requested paid fields in this observed Team-plan response | Explicit false query flags returned HTTP 200 |

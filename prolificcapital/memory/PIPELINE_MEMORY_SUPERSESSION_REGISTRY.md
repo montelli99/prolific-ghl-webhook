@@ -97,6 +97,14 @@
 - **Current source:** `ghl-automations/modules/contact-card-self-test.js`
 - **Supersession reason:** Owner-approved separation of self-test from production canary
 
+### SUPERSEDED-012: JustCall transcript unavailable or UI-only
+- **Original source:** Transcript certification attempts before the transcript-only query correction
+- **Original timestamp:** 2026-08-04
+- **Stale fact:** `JUSTCALL_TRANSCRIPT_FEATURE_NOT_ENABLED`, transcript not generated, transcript UI-only, or AI Review Assist required for transcript-only retrieval
+- **Current fact:** Team generates the transcript; it is visible in the UI and retrievable through the official Calls AI API when transcription is enabled and summary, insights, action items, and smart chapters are explicitly disabled
+- **Current source:** `memory/PROLIFICCLAWD_PIPELINE_CURRENT_STATE.md`
+- **Supersession reason:** Exact read-only API probe returned HTTP 200 and provider transcript data for the owner-controlled call
+
 ---
 
 ## Retrieval Priority Rules
