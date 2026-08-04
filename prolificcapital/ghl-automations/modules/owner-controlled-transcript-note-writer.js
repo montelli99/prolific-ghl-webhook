@@ -97,7 +97,7 @@ class OwnerControlledTranscriptNoteWriter {
       return { status: 'GHL_WRITE_UNCERTAIN', preNoteCount: notesBefore.length, postNoteCount: notesAfter.length, productionEffects: { ...zeroEffects(), ghlWrites: 1 } };
     }
     const noteId = matchingAfter[0].id || created?.id || null;
-    this.previewStore.update(previewId, { status: 'NOTE_WRITTEN', noteId, preNoteCount: notesBefore.length, postNoteCount: notesAfter.length, reconciledAt: new Date().toISOString() });
+    this.previewStore.update(previewId, { status: 'NOTE_WRITTEN', noteId, approvalId, approvalStatus: 'CONSUMED', preNoteCount: notesBefore.length, postNoteCount: notesAfter.length, reconciledAt: new Date().toISOString(), productionEffects: { ...zeroEffects(), ghlWrites: 1 } });
     this.approvalStore.consume(approvalId, noteId);
     return { status: 'NOTE_WRITTEN', noteId, preNoteCount: notesBefore.length, postNoteCount: notesAfter.length, productionEffects: { ...zeroEffects(), ghlWrites: 1 } };
   }
@@ -109,7 +109,8 @@ function isExactTestContact(contact, contactId) {
 }
 
 function fingerprintContact(contact) {
-  return sha256(contact);
+  const { dateUpdated: _dateUpdated, updatedAt: _updatedAt, lastActivity: _lastActivity, lastActivityDate: _lastActivityDate, ...stableContact } = contact;
+  return sha256(stableContact);
 }
 
 function hasExactLine(body, marker) {

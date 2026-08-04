@@ -38,6 +38,7 @@ const COMMANDS = {
   contract: 'Route to PSA template: /contract <oppId>',
   pipeline: 'Read-only Pipeline review center: /pipeline [health|queue|outcomes|coverage|quality|calls|readiness|alerts|reports]',
   outreach: 'Kayla-course outreach dry run: /outreach show me 10 agents | preview the first 5 | approve these for dry run',
+  callnotes: 'Read-only JustCall call-note review and reconciliation status',
   kayla: 'Alias for /outreach natural-language dry-run requests',
   help: 'List all commands',
 };
@@ -53,6 +54,7 @@ function _getContracts() { return require(path.join(__dirname, 'contract-templat
 function _getPipelineReview() { return require(path.join(__dirname, 'pipeline-telegram-review.js')); }
 function _getKaylaOutreach() { return require(path.join(__dirname, 'kayla-telegram-outreach.js')); }
 function _getCanaryRunbook() { return require(path.join(__dirname, 'supervised-canary-runbook-service.js')); }
+function _getCallNotes() { return require(path.join(__dirname, 'call-note-operator-service.js')); }
 
 /**
  * Parse a message into { command, args }.
@@ -81,13 +83,15 @@ function parseCommand(text) {
   if (/\b(?:group handoff|kayla group|prepare.*group|create.*group|walk.*through.*group|group.*created|handoff.*confirm|gcj|group chat|who will be in the group|show.*group)\b/i.test(trimmed)) {
     return { command: 'grouphandoff', args: trimmed };
   }
-  if (/\b(?:kayla|untouched leads|agents due|owners due|show me \d+ agents|show me \d+ owners|who should i call|preview the first|hold \d+|skip \d+|select \d+|approve these|pause outreach|resume outreach|contact made)\b/i.test(trimmed)) {
-    return { command: 'outreach', args: trimmed };
-  }
+  const callNotes = new (_getCallNotes().CallNoteOperatorService)();
+  if (callNotes.isCommand(trimmed)) return { command: 'callnotes', args: trimmed };
   const canary = _getCanaryRunbook();
   const svc = canary.SupervisedCanaryRunbookService ? new canary.SupervisedCanaryRunbookService() : null;
-  if (svc && (svc.isTrigger(trimmed) || svc.isReviewQuestion(trimmed) || svc.parseApproval(trimmed) || svc.isSafetyCommand(trimmed) || svc.isProviderConfirmation(trimmed))) {
+  if (svc && (svc.isTrigger(trimmed) || svc.isReviewQuestion(trimmed) || svc.parseApproval(trimmed) || svc.isSafetyCommand(trimmed) || svc.isProviderConfirmation(trimmed) || svc.isOperatorCommand(trimmed))) {
     return { command: 'canary', args: trimmed };
+  }
+  if (/\b(?:kayla|untouched leads|agents due|owners due|show me \d+ agents|show me \d+ owners|who should i call|preview the first|hold \d+|skip \d+|select \d+|approve these|pause outreach|resume outreach|contact made)\b/i.test(trimmed)) {
+    return { command: 'outreach', args: trimmed };
   }
   if (/\b(?:prepare.*reboot|reboot.*prepare|ready.*reboot|pipeline.*reboot)\b/i.test(trimmed)) {
     return { command: 'reboot-prepare', args: trimmed };
@@ -126,6 +130,8 @@ async function routeCommand({ command, args, sourceTopicId, targetTopicId, oppId
       return _handleKaylaOutreach(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env });
     case 'canary':
       return _handleCanary(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env, messageId: sourceMessageId });
+    case 'callnotes':
+      return _handleCallNotes(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env, messageId: sourceMessageId });
     case 'contactcard':
       return _handleContactCard(args, { telegramUserId, chatId: chatId || sourceTopicId, sourceTopicId, env });
     case 'grouphandoff':
@@ -162,7 +168,7 @@ async function _handleCanary(args, ctx) {
   if (service.isSafetyCommand(text)) {
     const planId = service.getActivePlanId();
     if (planId) {
-      const result = await service.handleCancel(planId);
+      const result = await service.handleCancel(planId, ctx);
       return { reply: result.reply };
     }
     return { reply: 'No active plan to cancel. Remaining PAUSED.' };
@@ -172,7 +178,7 @@ async function _handleCanary(args, ctx) {
   if (review) {
     const planId = service.getActivePlanId();
     if (!planId) return { reply: 'No active plan to review. Start by saying "Begin the first supervised canary."' };
-    const result = await service.handleReview(planId, text);
+    const result = await service.handleReview(planId, text, ctx);
     return { reply: result.reply };
   }
 
@@ -184,12 +190,32 @@ async function _handleCanary(args, ctx) {
     return { reply: result.reply };
   }
 
+  if (service.isOperatorCommand(text)) {
+    const result = await service.handleOperatorCommand(text, ctx);
+    return { reply: result.reply };
+  }
+
   if (service.isProviderConfirmation(text)) {
-    return { reply: 'JustCall account confirmed as active and funded. Proceeding with preparation.' };
+    const contextCheck = service.validateContext(ctx);
+    if (!contextCheck.ok) return { reply: `Provider confirmation denied: ${contextCheck.errors.join(', ')}.` };
+    const confirmation = service.recordProviderConfirmation(ctx);
+    if (!confirmation.recorded) {
+      return { reply: 'Provider readiness was not recorded because there is no active supervised canary plan. Prepare the plan first; remaining PAUSED.' };
+    }
+    return { reply: 'Provider readiness confirmation recorded for this supervised canary session. No send occurred; remaining PAUSED.' };
   }
 
   const result = await service.beginPreparation(ctx);
   return { reply: result.reply };
+}
+
+async function _handleCallNotes(args, ctx) {
+  const canaryService = new (_getCanaryRunbook().SupervisedCanaryRunbookService)();
+  const validation = canaryService.validateContext({ ...ctx, topicId: ctx.sourceTopicId });
+  if (!validation.ok) return { reply: `Call-note request denied: ${validation.errors.join(', ')}.` };
+  const runtime = require('./call-note-runtime').createCallNoteRuntime(ctx.env || process.env);
+  const service = new (_getCallNotes().CallNoteOperatorService)({ processor: runtime.processor });
+  return service.handle(args || 'Which completed calls need note review?', { ...ctx, ownerContextVerified: true });
 }
 
 function _handlePipelineReview(args, ctx) {

@@ -268,25 +268,30 @@ class TranscriptNoteApprovalStore {
     this.signingSecret = options.signingSecret || '';
     this.ownerId = String(options.ownerId || '');
     this.verifyOwnerContext = options.verifyOwnerContext || (() => false);
+    this.previewStore = options.previewStore || null;
   }
 
   approve(preview, approvalText, context = {}) {
     if (!this.signingSecret) throw new Error('TEST_NOTE_APPROVAL_SECRET_REQUIRED');
-    if (String(approvalText || '').trim() !== APPROVAL_LANGUAGE) throw new Error('EXACT_TEST_NOTE_APPROVAL_LANGUAGE_REQUIRED');
-    if (this.verifyOwnerContext(context) !== true || String(context.ownerId) !== this.ownerId || String(preview.ownerId) !== this.ownerId) throw new Error('TEST_NOTE_OWNER_IDENTITY_REQUIRED');
-    if (new Date(preview.expiresAt) <= new Date()) throw new Error('NOTE_PREVIEW_EXPIRED');
+    if (!this.previewStore) throw new Error('TEST_NOTE_PREVIEW_STORE_REQUIRED');
+    const currentPreview = this.previewStore.load(preview?.previewId);
+    if (!currentPreview || currentPreview.status !== 'NOTE_PREVIEW_PENDING_APPROVAL' || currentPreview.previewHash !== preview.previewHash || currentPreview.noteBodyHash !== preview.noteBodyHash || currentPreview.transcriptHash !== preview.transcriptHash) throw new Error('NOTE_PREVIEW_NOT_ACTIVE');
+    const expectedApprovalLanguage = currentPreview.approvalInstruction || APPROVAL_LANGUAGE;
+    if (String(approvalText || '').trim() !== expectedApprovalLanguage) throw new Error('EXACT_TEST_NOTE_APPROVAL_LANGUAGE_REQUIRED');
+    if (this.verifyOwnerContext(context) !== true || String(context.ownerId) !== this.ownerId || String(currentPreview.ownerId) !== this.ownerId) throw new Error('TEST_NOTE_OWNER_IDENTITY_REQUIRED');
+    if (new Date(currentPreview.expiresAt) <= new Date()) throw new Error('NOTE_PREVIEW_EXPIRED');
     const payload = {
       approvalId: `test_note_approval_${sha256({ previewId: preview.previewId, messageId: context.messageId, createdAt: new Date().toISOString() }).slice(0, 20)}`,
-      previewId: preview.previewId,
-      previewHash: preview.previewHash,
-      noteBodyHash: preview.noteBodyHash,
-      callId: preview.callId,
-      transcriptHash: preview.transcriptHash,
-      testContactId: preview.testContactId,
+      previewId: currentPreview.previewId,
+      previewHash: currentPreview.previewHash,
+      noteBodyHash: currentPreview.noteBodyHash,
+      callId: currentPreview.callId,
+      transcriptHash: currentPreview.transcriptHash,
+      testContactId: currentPreview.testContactId,
       ownerId: this.ownerId,
       status: 'ACTIVE',
       createdAt: new Date().toISOString(),
-      expiresAt: preview.expiresAt,
+      expiresAt: currentPreview.expiresAt,
     };
     const approval = { ...payload, integrityHash: hmac(payload, this.signingSecret) };
     fs.mkdirSync(this.dir, { recursive: true });
@@ -344,6 +349,38 @@ class TranscriptNoteApprovalStore {
         fs.rmSync(lock, { force: true });
       }
     }
+  }
+
+  revokeForPreview(previewId) {
+    if (!fs.existsSync(this.dir)) return 0;
+    let revoked = 0;
+    for (const name of fs.readdirSync(this.dir).filter(file => file.endsWith('.json'))) {
+      const file = path.join(this.dir, name);
+      const approval = JSON.parse(fs.readFileSync(file, 'utf8'));
+      if (approval.previewId !== previewId || !['ACTIVE', 'RESERVED'].includes(approval.status)) continue;
+      const lock = `${file}.lock`;
+      let descriptor;
+      try {
+        descriptor = fs.openSync(lock, 'wx');
+        const current = this.load(approval.approvalId);
+        if (!current || !verifyApprovalIntegrity(current, this.signingSecret)) throw new Error('TEST_NOTE_APPROVAL_INTEGRITY_FAILED');
+        if (current.status === 'RESERVED') throw new Error('TEST_NOTE_APPROVAL_ALREADY_RESERVED');
+        if (current.status !== 'ACTIVE') continue;
+        const { integrityHash: _ignored, ...existing } = current;
+        const payload = { ...existing, status: 'REVOKED', revokedAt: new Date().toISOString(), revokeReason: 'PREVIEW_SUPERSEDED' };
+        const updated = { ...payload, integrityHash: hmac(payload, this.signingSecret) };
+        const temporary = `${file}.${process.pid}.${Date.now()}.tmp`;
+        fs.writeFileSync(temporary, JSON.stringify(updated, null, 2) + '\n', { flag: 'wx' });
+        fs.renameSync(temporary, file);
+        revoked++;
+      } finally {
+        if (descriptor !== undefined) {
+          fs.closeSync(descriptor);
+          fs.rmSync(lock, { force: true });
+        }
+      }
+    }
+    return revoked;
   }
 }
 
