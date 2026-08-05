@@ -1,0 +1,87 @@
+{
+  "policyId": "AUTOMATIC_CALL_NOTE_POLICY_V1",
+  "policyVersion": "2026-08-05-v1",
+  "createdAt": "2026-08-05T00:00:00.000Z",
+  "mode": "TEST_CONTACT_ONLY",
+  "description": "Machine-readable production policy for automatic post-call transcript notes. Narrowest safe defaults. Unresolved categories block.",
+  "eligibility": {
+    "allowedSenderNumbers": ["571-601-2619"],
+    "allowedJustCallUsers": ["owner_controlled"],
+    "allowedCallDirections": ["OUTGOING"],
+    "allowedCallOutcomes": ["ANSWERED"],
+    "minimumDurationSeconds": 10,
+    "transcriptRequired": true,
+    "exactGhlContactRequired": true,
+    "ambiguousContactMatchBlocks": true,
+    "blockedContacts": {
+      "internalTestNumbers": "blocked_unless_test_mode",
+      "ownerControlledTestContactId": "PSVc2FuuA0dqyaQPXqOE"
+    },
+    "allowedRoles": ["owner_controlled"],
+    "allowedPipelineStages": ["owner_controlled"],
+    "callsWithNoOpportunity": "blocked",
+    "callsWithMultipleOpportunities": "blocked",
+    "archivedOrLostOpportunities": "blocked",
+    "consentComplianceState": "owner_policy_required",
+    "sensitiveDataHandling": "redact_urls_and_phone_numbers",
+    "duplicateState": "ALREADY_PROCESSED_NO_WRITE",
+    "automationIsolationState": "AUTOMATION_ISOLATION_PARTIAL"
+  },
+  "writeGate": {
+    "operation": "CREATE_AUTOMATIC_APPROVED_CALL_TRANSCRIPT_NOTE",
+    "allowedActions": ["create_one_contact_note", "read_back_and_reconcile"],
+    "forbiddenActions": [
+      "update_fields",
+      "modify_tags",
+      "create_tasks",
+      "create_update_opportunities",
+      "move_stages",
+      "send_sms",
+      "place_calls",
+      "create_appointments",
+      "trigger_documents",
+      "enroll_workflows"
+    ]
+  },
+  "noteSchema": {
+    "version": "automatic-call-transcript-note-v1",
+    "sections": [
+      "CALL_REFERENCE",
+      "KEY_FACTS",
+      "FOLLOW_UP_OPEN_ITEMS",
+      "TRANSCRIPT",
+      "PROVENANCE"
+    ],
+    "autoCreateFollowUpTasks": false,
+    "autoCreateCalendarEvents": false,
+    "autoSendSms": false,
+    "autoPlaceCalls": false,
+    "autoMoveStages": false,
+    "autoModifyOpportunities": false
+  },
+  "transcriptNormalization": {
+    "allowed": [
+      "whitespace_cleanup",
+      "speaker_ordering",
+      "timestamp_preservation",
+      "unclear_markers",
+      "transport_noise_removal"
+    ],
+    "forbidden": [
+      "silently_correct_facts",
+      "rewrite_grammar_as_verified",
+      "infer_seller_agreement",
+      "infer_motivation",
+      "schedule_from_suspicious_text",
+      "convert_ambiguous_to_actions"
+    ]
+  },
+  "unresolvedCategories": {
+    "consentComplianceState": "owner_policy_required",
+    "allowedRoles": "owner_policy_required",
+    "allowedPipelineStages": "owner_policy_required",
+    "callsWithNoOpportunity": "owner_policy_required",
+    "callsWithMultipleOpportunities": "owner_policy_required",
+    "archivedOrLostOpportunities": "owner_policy_required"
+  }
+}
