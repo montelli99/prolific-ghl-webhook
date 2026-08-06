@@ -1,0 +1,40 @@
+{
+  "incidentId": "CANARY_TEMPLATE_WEEKDAY_ABBREVIATION_ESCAPED_REVIEW",
+  "classification": "CANARY_TEMPLATE_WEEKDAY_ABBREVIATION_ESCAPED_REVIEW",
+  "severity": "LOW_QUALITY_DEFECT",
+  "planId": "plan_694953d75b8ccc36",
+  "planHash": "604a101377f65d37c00c72772a8b48078c2b8f30b01c76af79bb35f2b29a54ba",
+  "detectedAt": "2026-08-06T16:55:00Z",
+  "reportedBy": "owner_718718959",
+  "rootCause": "localParts() in property-timezone.js used weekday:'short' producing 'Thu' instead of weekday:'long' producing 'Thursday'",
+  "rootCauseFile": "ghl-automations/modules/property-timezone.js:134",
+  "fixCommit": "Changed weekday:'short' to weekday:'long' in localParts()",
+  "affectedItems": [
+    {
+      "number": 1,
+      "contactName": "Tamara Harper",
+      "providerId": 582011269,
+      "approvedPreviewBody": "Happy Thu, Tamara Harper! Are you still accepting offers for 7117 Manker St, Indianapolis IN 46227? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "actualProviderBody": "Happy Thu, Tamara Harper! Are you still accepting offers for 7117 Manker St, Indianapolis IN 46227? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "bodyMatch": true,
+      "defect": "Thu instead of Thursday"
+    },
+    {
+      "number": 3,
+      "contactName": "Sydney Tilford",
+      "providerId": 582011324,
+      "approvedPreviewBody": "Happy Thu, Sydney Tilford! Are you still accepting offers for 418 N Centennial St, Indianapolis IN 46222? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "actualProviderBody": "Happy Thu, Sydney Tilford! Are you still accepting offers for 418 N Centennial St, Indianapolis IN 46222? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "bodyMatch": true,
+      "defect": "Thu instead of Thursday"
+    }
+  ],
+  "reviewFailure": "Owner-facing preview displayed 'Happy Thu' and was approved. This was not a hidden executor mutation — it was an approved-preview quality defect that escaped owner review.",
+  "remediation": "Changed weekday formatter from 'short' to 'long'. Added template quality gate before persistence. Added APPROVED_BODY_HASH === EXECUTED_BODY_HASH invariant.",
+  "effects": {
+    "liveSends": 2,
+    "failedAttempts": 1,
+    "ghlWrites": 0,
+    "stageMovements": 0
+  }
+}

@@ -10,6 +10,7 @@ const { evaluateCanaryWindow } = require('./atlas-ghl-telegram-live-guards');
 const GUARD_NAMES = Object.freeze([
   'DNC', 'STOP_OPT_OUT', 'WRONG_NUMBER', 'PENDING_REPLY',
   'ACTIVE_HUMAN_WORK', 'PRIOR_OUTREACH', 'DUPLICATE_HISTORY', 'PROVIDER_UNCERTAINTY',
+  'CANARY_WINDOW',
 ]);
 
 const PASSING_STATES = new Set(['CLEAR', 'NOT_APPLICABLE_NO_PRIOR_CONTACT', 'CLEAR_NO_PRIOR_OUTREACH', 'CLEAR_NO_PRIOR_SEND']);
@@ -82,6 +83,10 @@ function resolveCompliance(record, context = {}) {
   guards.PROVIDER_UNCERTAINTY = resolveGuard('PROVIDER_UNCERTAINTY', [
     justcallHistory ? { source: 'JUSTCALL_HISTORY', state: justcallHistory.deliveryState === 'FAILED' ? 'BLOCKED' : justcallHistory.deliveryState === 'UNKNOWN' ? 'UNKNOWN' : 'CLEAR' } : null,
     localRegistry ? { source: 'LOCAL_REGISTRY', state: localRegistry.providerUncertain || 'UNKNOWN' } : null,
+  ]);
+
+  guards.CANARY_WINDOW = resolveGuard('CANARY_WINDOW', [
+    { source: 'PROPERTY_TIMEZONE', state: window.ok ? 'CLEAR' : 'BLOCKED' },
   ]);
 
   const allPassed = GUARD_NAMES.every(name => PASSING_STATES.has(guards[name].state));

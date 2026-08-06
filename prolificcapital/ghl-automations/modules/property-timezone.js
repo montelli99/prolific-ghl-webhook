@@ -131,9 +131,32 @@ function parseStateZip(record = {}) {
 }
 
 function localParts(timeZone, now = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'short', hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now);
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'long', hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now);
   return { weekday: parts.find(part => part.type === 'weekday')?.value || '', localTime: `${parts.find(part => part.type === 'hour')?.value || '00'}:${parts.find(part => part.type === 'minute')?.value || '00'}` };
 }
+
+const STATE_TIMEZONES = Object.freeze({
+  'AZ': 'America/Phoenix',
+  'AL': 'America/Chicago', 'AK': 'America/Anchorage', 'AR': 'America/Chicago',
+  'CA': 'America/Los_Angeles', 'CO': 'America/Denver', 'CT': 'America/New_York',
+  'DE': 'America/New_York', 'FL': 'America/New_York', 'GA': 'America/New_York',
+  'HI': 'Pacific/Honolulu', 'IA': 'America/Chicago', 'ID': 'America/Boise',
+  'IL': 'America/Chicago', 'IN': 'America/Indiana/Indianapolis',
+  'KS': 'America/Chicago', 'KY': 'America/New_York', 'LA': 'America/Chicago',
+  'MA': 'America/New_York', 'MD': 'America/New_York', 'ME': 'America/New_York',
+  'MI': 'America/Detroit', 'MN': 'America/Chicago', 'MO': 'America/Chicago',
+  'MS': 'America/Chicago', 'MT': 'America/Denver', 'NC': 'America/New_York',
+  'ND': 'America/Chicago', 'NE': 'America/Chicago', 'NH': 'America/New_York',
+  'NJ': 'America/New_York', 'NM': 'America/Denver', 'NV': 'America/Los_Angeles',
+  'NY': 'America/New_York', 'OH': 'America/New_York', 'OK': 'America/Chicago',
+  'OR': 'America/Los_Angeles', 'PA': 'America/New_York', 'RI': 'America/New_York',
+  'SC': 'America/New_York', 'SD': 'America/Chicago', 'TN': 'America/Chicago',
+  'TX': 'America/Chicago', 'UT': 'America/Denver', 'VA': 'America/New_York',
+  'VT': 'America/New_York', 'WA': 'America/Los_Angeles', 'WI': 'America/Chicago',
+  'WV': 'America/New_York', 'WY': 'America/Denver', 'DC': 'America/New_York',
+});
+
+const ARIZONA_ZIP3 = new Set(['850','851','852','853','855','856','857','859','860','863','864','865']);
 
 function derivePropertyTimezone(record = {}, options = {}) {
   const { state, zip } = parseStateZip(record);
@@ -162,6 +185,35 @@ function derivePropertyTimezone(record = {}, options = {}) {
     }
   }
 
+  if (timeZone && state && STATE_TIMEZONES[state]) {
+    const stateZone = STATE_TIMEZONES[state];
+    if (timeZone !== stateZone) {
+      if (state === 'AZ' && ARIZONA_ZIP3.has(evidence.zip3)) {
+        timeZone = 'America/Phoenix';
+        confidence = 'HIGH_CONFIDENCE_STATE_OVERRIDE';
+        derivationSource = 'Arizona state override → America/Phoenix (AZ does not observe DST)';
+        evidence.stateOverride = 'AZ_FORCED_PHOENIX';
+      } else if (state === 'FL' && FLORIDA_PANHANDLE_ZIP3.has(evidence.zip3)) {
+        timeZone = 'America/Chicago';
+        confidence = 'HIGH_CONFIDENCE_STATE_OVERRIDE';
+        derivationSource = 'Florida panhandle ZIP3 → America/Chicago';
+        evidence.stateOverride = 'FL_PANHANDLE_CHICAGO';
+      } else {
+        timeZone = stateZone;
+        confidence = 'HIGH_CONFIDENCE_STATE_OVERRIDE';
+        derivationSource = 'state-based override → ' + stateZone;
+        evidence.stateOverride = state + '_STATE_OVERRIDE';
+      }
+    }
+  }
+
+  if (!timeZone && state && STATE_TIMEZONES[state]) {
+    timeZone = STATE_TIMEZONES[state];
+    confidence = 'MEDIUM_CONFIDENCE_STATE_ONLY';
+    derivationSource = 'state-only resolution (no ZIP match) → ' + timeZone;
+    evidence.stateOnly = state;
+  }
+
   if (!timeZone) {
     return {
       ok: false,
@@ -170,7 +222,7 @@ function derivePropertyTimezone(record = {}, options = {}) {
       zip: zip || null,
       timeZone: null,
       confidence: 'UNKNOWN',
-      derivationSource: 'no ZIP match in dataset',
+      derivationSource: 'no ZIP or state match in dataset',
       evidence,
     };
   }

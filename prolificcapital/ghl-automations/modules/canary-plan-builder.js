@@ -11,10 +11,28 @@ const { LocalSuppressionRegistry } = require('./local-suppression-registry');
 const { getTemplate, renderTemplate } = require('./kayla-template-registry');
 const { SELECTED_SENDER_SUFFIX } = require('./kayla-course-spec');
 const { PlanStore } = require('./plan-store');
+const { evaluateOpportunity } = require('./course-guided-action-engine');
 
 const POLICY_VERSION = 'OP-2026-08-02-v1';
 const TEMPLATE_ID = 'OWNER_APPROVED_PIPELINE_INT';
 const MAX_CANARY = 3;
+
+const ABBREVIATED_WEEKDAYS = new Set(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+const FULL_WEEKDAYS = new Set(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']);
+
+function validateTemplateQuality(rendered) {
+  if (!rendered) return { ok: false, reason: 'MISSING_RENDERED_MESSAGE' };
+  const errors = [];
+  if (/\{\{[^}]+\}\}/.test(rendered)) errors.push('UNRESOLVED_PLACEHOLDER');
+  if (/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/.test(rendered) && !FULL_WEEKDAYS.has(rendered.match(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/)?.[0])) {
+    const found = rendered.match(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/)?.[0];
+    if (found && ABBREVIATED_WEEKDAYS.has(found)) errors.push('ABBREVIATED_WEEKDAY_' + found);
+  }
+  if (/[!?.]{2,}/.test(rendered)) errors.push('DUPLICATED_PUNCTUATION');
+  if (!/Montelli/.test(rendered)) errors.push('MISSING_SENDER_IDENTITY');
+  if (rendered.length < 20) errors.push('MESSAGE_TOO_SHORT');
+  return { ok: errors.length === 0, errors };
+}
 
 function stableHash(value) {
   return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -123,6 +141,23 @@ class CanaryPlanBuilder {
         day: timezone.currentWeekday || '[day]',
       }) : null;
 
+      const operator = evaluateOpportunity({
+        opportunityId: normalized.opportunityId,
+        contactId: normalized.contactId,
+        propertyAddress: normalized.propertyAddress,
+        currentStage: normalized.currentStageName,
+        currentStageId: normalized.currentStageId,
+        contactPathStatus: normalized.phone && normalized.contactName ? 'ESTABLISHED' : 'MISSING',
+        contactName: normalized.contactName,
+        contactRole: roleEvidence.role,
+        priorOutboundMessages: jcHistory?.outboundHistory === 'PRIOR_SEND_FOUND' ? 1 : 0,
+        inboundReplies: jcHistory?.pendingReply === 'INBOUND_REPLY_REQUIRES_HUMAN' ? 1 : 0,
+        deliveryState: jcHistory?.deliveryState || 'NOT_SENT',
+        activeHumanWork: localLookup.ACTIVE_HUMAN_WORK !== 'CLEAR',
+        complianceStatus: compliance.passed ? 'CLEAR' : 'BLOCKED',
+        missingPropertyFacts: deriveMissingPropertyFacts(normalized.raw),
+      }, { renderedInt: rendered, day: timezone.currentWeekday || '[day]' });
+
       candidates.push({
         opportunityId: normalized.opportunityId,
         contactId: normalized.contactId,
@@ -136,6 +171,9 @@ class CanaryPlanBuilder {
         localTime: timezone.currentLocalTime || null,
         renderedMessage: rendered,
         compliance,
+        operatorState: operator.state,
+        operatorQueue: operator.queue,
+        preparedAction: operator.preparedAction,
         passed: compliance.passed,
         blockedReasons: Object.entries(compliance.guards)
           .filter(([, g]) => !PASSING_STATES.has(g.state))
@@ -143,25 +181,38 @@ class CanaryPlanBuilder {
       });
     }
 
-    const selected = rankCandidates(candidates.filter(c => c.passed)).slice(0, MAX_CANARY);
+    const eligible = candidates.filter(c => c.passed);
+    const selected = rankCandidates(eligible).slice(0, MAX_CANARY);
     const blocked = candidates.filter(c => !c.passed);
+
+    for (const item of selected) {
+      const nonPassing = Object.entries(item.compliance.guards)
+        .filter(([, g]) => !PASSING_STATES.has(g.state))
+        .map(([name, g]) => ({ guard: name, state: g.state, blockerCode: g.blockerCode }));
+      if (nonPassing.length > 0) {
+        const err = new Error('PLAN_INVARIANT_VIOLATION');
+        err.code = 'PLAN_INVARIANT_VIOLATION';
+        err.details = {
+          opportunityId: item.opportunityId,
+          contactName: item.contactName,
+          nonPassingGuards: nonPassing,
+        };
+        throw err;
+      }
+
+      const quality = validateTemplateQuality(item.renderedMessage);
+      if (!quality.ok) {
+        const err = new Error('TEMPLATE_QUALITY_GATE_FAILED');
+        err.code = 'TEMPLATE_QUALITY_GATE_FAILED';
+        err.details = { opportunityId: item.opportunityId, contactName: item.contactName, errors: quality.errors };
+        throw err;
+      }
+    }
 
     const planId = `plan_${stableHash({ at: now.toISOString(), policyVersion: POLICY_VERSION, templateId: TEMPLATE_ID }).slice(0, 16)}`;
     const plan = {
       planId,
-      planHash: stableHash({
-        planId,
-        items: selected.map(s => ({
-          number: s._rank || 0,
-          opportunityId: s.opportunityId,
-          contactId: s.contactId,
-          renderedMessage: s.renderedMessage,
-        })),
-        policyVersion: POLICY_VERSION,
-        templateId: TEMPLATE_ID,
-        templateVersion: stableHash(this.template?.body || ''),
-        createdAt: now.toISOString(),
-      }),
+      planHash: null,
       status: 'PREVIEW_PENDING_APPROVAL',
       schema: 'canary-plan-v2',
       policyVersion: POLICY_VERSION,
@@ -171,6 +222,11 @@ class CanaryPlanBuilder {
       expiresAt: new Date(now.getTime() + 30 * 60 * 1000).toISOString(),
       executable: false,
       productionEffects: { sends: 0, ghlWrites: 0, stageMovements: 0 },
+      canaryScope: {
+        firstSupervisedCanary: true,
+        allowedActionTypes: ['SEND_INT'],
+        downstreamMode: 'COURSE_GUIDED_APPROVAL_GATED',
+      },
       sender: `+*******${SELECTED_SENDER_SUFFIX}`,
       ownerId: options.ownerId || null,
       chatId: options.chatId || null,
@@ -193,11 +249,15 @@ class CanaryPlanBuilder {
         timezone: s.timezone,
         timezoneConfidence: s.timezoneConfidence,
         renderedMessage: s.renderedMessage,
+        approvedBodyHash: stableHash(s.renderedMessage),
         localWeekday: s.localWeekday,
         localTime: s.localTime,
         guardEvidence: Object.fromEntries(
           Object.entries(s.compliance.guards).map(([name, g]) => [name, { state: g.state, sources: g.sources.map(src => ({ source: src.source, state: src.state })) }])
         ),
+        operatorState: s.operatorState,
+        operatorQueue: s.operatorQueue,
+        preparedAction: s.preparedAction,
       })),
       blockerDistribution: buildBlockerDistribution(blocked),
       sourceSnapshot: {
@@ -216,7 +276,26 @@ class CanaryPlanBuilder {
       plan.warnings.push('PLAN_EXPIRED_AT_CREATION');
     }
 
+    plan.planHash = this.planStore.computePlanHash(plan);
     this.planStore.savePlan(plan);
+
+    const readback = this.planStore.loadPlan(plan.planId);
+    if (!readback || readback.planHash !== plan.planHash) {
+      throw new Error('PLAN_READBACK_VERIFICATION_FAILED');
+    }
+
+    for (const item of readback.items) {
+      const nonPassing = Object.entries(item.guardEvidence || {})
+        .filter(([, g]) => !PASSING_STATES.has(g.state))
+        .map(([name, g]) => ({ guard: name, state: g.state }));
+      if (nonPassing.length > 0) {
+        const err = new Error('PLAN_INVARIANT_VIOLATION_READBACK');
+        err.code = 'PLAN_INVARIANT_VIOLATION_READBACK';
+        err.details = { opportunityId: item.opportunityId, contactName: item.contactName, nonPassingGuards: nonPassing };
+        throw err;
+      }
+    }
+
     return plan;
   }
 
@@ -224,22 +303,19 @@ class CanaryPlanBuilder {
     return this.planStore.loadPlan(planId);
   }
 
-  approvePlan(planId, approvalContext = {}) {
-    const plan = this.planStore.loadPlan(planId);
-    if (!plan) throw new Error(`PLAN_NOT_FOUND: ${planId}`);
-    if (plan.status !== 'PREVIEW_PENDING_APPROVAL') throw new Error(`PLAN_NOT_APPROVABLE: status is ${plan.status}`);
-    if (new Date(plan.expiresAt) <= new Date()) throw new Error('PLAN_EXPIRED');
-    if (plan.executable) throw new Error('PLAN_ALREADY_EXECUTABLE');
+}
 
-    const updated = this.planStore.updateStatus(planId, 'APPROVED_PENDING_EXECUTION', {
-      approvedAt: new Date().toISOString(),
-      approvedBy: approvalContext.ownerUserId || null,
-      approvalChatId: approvalContext.chatId || null,
-      approvalTopicId: approvalContext.topicId || null,
-    });
-
-    return updated;
-  }
+function deriveMissingPropertyFacts(raw = {}) {
+  const opportunity = raw?.opportunity || raw || {};
+  const facts = {
+    askingPrice: opportunity.askingPrice || opportunity.price,
+    occupancy: opportunity.occupancy,
+    condition: opportunity.condition,
+    rent: opportunity.rent || opportunity.monthlyRent,
+    roof: opportunity.roof || opportunity.roofAge,
+    hvac: opportunity.hvac || opportunity.hvacAge,
+  };
+  return Object.entries(facts).filter(([, value]) => value == null || value === '').map(([name]) => name);
 }
 
 function rankCandidates(candidates) {

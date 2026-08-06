@@ -1,0 +1,996 @@
+{
+  "planId": "plan_2f5bb13b4d342f00",
+  "planHash": "9fe592fbc617becf481566cf79ac4eed5924b2d7426cad7104f41d288e5e039c",
+  "status": "PREVIEW_PENDING_APPROVAL",
+  "schema": "canary-plan-v2",
+  "policyVersion": "OP-2026-08-02-v1",
+  "templateId": "OWNER_APPROVED_PIPELINE_INT",
+  "templateVersion": "e5e48e3767cd599364a75194e44917f50e90b088e99a5295cedf2f33d72de8be",
+  "createdAt": "2026-08-06T16:42:48.495Z",
+  "expiresAt": "2026-08-06T17:12:48.495Z",
+  "executable": false,
+  "productionEffects": {
+    "sends": 0,
+    "ghlWrites": 0,
+    "stageMovements": 0
+  },
+  "canaryScope": {
+    "firstSupervisedCanary": true,
+    "allowedActionTypes": [
+      "SEND_INT"
+    ],
+    "downstreamMode": "COURSE_GUIDED_APPROVAL_GATED"
+  },
+  "sender": "+*******2619",
+  "ownerId": "718718959",
+  "chatId": "-1003975794600",
+  "topicId": 389,
+  "originatingMessageId": null,
+  "runbookId": "runbook_supervised_canary_v2",
+  "runbookHash": "9126b05e2c39d2ee6d8fb35ed2ad065a95969badf316c65124b74315ff17b750",
+  "runtimeRevision": null,
+  "totalCandidates": 77,
+  "selectedCount": 3,
+  "blockedCount": 0,
+  "items": [
+    {
+      "number": 1,
+      "opportunityId": "c7poApCAbi3qth1HHRRL",
+      "contactId": "JEMKDPNl8gCQaIc2Lkhz",
+      "propertyAddress": "14325 W Banff Ln, Surprise AZ 85379",
+      "contactName": "Christopher Collins",
+      "contactRole": "agent",
+      "phone": "+148***5231",
+      "timezone": "America/Phoenix",
+      "timezoneConfidence": "HIGH_CONFIDENCE_STATE_OVERRIDE",
+      "renderedMessage": "Happy Thu, Christopher Collins! Are you still accepting offers for 14325 W Banff Ln, Surprise AZ 85379? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "localWeekday": "Thu",
+      "localTime": "09:42",
+      "guardEvidence": {
+        "DNC": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_CONTACT_STATUS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "STOP_OPT_OUT": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "WRONG_NUMBER": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PENDING_REPLY": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "ACTIVE_HUMAN_WORK": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PRIOR_OUTREACH": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "DUPLICATE_HISTORY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "WITHIN_PLAN",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PROVIDER_UNCERTAINTY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        }
+      },
+      "operatorState": {
+        "opportunityId": "c7poApCAbi3qth1HHRRL",
+        "contactId": "JEMKDPNl8gCQaIc2Lkhz",
+        "property": "14325 W Banff Ln, Surprise AZ 85379",
+        "currentStage": "Lead Entered",
+        "currentStageId": "7067148a-2ee8-4e5b-93c8-31e0253fea68",
+        "contactPathStatus": "ESTABLISHED",
+        "contactIdentity": "Christopher Collins",
+        "contactRole": "agent",
+        "priorOutboundMessages": 0,
+        "inboundReplies": 0,
+        "deliveryState": "NOT_APPLICABLE",
+        "intStatus": "NOT_SENT",
+        "callAttemptCount": 0,
+        "completedCallStatus": "NOT_COMPLETED",
+        "qualificationChecklistStatus": "NOT_STARTED",
+        "voiceMemoStatus": "NOT_RECORDED",
+        "noaStatus": "NOT_SENT",
+        "notesStatus": "NOT_PREPARED",
+        "cccStatus": "NOT_SENT",
+        "contactCardStatus": "NOT_SENT",
+        "missingPropertyFacts": [
+          "askingPrice",
+          "occupancy",
+          "condition",
+          "rent",
+          "roof",
+          "hvac"
+        ],
+        "compStatus": "NOT_STARTED",
+        "arvStatus": "NOT_STARTED",
+        "offerStatus": "NOT_STARTED",
+        "kaylaHandoffStatus": "NOT_STARTED",
+        "activeHumanWork": true,
+        "complianceStatus": "CLEAR",
+        "followUpDue": false,
+        "nextDueAction": {
+          "actionId": "action_9bed584978b8abc0",
+          "actionType": "WAIT_FOR_HUMAN_WORK",
+          "exactNextAction": "Do not overlap active human work.",
+          "whyDue": "Do not overlap active human work.",
+          "courseRule": {
+            "id": "COURSE_GUIDED_NEXT_ACTION",
+            "text": "After each completion, recalculate and display the next required action.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          "preparedArtifact": {
+            "type": "CHECKLIST",
+            "content": "Do not overlap active human work."
+          },
+          "behaviorLevel": "MANUAL_ASSISTED",
+          "approvalRequirement": "NONE",
+          "approvalScope": {
+            "atomic": true,
+            "scopeHash": "9bed584978b8abc0422622a65760ab0ae77635a75e6e5242317eb0e67b81effd",
+            "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
+            "doesNotAuthorize": [
+              "CALL",
+              "SECOND_SEND",
+              "CCC",
+              "CONTACT_CARD",
+              "GHL_NOTES",
+              "STAGE_MOVEMENT",
+              "FOLLOW_UP",
+              "OFFER",
+              "HANDOFF"
+            ]
+          },
+          "remainsBlocked": [
+            "ALL_OUTREACH",
+            "STAGE_MOVEMENT"
+          ],
+          "afterCompletion": "Re-read state after the human work is complete."
+        },
+        "blockedActions": [
+          "ALL_OUTREACH",
+          "STAGE_MOVEMENT"
+        ],
+        "courseProvenance": [
+          {
+            "id": "CONTACT_PATH_FIRST",
+            "text": "Establish a verified contact path before preparing INT.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "INT_BEFORE_CALL",
+            "text": "Send INT before either call attempt.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "TWO_CALLS_BEFORE_NOA",
+            "text": "Complete two unanswered call attempts before voice memo and NOA.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "ANSWERED_CALL_QUALIFICATION",
+            "text": "An answered call opens the qualification checklist and notes preparation.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "CCC_AFTER_COMPLETED_CALL",
+            "text": "Prepare CCC and the Montelli contact card after a completed call.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "CONTACT_MADE_CRITERIA",
+            "text": "Evaluate Contact Made only after call facts, notes, CCC, and contact card requirements are satisfied.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "NOA_AFTER_TWO_CALLS",
+            "text": "After two unanswered calls, complete the voice memo and prepare NOA while retaining the correct stage.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "OWNER_APPROVAL_ATOMIC",
+            "text": "Approval authorizes only the exact prepared action shown.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "COURSE_GUIDED_NEXT_ACTION",
+            "text": "After each completion, recalculate and display the next required action.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          }
+        ]
+      },
+      "operatorQueue": "ACTIVE_HUMAN_WORK",
+      "preparedAction": {
+        "actionId": "action_9bed584978b8abc0",
+        "actionType": "WAIT_FOR_HUMAN_WORK",
+        "exactNextAction": "Do not overlap active human work.",
+        "whyDue": "Do not overlap active human work.",
+        "courseRule": {
+          "id": "COURSE_GUIDED_NEXT_ACTION",
+          "text": "After each completion, recalculate and display the next required action.",
+          "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+          "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+        },
+        "preparedArtifact": {
+          "type": "CHECKLIST",
+          "content": "Do not overlap active human work."
+        },
+        "behaviorLevel": "MANUAL_ASSISTED",
+        "approvalRequirement": "NONE",
+        "approvalScope": {
+          "atomic": true,
+          "scopeHash": "9bed584978b8abc0422622a65760ab0ae77635a75e6e5242317eb0e67b81effd",
+          "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
+          "doesNotAuthorize": [
+            "CALL",
+            "SECOND_SEND",
+            "CCC",
+            "CONTACT_CARD",
+            "GHL_NOTES",
+            "STAGE_MOVEMENT",
+            "FOLLOW_UP",
+            "OFFER",
+            "HANDOFF"
+          ]
+        },
+        "remainsBlocked": [
+          "ALL_OUTREACH",
+          "STAGE_MOVEMENT"
+        ],
+        "afterCompletion": "Re-read state after the human work is complete."
+      }
+    },
+    {
+      "number": 2,
+      "opportunityId": "4herqizuzbrRNFOlfA8o",
+      "contactId": "GORymvtJbwTaTbAi9ja0",
+      "propertyAddress": "14436 N 34th Pl, Phoenix AZ 85032",
+      "contactName": "Demi McGauley",
+      "contactRole": "agent",
+      "phone": "+148***1779",
+      "timezone": "America/Phoenix",
+      "timezoneConfidence": "HIGH_CONFIDENCE_STATE_OVERRIDE",
+      "renderedMessage": "Happy Thu, Demi McGauley! Are you still accepting offers for 14436 N 34th Pl, Phoenix AZ 85032? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "localWeekday": "Thu",
+      "localTime": "09:42",
+      "guardEvidence": {
+        "DNC": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_CONTACT_STATUS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "STOP_OPT_OUT": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "WRONG_NUMBER": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PENDING_REPLY": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "ACTIVE_HUMAN_WORK": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PRIOR_OUTREACH": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "DUPLICATE_HISTORY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "WITHIN_PLAN",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PROVIDER_UNCERTAINTY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        }
+      },
+      "operatorState": {
+        "opportunityId": "4herqizuzbrRNFOlfA8o",
+        "contactId": "GORymvtJbwTaTbAi9ja0",
+        "property": "14436 N 34th Pl, Phoenix AZ 85032",
+        "currentStage": "Lead Entered",
+        "currentStageId": "7067148a-2ee8-4e5b-93c8-31e0253fea68",
+        "contactPathStatus": "ESTABLISHED",
+        "contactIdentity": "Demi McGauley",
+        "contactRole": "agent",
+        "priorOutboundMessages": 0,
+        "inboundReplies": 0,
+        "deliveryState": "NOT_APPLICABLE",
+        "intStatus": "NOT_SENT",
+        "callAttemptCount": 0,
+        "completedCallStatus": "NOT_COMPLETED",
+        "qualificationChecklistStatus": "NOT_STARTED",
+        "voiceMemoStatus": "NOT_RECORDED",
+        "noaStatus": "NOT_SENT",
+        "notesStatus": "NOT_PREPARED",
+        "cccStatus": "NOT_SENT",
+        "contactCardStatus": "NOT_SENT",
+        "missingPropertyFacts": [
+          "askingPrice",
+          "occupancy",
+          "condition",
+          "rent",
+          "roof",
+          "hvac"
+        ],
+        "compStatus": "NOT_STARTED",
+        "arvStatus": "NOT_STARTED",
+        "offerStatus": "NOT_STARTED",
+        "kaylaHandoffStatus": "NOT_STARTED",
+        "activeHumanWork": true,
+        "complianceStatus": "CLEAR",
+        "followUpDue": false,
+        "nextDueAction": {
+          "actionId": "action_3c86b420dc415e2e",
+          "actionType": "WAIT_FOR_HUMAN_WORK",
+          "exactNextAction": "Do not overlap active human work.",
+          "whyDue": "Do not overlap active human work.",
+          "courseRule": {
+            "id": "COURSE_GUIDED_NEXT_ACTION",
+            "text": "After each completion, recalculate and display the next required action.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          "preparedArtifact": {
+            "type": "CHECKLIST",
+            "content": "Do not overlap active human work."
+          },
+          "behaviorLevel": "MANUAL_ASSISTED",
+          "approvalRequirement": "NONE",
+          "approvalScope": {
+            "atomic": true,
+            "scopeHash": "3c86b420dc415e2e9d6be9403446aa1286374e270ae6a98aad1f3b1e7fd95ac0",
+            "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
+            "doesNotAuthorize": [
+              "CALL",
+              "SECOND_SEND",
+              "CCC",
+              "CONTACT_CARD",
+              "GHL_NOTES",
+              "STAGE_MOVEMENT",
+              "FOLLOW_UP",
+              "OFFER",
+              "HANDOFF"
+            ]
+          },
+          "remainsBlocked": [
+            "ALL_OUTREACH",
+            "STAGE_MOVEMENT"
+          ],
+          "afterCompletion": "Re-read state after the human work is complete."
+        },
+        "blockedActions": [
+          "ALL_OUTREACH",
+          "STAGE_MOVEMENT"
+        ],
+        "courseProvenance": [
+          {
+            "id": "CONTACT_PATH_FIRST",
+            "text": "Establish a verified contact path before preparing INT.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "INT_BEFORE_CALL",
+            "text": "Send INT before either call attempt.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "TWO_CALLS_BEFORE_NOA",
+            "text": "Complete two unanswered call attempts before voice memo and NOA.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "ANSWERED_CALL_QUALIFICATION",
+            "text": "An answered call opens the qualification checklist and notes preparation.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "CCC_AFTER_COMPLETED_CALL",
+            "text": "Prepare CCC and the Montelli contact card after a completed call.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "CONTACT_MADE_CRITERIA",
+            "text": "Evaluate Contact Made only after call facts, notes, CCC, and contact card requirements are satisfied.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "NOA_AFTER_TWO_CALLS",
+            "text": "After two unanswered calls, complete the voice memo and prepare NOA while retaining the correct stage.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "OWNER_APPROVAL_ATOMIC",
+            "text": "Approval authorizes only the exact prepared action shown.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "COURSE_GUIDED_NEXT_ACTION",
+            "text": "After each completion, recalculate and display the next required action.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          }
+        ]
+      },
+      "operatorQueue": "ACTIVE_HUMAN_WORK",
+      "preparedAction": {
+        "actionId": "action_3c86b420dc415e2e",
+        "actionType": "WAIT_FOR_HUMAN_WORK",
+        "exactNextAction": "Do not overlap active human work.",
+        "whyDue": "Do not overlap active human work.",
+        "courseRule": {
+          "id": "COURSE_GUIDED_NEXT_ACTION",
+          "text": "After each completion, recalculate and display the next required action.",
+          "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+          "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+        },
+        "preparedArtifact": {
+          "type": "CHECKLIST",
+          "content": "Do not overlap active human work."
+        },
+        "behaviorLevel": "MANUAL_ASSISTED",
+        "approvalRequirement": "NONE",
+        "approvalScope": {
+          "atomic": true,
+          "scopeHash": "3c86b420dc415e2e9d6be9403446aa1286374e270ae6a98aad1f3b1e7fd95ac0",
+          "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
+          "doesNotAuthorize": [
+            "CALL",
+            "SECOND_SEND",
+            "CCC",
+            "CONTACT_CARD",
+            "GHL_NOTES",
+            "STAGE_MOVEMENT",
+            "FOLLOW_UP",
+            "OFFER",
+            "HANDOFF"
+          ]
+        },
+        "remainsBlocked": [
+          "ALL_OUTREACH",
+          "STAGE_MOVEMENT"
+        ],
+        "afterCompletion": "Re-read state after the human work is complete."
+      }
+    },
+    {
+      "number": 3,
+      "opportunityId": "0VzlrAAyD7Tbj9RBUJ3T",
+      "contactId": "MKE6QUyICSeCuBu0InLe",
+      "propertyAddress": "17346 W Pima St, Goodyear AZ 85338",
+      "contactName": "Marisol Castro",
+      "contactRole": "agent",
+      "phone": "+162***8613",
+      "timezone": "America/Phoenix",
+      "timezoneConfidence": "HIGH_CONFIDENCE_STATE_OVERRIDE",
+      "renderedMessage": "Happy Thu, Marisol Castro! Are you still accepting offers for 17346 W Pima St, Goodyear AZ 85338? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "localWeekday": "Thu",
+      "localTime": "09:42",
+      "guardEvidence": {
+        "DNC": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_CONTACT_STATUS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "STOP_OPT_OUT": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "WRONG_NUMBER": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PENDING_REPLY": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "ACTIVE_HUMAN_WORK": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PRIOR_OUTREACH": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "DUPLICATE_HISTORY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "WITHIN_PLAN",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PROVIDER_UNCERTAINTY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        }
+      },
+      "operatorState": {
+        "opportunityId": "0VzlrAAyD7Tbj9RBUJ3T",
+        "contactId": "MKE6QUyICSeCuBu0InLe",
+        "property": "17346 W Pima St, Goodyear AZ 85338",
+        "currentStage": "Lead Entered",
+        "currentStageId": "7067148a-2ee8-4e5b-93c8-31e0253fea68",
+        "contactPathStatus": "ESTABLISHED",
+        "contactIdentity": "Marisol Castro",
+        "contactRole": "agent",
+        "priorOutboundMessages": 0,
+        "inboundReplies": 0,
+        "deliveryState": "NOT_APPLICABLE",
+        "intStatus": "NOT_SENT",
+        "callAttemptCount": 0,
+        "completedCallStatus": "NOT_COMPLETED",
+        "qualificationChecklistStatus": "NOT_STARTED",
+        "voiceMemoStatus": "NOT_RECORDED",
+        "noaStatus": "NOT_SENT",
+        "notesStatus": "NOT_PREPARED",
+        "cccStatus": "NOT_SENT",
+        "contactCardStatus": "NOT_SENT",
+        "missingPropertyFacts": [
+          "askingPrice",
+          "occupancy",
+          "condition",
+          "rent",
+          "roof",
+          "hvac"
+        ],
+        "compStatus": "NOT_STARTED",
+        "arvStatus": "NOT_STARTED",
+        "offerStatus": "NOT_STARTED",
+        "kaylaHandoffStatus": "NOT_STARTED",
+        "activeHumanWork": true,
+        "complianceStatus": "CLEAR",
+        "followUpDue": false,
+        "nextDueAction": {
+          "actionId": "action_7f2aaa9e478a8e2c",
+          "actionType": "WAIT_FOR_HUMAN_WORK",
+          "exactNextAction": "Do not overlap active human work.",
+          "whyDue": "Do not overlap active human work.",
+          "courseRule": {
+            "id": "COURSE_GUIDED_NEXT_ACTION",
+            "text": "After each completion, recalculate and display the next required action.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          "preparedArtifact": {
+            "type": "CHECKLIST",
+            "content": "Do not overlap active human work."
+          },
+          "behaviorLevel": "MANUAL_ASSISTED",
+          "approvalRequirement": "NONE",
+          "approvalScope": {
+            "atomic": true,
+            "scopeHash": "7f2aaa9e478a8e2c34bc24a7e273bf96f2521f29256595f1158ace02923197c8",
+            "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
+            "doesNotAuthorize": [
+              "CALL",
+              "SECOND_SEND",
+              "CCC",
+              "CONTACT_CARD",
+              "GHL_NOTES",
+              "STAGE_MOVEMENT",
+              "FOLLOW_UP",
+              "OFFER",
+              "HANDOFF"
+            ]
+          },
+          "remainsBlocked": [
+            "ALL_OUTREACH",
+            "STAGE_MOVEMENT"
+          ],
+          "afterCompletion": "Re-read state after the human work is complete."
+        },
+        "blockedActions": [
+          "ALL_OUTREACH",
+          "STAGE_MOVEMENT"
+        ],
+        "courseProvenance": [
+          {
+            "id": "CONTACT_PATH_FIRST",
+            "text": "Establish a verified contact path before preparing INT.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "INT_BEFORE_CALL",
+            "text": "Send INT before either call attempt.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "TWO_CALLS_BEFORE_NOA",
+            "text": "Complete two unanswered call attempts before voice memo and NOA.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "ANSWERED_CALL_QUALIFICATION",
+            "text": "An answered call opens the qualification checklist and notes preparation.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "CCC_AFTER_COMPLETED_CALL",
+            "text": "Prepare CCC and the Montelli contact card after a completed call.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "CONTACT_MADE_CRITERIA",
+            "text": "Evaluate Contact Made only after call facts, notes, CCC, and contact card requirements are satisfied.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "NOA_AFTER_TWO_CALLS",
+            "text": "After two unanswered calls, complete the voice memo and prepare NOA while retaining the correct stage.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "OWNER_APPROVAL_ATOMIC",
+            "text": "Approval authorizes only the exact prepared action shown.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "COURSE_GUIDED_NEXT_ACTION",
+            "text": "After each completion, recalculate and display the next required action.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          }
+        ]
+      },
+      "operatorQueue": "ACTIVE_HUMAN_WORK",
+      "preparedAction": {
+        "actionId": "action_7f2aaa9e478a8e2c",
+        "actionType": "WAIT_FOR_HUMAN_WORK",
+        "exactNextAction": "Do not overlap active human work.",
+        "whyDue": "Do not overlap active human work.",
+        "courseRule": {
+          "id": "COURSE_GUIDED_NEXT_ACTION",
+          "text": "After each completion, recalculate and display the next required action.",
+          "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+          "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+        },
+        "preparedArtifact": {
+          "type": "CHECKLIST",
+          "content": "Do not overlap active human work."
+        },
+        "behaviorLevel": "MANUAL_ASSISTED",
+        "approvalRequirement": "NONE",
+        "approvalScope": {
+          "atomic": true,
+          "scopeHash": "7f2aaa9e478a8e2c34bc24a7e273bf96f2521f29256595f1158ace02923197c8",
+          "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
+          "doesNotAuthorize": [
+            "CALL",
+            "SECOND_SEND",
+            "CCC",
+            "CONTACT_CARD",
+            "GHL_NOTES",
+            "STAGE_MOVEMENT",
+            "FOLLOW_UP",
+            "OFFER",
+            "HANDOFF"
+          ]
+        },
+        "remainsBlocked": [
+          "ALL_OUTREACH",
+          "STAGE_MOVEMENT"
+        ],
+        "afterCompletion": "Re-read state after the human work is complete."
+      }
+    }
+  ],
+  "blockerDistribution": {},
+  "sourceSnapshot": {
+    "hydrationTimestamp": "2026-08-06T16:43:19.327Z",
+    "pipelineId": "nSf3NXYVkt8X4PgW9aZ3",
+    "locationId": "61XPzSqRy7UKMwW9DeB8",
+    "justcallBlacklistComplete": true,
+    "justcallHistoryComplete": "PARTIAL",
+    "justcallTotalCount": 33,
+    "justcallFetchedCount": 28
+  },
+  "warnings": []
+}

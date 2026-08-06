@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const SUPPRESSION_TYPES = Object.freeze([
   'DNC', 'STOP', 'OPT_OUT', 'WRONG_NUMBER',
   'PENDING_REPLY', 'ACTIVE_HUMAN_WORK', 'PRIOR_OUTREACH', 'PROVIDER_UNCERTAIN',
+  'DUPLICATE_HISTORY', 'LANDLINE',
 ]);
 
 const DEFAULT_REGISTRY_PATH = path.resolve(__dirname, '..', 'data', 'local-suppression-registry.json');

@@ -1,0 +1,1069 @@
+{
+  "planId": "plan_694953d75b8ccc36",
+  "planHash": "604a101377f65d37c00c72772a8b48078c2b8f30b01c76af79bb35f2b29a54ba",
+  "status": "COMPLETED_WITH_PARTIAL_DELIVERY",
+  "schema": "canary-plan-v2",
+  "policyVersion": "OP-2026-08-02-v1",
+  "templateId": "OWNER_APPROVED_PIPELINE_INT",
+  "templateVersion": "e5e48e3767cd599364a75194e44917f50e90b088e99a5295cedf2f33d72de8be",
+  "createdAt": "2026-08-06T16:43:56.663Z",
+  "expiresAt": "2026-08-06T17:13:56.663Z",
+  "executable": false,
+  "productionEffects": {
+    "providerAttempts": 3,
+    "providerAccepted": 2,
+    "delivered": 1,
+    "undelivered": 1,
+    "failedLandline": 1,
+    "ghlWrites": 0,
+    "stageMovements": 0
+  },
+  "canaryScope": {
+    "firstSupervisedCanary": true,
+    "allowedActionTypes": [
+      "SEND_INT"
+    ],
+    "downstreamMode": "COURSE_GUIDED_APPROVAL_GATED"
+  },
+  "sender": "+*******2619",
+  "ownerId": "718718959",
+  "chatId": "-1003975794600",
+  "topicId": 389,
+  "originatingMessageId": null,
+  "runbookId": "runbook_supervised_canary_v2",
+  "runbookHash": "9126b05e2c39d2ee6d8fb35ed2ad065a95969badf316c65124b74315ff17b750",
+  "runtimeRevision": null,
+  "totalCandidates": 65,
+  "selectedCount": 3,
+  "blockedCount": 34,
+  "items": [
+    {
+      "number": 1,
+      "opportunityId": "x6wHpQJXxCi4loMj6lTZ",
+      "contactId": "LcqernTqlVOxoMBnSroZ",
+      "propertyAddress": "7117 Manker St, Indianapolis IN 46227",
+      "contactName": "Tamara Harper",
+      "contactRole": "agent",
+      "phone": "+180***1727",
+      "timezone": "America/Indiana/Indianapolis",
+      "timezoneConfidence": "HIGH_CONFIDENCE_ZIP3",
+      "renderedMessage": "Happy Thu, Tamara Harper! Are you still accepting offers for 7117 Manker St, Indianapolis IN 46227? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "localWeekday": "Thu",
+      "localTime": "12:43",
+      "guardEvidence": {
+        "DNC": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_CONTACT_STATUS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "STOP_OPT_OUT": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "WRONG_NUMBER": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PENDING_REPLY": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "ACTIVE_HUMAN_WORK": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PRIOR_OUTREACH": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "DUPLICATE_HISTORY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "WITHIN_PLAN",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PROVIDER_UNCERTAINTY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "CANARY_WINDOW": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "PROPERTY_TIMEZONE",
+              "state": "CLEAR"
+            }
+          ]
+        }
+      },
+      "operatorState": {
+        "opportunityId": "x6wHpQJXxCi4loMj6lTZ",
+        "contactId": "LcqernTqlVOxoMBnSroZ",
+        "property": "7117 Manker St, Indianapolis IN 46227",
+        "currentStage": "Lead Entered",
+        "currentStageId": "7067148a-2ee8-4e5b-93c8-31e0253fea68",
+        "contactPathStatus": "ESTABLISHED",
+        "contactIdentity": "Tamara Harper",
+        "contactRole": "agent",
+        "priorOutboundMessages": 0,
+        "inboundReplies": 0,
+        "deliveryState": "NOT_APPLICABLE",
+        "intStatus": "NOT_SENT",
+        "callAttemptCount": 0,
+        "completedCallStatus": "NOT_COMPLETED",
+        "qualificationChecklistStatus": "NOT_STARTED",
+        "voiceMemoStatus": "NOT_RECORDED",
+        "noaStatus": "NOT_SENT",
+        "notesStatus": "NOT_PREPARED",
+        "cccStatus": "NOT_SENT",
+        "contactCardStatus": "NOT_SENT",
+        "missingPropertyFacts": [
+          "askingPrice",
+          "occupancy",
+          "condition",
+          "rent",
+          "roof",
+          "hvac"
+        ],
+        "compStatus": "NOT_STARTED",
+        "arvStatus": "NOT_STARTED",
+        "offerStatus": "NOT_STARTED",
+        "kaylaHandoffStatus": "NOT_STARTED",
+        "activeHumanWork": true,
+        "complianceStatus": "CLEAR",
+        "followUpDue": false,
+        "nextDueAction": {
+          "actionId": "action_804c277fa44dfb40",
+          "actionType": "WAIT_FOR_HUMAN_WORK",
+          "exactNextAction": "Do not overlap active human work.",
+          "whyDue": "Do not overlap active human work.",
+          "courseRule": {
+            "id": "COURSE_GUIDED_NEXT_ACTION",
+            "text": "After each completion, recalculate and display the next required action.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          "preparedArtifact": {
+            "type": "CHECKLIST",
+            "content": "Do not overlap active human work."
+          },
+          "behaviorLevel": "MANUAL_ASSISTED",
+          "approvalRequirement": "NONE",
+          "approvalScope": {
+            "atomic": true,
+            "scopeHash": "804c277fa44dfb402e6b298ee6117a8bf2583de6d07cf71d5c228b5ff312c106",
+            "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
+            "doesNotAuthorize": [
+              "CALL",
+              "SECOND_SEND",
+              "CCC",
+              "CONTACT_CARD",
+              "GHL_NOTES",
+              "STAGE_MOVEMENT",
+              "FOLLOW_UP",
+              "OFFER",
+              "HANDOFF"
+            ]
+          },
+          "remainsBlocked": [
+            "ALL_OUTREACH",
+            "STAGE_MOVEMENT"
+          ],
+          "afterCompletion": "Re-read state after the human work is complete."
+        },
+        "blockedActions": [
+          "ALL_OUTREACH",
+          "STAGE_MOVEMENT"
+        ],
+        "courseProvenance": [
+          {
+            "id": "CONTACT_PATH_FIRST",
+            "text": "Establish a verified contact path before preparing INT.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "INT_BEFORE_CALL",
+            "text": "Send INT before either call attempt.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "TWO_CALLS_BEFORE_NOA",
+            "text": "Complete two unanswered call attempts before voice memo and NOA.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "ANSWERED_CALL_QUALIFICATION",
+            "text": "An answered call opens the qualification checklist and notes preparation.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "CCC_AFTER_COMPLETED_CALL",
+            "text": "Prepare CCC and the Montelli contact card after a completed call.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "CONTACT_MADE_CRITERIA",
+            "text": "Evaluate Contact Made only after call facts, notes, CCC, and contact card requirements are satisfied.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "NOA_AFTER_TWO_CALLS",
+            "text": "After two unanswered calls, complete the voice memo and prepare NOA while retaining the correct stage.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "OWNER_APPROVAL_ATOMIC",
+            "text": "Approval authorizes only the exact prepared action shown.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "COURSE_GUIDED_NEXT_ACTION",
+            "text": "After each completion, recalculate and display the next required action.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          }
+        ]
+      },
+      "operatorQueue": "ACTIVE_HUMAN_WORK",
+      "preparedAction": {
+        "actionId": "action_804c277fa44dfb40",
+        "actionType": "WAIT_FOR_HUMAN_WORK",
+        "exactNextAction": "Do not overlap active human work.",
+        "whyDue": "Do not overlap active human work.",
+        "courseRule": {
+          "id": "COURSE_GUIDED_NEXT_ACTION",
+          "text": "After each completion, recalculate and display the next required action.",
+          "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+          "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+        },
+        "preparedArtifact": {
+          "type": "CHECKLIST",
+          "content": "Do not overlap active human work."
+        },
+        "behaviorLevel": "MANUAL_ASSISTED",
+        "approvalRequirement": "NONE",
+        "approvalScope": {
+          "atomic": true,
+          "scopeHash": "804c277fa44dfb402e6b298ee6117a8bf2583de6d07cf71d5c228b5ff312c106",
+          "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
+          "doesNotAuthorize": [
+            "CALL",
+            "SECOND_SEND",
+            "CCC",
+            "CONTACT_CARD",
+            "GHL_NOTES",
+            "STAGE_MOVEMENT",
+            "FOLLOW_UP",
+            "OFFER",
+            "HANDOFF"
+          ]
+        },
+        "remainsBlocked": [
+          "ALL_OUTREACH",
+          "STAGE_MOVEMENT"
+        ],
+        "afterCompletion": "Re-read state after the human work is complete."
+      }
+    },
+    {
+      "number": 2,
+      "opportunityId": "Y9s3qTQrdmxMdHLtFtJU",
+      "contactId": "H2B2QyA3JmG0XxzjB2pg",
+      "propertyAddress": "1542 S Alabama St, Indianapolis IN 46225",
+      "contactName": "Fred McIntire",
+      "contactRole": "agent",
+      "phone": "+131***5959",
+      "timezone": "America/Indiana/Indianapolis",
+      "timezoneConfidence": "HIGH_CONFIDENCE_ZIP3",
+      "renderedMessage": "Happy Thu, Fred McIntire! Are you still accepting offers for 1542 S Alabama St, Indianapolis IN 46225? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "localWeekday": "Thu",
+      "localTime": "12:43",
+      "guardEvidence": {
+        "DNC": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_CONTACT_STATUS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "STOP_OPT_OUT": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "WRONG_NUMBER": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PENDING_REPLY": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "ACTIVE_HUMAN_WORK": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PRIOR_OUTREACH": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "DUPLICATE_HISTORY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "WITHIN_PLAN",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PROVIDER_UNCERTAINTY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "CANARY_WINDOW": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "PROPERTY_TIMEZONE",
+              "state": "CLEAR"
+            }
+          ]
+        }
+      },
+      "operatorState": {
+        "opportunityId": "Y9s3qTQrdmxMdHLtFtJU",
+        "contactId": "H2B2QyA3JmG0XxzjB2pg",
+        "property": "1542 S Alabama St, Indianapolis IN 46225",
+        "currentStage": "Lead Entered",
+        "currentStageId": "7067148a-2ee8-4e5b-93c8-31e0253fea68",
+        "contactPathStatus": "ESTABLISHED",
+        "contactIdentity": "Fred McIntire",
+        "contactRole": "agent",
+        "priorOutboundMessages": 0,
+        "inboundReplies": 0,
+        "deliveryState": "NOT_APPLICABLE",
+        "intStatus": "NOT_SENT",
+        "callAttemptCount": 0,
+        "completedCallStatus": "NOT_COMPLETED",
+        "qualificationChecklistStatus": "NOT_STARTED",
+        "voiceMemoStatus": "NOT_RECORDED",
+        "noaStatus": "NOT_SENT",
+        "notesStatus": "NOT_PREPARED",
+        "cccStatus": "NOT_SENT",
+        "contactCardStatus": "NOT_SENT",
+        "missingPropertyFacts": [
+          "askingPrice",
+          "occupancy",
+          "condition",
+          "rent",
+          "roof",
+          "hvac"
+        ],
+        "compStatus": "NOT_STARTED",
+        "arvStatus": "NOT_STARTED",
+        "offerStatus": "NOT_STARTED",
+        "kaylaHandoffStatus": "NOT_STARTED",
+        "activeHumanWork": true,
+        "complianceStatus": "CLEAR",
+        "followUpDue": false,
+        "nextDueAction": {
+          "actionId": "action_4daaa929d1c834f0",
+          "actionType": "WAIT_FOR_HUMAN_WORK",
+          "exactNextAction": "Do not overlap active human work.",
+          "whyDue": "Do not overlap active human work.",
+          "courseRule": {
+            "id": "COURSE_GUIDED_NEXT_ACTION",
+            "text": "After each completion, recalculate and display the next required action.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          "preparedArtifact": {
+            "type": "CHECKLIST",
+            "content": "Do not overlap active human work."
+          },
+          "behaviorLevel": "MANUAL_ASSISTED",
+          "approvalRequirement": "NONE",
+          "approvalScope": {
+            "atomic": true,
+            "scopeHash": "4daaa929d1c834f0619eb10fb3c37bcc4412e9e43e4db1bd465b96a210d44ffc",
+            "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
+            "doesNotAuthorize": [
+              "CALL",
+              "SECOND_SEND",
+              "CCC",
+              "CONTACT_CARD",
+              "GHL_NOTES",
+              "STAGE_MOVEMENT",
+              "FOLLOW_UP",
+              "OFFER",
+              "HANDOFF"
+            ]
+          },
+          "remainsBlocked": [
+            "ALL_OUTREACH",
+            "STAGE_MOVEMENT"
+          ],
+          "afterCompletion": "Re-read state after the human work is complete."
+        },
+        "blockedActions": [
+          "ALL_OUTREACH",
+          "STAGE_MOVEMENT"
+        ],
+        "courseProvenance": [
+          {
+            "id": "CONTACT_PATH_FIRST",
+            "text": "Establish a verified contact path before preparing INT.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "INT_BEFORE_CALL",
+            "text": "Send INT before either call attempt.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "TWO_CALLS_BEFORE_NOA",
+            "text": "Complete two unanswered call attempts before voice memo and NOA.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "ANSWERED_CALL_QUALIFICATION",
+            "text": "An answered call opens the qualification checklist and notes preparation.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "CCC_AFTER_COMPLETED_CALL",
+            "text": "Prepare CCC and the Montelli contact card after a completed call.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "CONTACT_MADE_CRITERIA",
+            "text": "Evaluate Contact Made only after call facts, notes, CCC, and contact card requirements are satisfied.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "NOA_AFTER_TWO_CALLS",
+            "text": "After two unanswered calls, complete the voice memo and prepare NOA while retaining the correct stage.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "OWNER_APPROVAL_ATOMIC",
+            "text": "Approval authorizes only the exact prepared action shown.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "COURSE_GUIDED_NEXT_ACTION",
+            "text": "After each completion, recalculate and display the next required action.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          }
+        ]
+      },
+      "operatorQueue": "ACTIVE_HUMAN_WORK",
+      "preparedAction": {
+        "actionId": "action_4daaa929d1c834f0",
+        "actionType": "WAIT_FOR_HUMAN_WORK",
+        "exactNextAction": "Do not overlap active human work.",
+        "whyDue": "Do not overlap active human work.",
+        "courseRule": {
+          "id": "COURSE_GUIDED_NEXT_ACTION",
+          "text": "After each completion, recalculate and display the next required action.",
+          "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+          "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+        },
+        "preparedArtifact": {
+          "type": "CHECKLIST",
+          "content": "Do not overlap active human work."
+        },
+        "behaviorLevel": "MANUAL_ASSISTED",
+        "approvalRequirement": "NONE",
+        "approvalScope": {
+          "atomic": true,
+          "scopeHash": "4daaa929d1c834f0619eb10fb3c37bcc4412e9e43e4db1bd465b96a210d44ffc",
+          "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
+          "doesNotAuthorize": [
+            "CALL",
+            "SECOND_SEND",
+            "CCC",
+            "CONTACT_CARD",
+            "GHL_NOTES",
+            "STAGE_MOVEMENT",
+            "FOLLOW_UP",
+            "OFFER",
+            "HANDOFF"
+          ]
+        },
+        "remainsBlocked": [
+          "ALL_OUTREACH",
+          "STAGE_MOVEMENT"
+        ],
+        "afterCompletion": "Re-read state after the human work is complete."
+      }
+    },
+    {
+      "number": 3,
+      "opportunityId": "GosQsh6swBJXAt7cB690",
+      "contactId": "MmU3jmQqkul67E6DgDFY",
+      "propertyAddress": "418 N Centennial St, Indianapolis IN 46222",
+      "contactName": "Sydney Tilford",
+      "contactRole": "agent",
+      "phone": "+131***5111",
+      "timezone": "America/Indiana/Indianapolis",
+      "timezoneConfidence": "HIGH_CONFIDENCE_ZIP3",
+      "renderedMessage": "Happy Thu, Sydney Tilford! Are you still accepting offers for 418 N Centennial St, Indianapolis IN 46222? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
+      "localWeekday": "Thu",
+      "localTime": "12:43",
+      "guardEvidence": {
+        "DNC": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_CONTACT_STATUS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "STOP_OPT_OUT": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "UNKNOWN"
+            },
+            {
+              "source": "JUSTCALL_BLACKLIST",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "WRONG_NUMBER": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PENDING_REPLY": {
+          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "ACTIVE_HUMAN_WORK": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "GHL_TAGS",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PRIOR_OUTREACH": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "DUPLICATE_HISTORY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "WITHIN_PLAN",
+              "state": "CLEAR"
+            },
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "PROVIDER_UNCERTAINTY": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "JUSTCALL_HISTORY",
+              "state": "CLEAR"
+            },
+            {
+              "source": "LOCAL_REGISTRY",
+              "state": "UNKNOWN"
+            }
+          ]
+        },
+        "CANARY_WINDOW": {
+          "state": "CLEAR",
+          "sources": [
+            {
+              "source": "PROPERTY_TIMEZONE",
+              "state": "CLEAR"
+            }
+          ]
+        }
+      },
+      "operatorState": {
+        "opportunityId": "GosQsh6swBJXAt7cB690",
+        "contactId": "MmU3jmQqkul67E6DgDFY",
+        "property": "418 N Centennial St, Indianapolis IN 46222",
+        "currentStage": "Lead Entered",
+        "currentStageId": "7067148a-2ee8-4e5b-93c8-31e0253fea68",
+        "contactPathStatus": "ESTABLISHED",
+        "contactIdentity": "Sydney Tilford",
+        "contactRole": "agent",
+        "priorOutboundMessages": 0,
+        "inboundReplies": 0,
+        "deliveryState": "NOT_APPLICABLE",
+        "intStatus": "NOT_SENT",
+        "callAttemptCount": 0,
+        "completedCallStatus": "NOT_COMPLETED",
+        "qualificationChecklistStatus": "NOT_STARTED",
+        "voiceMemoStatus": "NOT_RECORDED",
+        "noaStatus": "NOT_SENT",
+        "notesStatus": "NOT_PREPARED",
+        "cccStatus": "NOT_SENT",
+        "contactCardStatus": "NOT_SENT",
+        "missingPropertyFacts": [
+          "askingPrice",
+          "occupancy",
+          "condition",
+          "rent",
+          "roof",
+          "hvac"
+        ],
+        "compStatus": "NOT_STARTED",
+        "arvStatus": "NOT_STARTED",
+        "offerStatus": "NOT_STARTED",
+        "kaylaHandoffStatus": "NOT_STARTED",
+        "activeHumanWork": true,
+        "complianceStatus": "CLEAR",
+        "followUpDue": false,
+        "nextDueAction": {
+          "actionId": "action_f085c145173b28fa",
+          "actionType": "WAIT_FOR_HUMAN_WORK",
+          "exactNextAction": "Do not overlap active human work.",
+          "whyDue": "Do not overlap active human work.",
+          "courseRule": {
+            "id": "COURSE_GUIDED_NEXT_ACTION",
+            "text": "After each completion, recalculate and display the next required action.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          "preparedArtifact": {
+            "type": "CHECKLIST",
+            "content": "Do not overlap active human work."
+          },
+          "behaviorLevel": "MANUAL_ASSISTED",
+          "approvalRequirement": "NONE",
+          "approvalScope": {
+            "atomic": true,
+            "scopeHash": "f085c145173b28fa468091f3f797f94f644e2097f3ffc4c60da1832a31f2a575",
+            "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
+            "doesNotAuthorize": [
+              "CALL",
+              "SECOND_SEND",
+              "CCC",
+              "CONTACT_CARD",
+              "GHL_NOTES",
+              "STAGE_MOVEMENT",
+              "FOLLOW_UP",
+              "OFFER",
+              "HANDOFF"
+            ]
+          },
+          "remainsBlocked": [
+            "ALL_OUTREACH",
+            "STAGE_MOVEMENT"
+          ],
+          "afterCompletion": "Re-read state after the human work is complete."
+        },
+        "blockedActions": [
+          "ALL_OUTREACH",
+          "STAGE_MOVEMENT"
+        ],
+        "courseProvenance": [
+          {
+            "id": "CONTACT_PATH_FIRST",
+            "text": "Establish a verified contact path before preparing INT.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "INT_BEFORE_CALL",
+            "text": "Send INT before either call attempt.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "TWO_CALLS_BEFORE_NOA",
+            "text": "Complete two unanswered call attempts before voice memo and NOA.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "ANSWERED_CALL_QUALIFICATION",
+            "text": "An answered call opens the qualification checklist and notes preparation.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "CCC_AFTER_COMPLETED_CALL",
+            "text": "Prepare CCC and the Montelli contact card after a completed call.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "CONTACT_MADE_CRITERIA",
+            "text": "Evaluate Contact Made only after call facts, notes, CCC, and contact card requirements are satisfied.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "NOA_AFTER_TWO_CALLS",
+            "text": "After two unanswered calls, complete the voice memo and prepare NOA while retaining the correct stage.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "OWNER_APPROVAL_ATOMIC",
+            "text": "Approval authorizes only the exact prepared action shown.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          },
+          {
+            "id": "COURSE_GUIDED_NEXT_ACTION",
+            "text": "After each completion, recalculate and display the next required action.",
+            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+          }
+        ]
+      },
+      "operatorQueue": "ACTIVE_HUMAN_WORK",
+      "preparedAction": {
+        "actionId": "action_f085c145173b28fa",
+        "actionType": "WAIT_FOR_HUMAN_WORK",
+        "exactNextAction": "Do not overlap active human work.",
+        "whyDue": "Do not overlap active human work.",
+        "courseRule": {
+          "id": "COURSE_GUIDED_NEXT_ACTION",
+          "text": "After each completion, recalculate and display the next required action.",
+          "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
+          "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
+        },
+        "preparedArtifact": {
+          "type": "CHECKLIST",
+          "content": "Do not overlap active human work."
+        },
+        "behaviorLevel": "MANUAL_ASSISTED",
+        "approvalRequirement": "NONE",
+        "approvalScope": {
+          "atomic": true,
+          "scopeHash": "f085c145173b28fa468091f3f797f94f644e2097f3ffc4c60da1832a31f2a575",
+          "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
+          "doesNotAuthorize": [
+            "CALL",
+            "SECOND_SEND",
+            "CCC",
+            "CONTACT_CARD",
+            "GHL_NOTES",
+            "STAGE_MOVEMENT",
+            "FOLLOW_UP",
+            "OFFER",
+            "HANDOFF"
+          ]
+        },
+        "remainsBlocked": [
+          "ALL_OUTREACH",
+          "STAGE_MOVEMENT"
+        ],
+        "afterCompletion": "Re-read state after the human work is complete."
+      }
+    }
+  ],
+  "blockerDistribution": {
+    "CANARY_WINDOW": 34
+  },
+  "sourceSnapshot": {
+    "hydrationTimestamp": "2026-08-06T16:44:28.270Z",
+    "pipelineId": "nSf3NXYVkt8X4PgW9aZ3",
+    "locationId": "61XPzSqRy7UKMwW9DeB8",
+    "justcallBlacklistComplete": true,
+    "justcallHistoryComplete": "PARTIAL",
+    "justcallTotalCount": 33,
+    "justcallFetchedCount": 28
+  },
+  "warnings": [],
+  "updatedAt": "2026-08-06T16:52:48.012Z",
+  "executionResults": [
+    {
+      "number": 1,
+      "contactName": "Tamara Harper",
+      "providerId": 582011269,
+      "deliveryState": "DELIVERED",
+      "terminal": true,
+      "waitingForReply": true,
+      "cost": 0.05,
+      "timestamp": "2026-08-06T16:52:40Z",
+      "body": "Happy Thu, Tamara Harper! Are you still accepting offers for 7117 Manker St, Indianapolis IN 46227? My name is Montelli, I'm looking to purchase this as a rental for my portfolio."
+    },
+    {
+      "number": 2,
+      "contactName": "Fred McIntire",
+      "providerId": null,
+      "deliveryState": "UNCERTAIN_RESULT",
+      "terminal": false,
+      "waitingForReply": false,
+      "smsEligible": null,
+      "cost": 0,
+      "timestamp": "2026-08-06T16:52:43Z"
+    },
+    {
+      "number": 3,
+      "contactName": "Sydney Tilford",
+      "providerId": 582011324,
+      "deliveryState": "UNDELIVERED",
+      "terminal": false,
+      "waitingForReply": false,
+      "manualNumberValidationRequired": true,
+      "cost": 0.05,
+      "timestamp": "2026-08-06T16:52:45Z",
+      "body": "Happy Thu, Sydney Tilford! Are you still accepting offers for 418 N Centennial St, Indianapolis IN 46222? My name is Montelli, I'm looking to purchase this as a rental for my portfolio."
+    }
+  ],
+  "completedAt": "2026-08-06T16:52:48.011Z",
+  "reconciledAt": "2026-08-06T17:08:09.425Z",
+  "reconciliationHash": "b60691516570f77b1fe207eb4e47291f59189bf9c3ad35f4b0bcfaff43fbf4c4"
+}
