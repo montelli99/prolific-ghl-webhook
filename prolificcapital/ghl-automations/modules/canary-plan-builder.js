@@ -12,6 +12,8 @@ const { getTemplate, renderTemplate } = require('./kayla-template-registry');
 const { SELECTED_SENDER_SUFFIX } = require('./kayla-course-spec');
 const { PlanStore } = require('./plan-store');
 const { evaluateOpportunity } = require('./course-guided-action-engine');
+const { renderGreeting } = require('./greeting-renderer');
+const { classifyRecipient, RECIPIENT_TYPES } = require('./recipient-classifier');
 
 const POLICY_VERSION = 'OP-2026-08-02-v1';
 const TEMPLATE_ID = 'OWNER_APPROVED_PIPELINE_INT';
@@ -20,7 +22,7 @@ const MAX_CANARY = 3;
 const ABBREVIATED_WEEKDAYS = new Set(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
 const FULL_WEEKDAYS = new Set(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']);
 
-function validateTemplateQuality(rendered) {
+function validateTemplateQuality(rendered, recipientType) {
   if (!rendered) return { ok: false, reason: 'MISSING_RENDERED_MESSAGE' };
   const errors = [];
   if (/\{\{[^}]+\}\}/.test(rendered)) errors.push('UNRESOLVED_PLACEHOLDER');
@@ -31,6 +33,18 @@ function validateTemplateQuality(rendered) {
   if (/[!?.]{2,}/.test(rendered)) errors.push('DUPLICATED_PUNCTUATION');
   if (!/Montelli/.test(rendered)) errors.push('MISSING_SENDER_IDENTITY');
   if (rendered.length < 20) errors.push('MESSAGE_TOO_SHORT');
+
+  if (recipientType) {
+    const orgTypes = new Set([RECIPIENT_TYPES.TEAM, RECIPIENT_TYPES.BROKERAGE, RECIPIENT_TYPES.COMPANY, RECIPIENT_TYPES.LLC, RECIPIENT_TYPES.TRUST, RECIPIENT_TYPES.ESTATE, RECIPIENT_TYPES.GOVERNMENT]);
+    if (orgTypes.has(recipientType)) {
+      if (/^Happy \w+, \w/.test(rendered)) errors.push('RECIPIENT_TYPE_ORG_GREETED_AS_PERSON');
+      if (/,\s+\w+\s+\w+!/.test(rendered)) errors.push('RECIPIENT_TYPE_FULL_NAME_GREETING_FOR_ORG');
+    }
+    if (recipientType === RECIPIENT_TYPES.UNKNOWN) {
+      if (/^Happy \w+,/.test(rendered)) errors.push('RECIPIENT_TYPE_UNKNOWN_GREETED_WITH_NAME');
+    }
+  }
+
   return { ok: errors.length === 0, errors };
 }
 
@@ -134,12 +148,18 @@ class CanaryPlanBuilder {
         policyVersion: POLICY_VERSION,
       });
 
-      const rendered = this.template ? renderTemplate(this.template, {
+      const contactForGreeting = {
         contactName: normalized.contactName,
+        firstName: ((record.contact || {}).firstName || record.firstName || '').trim(),
+        lastName: ((record.contact || {}).lastName || record.lastName || '').trim(),
+        company: ((record.contact || {}).companyName || record.company || '').trim(),
+      };
+      const classification = classifyRecipient(contactForGreeting);
+      const rendered = renderGreeting(contactForGreeting, {
+        weekday: timezone.currentWeekday || 'Thursday',
         propertyAddress: normalized.propertyAddress,
         senderName: 'Montelli',
-        day: timezone.currentWeekday || '[day]',
-      }) : null;
+      });
 
       const operator = evaluateOpportunity({
         opportunityId: normalized.opportunityId,
@@ -170,6 +190,9 @@ class CanaryPlanBuilder {
         localWeekday: timezone.currentWeekday || null,
         localTime: timezone.currentLocalTime || null,
         renderedMessage: rendered,
+        recipientType: classification.recipientType,
+        recipientConfidence: classification.confidence,
+        recipientEvidence: classification.evidence,
         compliance,
         operatorState: operator.state,
         operatorQueue: operator.queue,
@@ -182,7 +205,9 @@ class CanaryPlanBuilder {
     }
 
     const eligible = candidates.filter(c => c.passed);
-    const selected = rankCandidates(eligible).slice(0, MAX_CANARY);
+    const preferredIds = new Set(options.preferredOpportunityIds || []);
+    const maxItems = options.maxItems || MAX_CANARY;
+    const selected = rankCandidates(eligible, preferredIds).slice(0, maxItems);
     const blocked = candidates.filter(c => !c.passed);
 
     for (const item of selected) {
@@ -200,7 +225,7 @@ class CanaryPlanBuilder {
         throw err;
       }
 
-      const quality = validateTemplateQuality(item.renderedMessage);
+      const quality = validateTemplateQuality(item.renderedMessage, item.recipientType);
       if (!quality.ok) {
         const err = new Error('TEMPLATE_QUALITY_GATE_FAILED');
         err.code = 'TEMPLATE_QUALITY_GATE_FAILED';
@@ -250,6 +275,9 @@ class CanaryPlanBuilder {
         timezoneConfidence: s.timezoneConfidence,
         renderedMessage: s.renderedMessage,
         approvedBodyHash: stableHash(s.renderedMessage),
+        recipientType: s.recipientType,
+        recipientConfidence: s.recipientConfidence,
+        recipientEvidence: s.recipientEvidence,
         localWeekday: s.localWeekday,
         localTime: s.localTime,
         guardEvidence: Object.fromEntries(
@@ -318,10 +346,13 @@ function deriveMissingPropertyFacts(raw = {}) {
   return Object.entries(facts).filter(([, value]) => value == null || value === '').map(([name]) => name);
 }
 
-function rankCandidates(candidates) {
+function rankCandidates(candidates, preferredIds = new Set()) {
   return candidates
     .map((c, i) => ({ ...c, _sourceIndex: i }))
     .sort((a, b) => {
+      const aPref = preferredIds.has(a.opportunityId) ? 0 : 1;
+      const bPref = preferredIds.has(b.opportunityId) ? 0 : 1;
+      if (aPref !== bPref) return aPref - bPref;
       if (a.contactRole !== b.contactRole) {
         const roleOrder = { agent: 1, broker: 2, owner: 3 };
         return (roleOrder[a.contactRole] || 99) - (roleOrder[b.contactRole] || 99);

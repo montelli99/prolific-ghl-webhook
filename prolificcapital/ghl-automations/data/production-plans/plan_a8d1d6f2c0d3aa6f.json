@@ -1,13 +1,13 @@
 {
-  "planId": "plan_17b7777d49012f19",
-  "planHash": "32c656eb07134d7415edb8a866e193abb2460f07c8ca32a6f4d524deee0888a1",
-  "status": "SUPERSEDED",
+  "planId": "plan_a8d1d6f2c0d3aa6f",
+  "planHash": "e10c1999d5e09bea01fabcfe32f28dddd35518476d5366e8b847b1fe8b2aeeeb",
+  "status": "PREVIEW_PENDING_APPROVAL",
   "schema": "canary-plan-v2",
   "policyVersion": "OP-2026-08-02-v1",
   "templateId": "OWNER_APPROVED_PIPELINE_INT",
   "templateVersion": "e5e48e3767cd599364a75194e44917f50e90b088e99a5295cedf2f33d72de8be",
-  "createdAt": "2026-08-06T17:08:19.189Z",
-  "expiresAt": "2026-08-06T17:38:19.189Z",
+  "createdAt": "2026-08-06T18:16:17.289Z",
+  "expiresAt": "2026-08-06T18:46:17.289Z",
   "executable": false,
   "productionEffects": {
     "sends": 0,
@@ -29,9 +29,9 @@
   "runbookId": "runbook_supervised_canary_v2",
   "runbookHash": "9126b05e2c39d2ee6d8fb35ed2ad065a95969badf316c65124b74315ff17b750",
   "runtimeRevision": null,
-  "totalCandidates": 78,
-  "selectedCount": 3,
-  "blockedCount": 5,
+  "totalCandidates": 97,
+  "selectedCount": 2,
+  "blockedCount": 48,
   "items": [
     {
       "number": 1,
@@ -43,10 +43,23 @@
       "phone": "+181***9920",
       "timezone": "America/Chicago",
       "timezoneConfidence": "HIGH_CONFIDENCE_ZIP3",
-      "renderedMessage": "Happy Thursday, Just Say Home KC Team! Are you still accepting offers for 6104 E 136th St, Grandview MO 64030? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
-      "approvedBodyHash": "bbd034b46667acc9d43a6fd69ec2d942a8df7c8e42616a26db49f7a44ee5a30c",
+      "renderedMessage": "Happy Thursday! Is the Just Say Home KC Team still accepting offers for 6104 E 136th St, Grandview MO 64030? My name is Montelli, and I'm looking to purchase it as a rental for my portfolio.",
+      "approvedBodyHash": "2d3ad9e8bf37945f00603b31645ad567f43a10b1eff2a419384eec86f4a7e83d",
+      "recipientType": "TEAM",
+      "recipientConfidence": "HIGH",
+      "recipientEvidence": [
+        {
+          "source": "name_pattern",
+          "pattern": "TEAM_INDICATOR",
+          "matched": "Team"
+        },
+        {
+          "source": "separate_company_field",
+          "company": "Keller Williams Realty Platinum Partners"
+        }
+      ],
       "localWeekday": "Thursday",
-      "localTime": "12:08",
+      "localTime": "13:16",
       "guardEvidence": {
         "DNC": {
           "state": "CLEAR",
@@ -369,10 +382,23 @@
       "phone": "+191***7705",
       "timezone": "America/Chicago",
       "timezoneConfidence": "HIGH_CONFIDENCE_ZIP3",
-      "renderedMessage": "Happy Thursday, KC RESOURCE GROUP! Are you still accepting offers for 42 E 106th St, Kansas City MO 64114? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
-      "approvedBodyHash": "f6586c2820d23754326b6b83f38479059294a1e70db484d6e732852aade3726f",
+      "renderedMessage": "Happy Thursday! Is KC RESOURCE GROUP still accepting offers for 42 E 106th St, Kansas City MO 64114? My name is Montelli, and I'm looking to purchase it as a rental for my portfolio.",
+      "approvedBodyHash": "0ad18cbd6b4c4b9dc8729bc128895338de372ec899dcba2ef4ee59e81f728fda",
+      "recipientType": "COMPANY",
+      "recipientConfidence": "MEDIUM",
+      "recipientEvidence": [
+        {
+          "source": "name_pattern",
+          "pattern": "ORG_INDICATOR",
+          "matched": "KC RESOURCE GROUP"
+        },
+        {
+          "source": "separate_company_field",
+          "company": "Platinum Realty"
+        }
+      ],
       "localWeekday": "Thursday",
-      "localTime": "12:08",
+      "localTime": "13:16",
       "guardEvidence": {
         "DNC": {
           "state": "CLEAR",
@@ -684,339 +710,14 @@
         ],
         "afterCompletion": "Re-read state after the human work is complete."
       }
-    },
-    {
-      "number": 3,
-      "opportunityId": "fOhjNPmLY1rDeIAWXQLG",
-      "contactId": "uK50fisyiqxNMnNyseMl",
-      "propertyAddress": "112 Ivy Ave, Bessemer AL 35023",
-      "contactName": "Steve Parker",
-      "contactRole": "agent",
-      "phone": "+120***5819",
-      "timezone": "America/Chicago",
-      "timezoneConfidence": "HIGH_CONFIDENCE_ZIP3",
-      "renderedMessage": "Happy Thursday, Steve Parker! Are you still accepting offers for 112 Ivy Ave, Bessemer AL 35023? My name is Montelli, I'm looking to purchase this as a rental for my portfolio.",
-      "approvedBodyHash": "de76779dfd3c051ec11f8b755ffeae2b65035c3a046735a2180c8bd4c48bc06b",
-      "localWeekday": "Thursday",
-      "localTime": "12:08",
-      "guardEvidence": {
-        "DNC": {
-          "state": "CLEAR",
-          "sources": [
-            {
-              "source": "GHL_TAGS",
-              "state": "UNKNOWN"
-            },
-            {
-              "source": "JUSTCALL_BLACKLIST",
-              "state": "CLEAR"
-            },
-            {
-              "source": "JUSTCALL_CONTACT_STATUS",
-              "state": "UNKNOWN"
-            },
-            {
-              "source": "LOCAL_REGISTRY",
-              "state": "UNKNOWN"
-            }
-          ]
-        },
-        "STOP_OPT_OUT": {
-          "state": "CLEAR",
-          "sources": [
-            {
-              "source": "GHL_TAGS",
-              "state": "UNKNOWN"
-            },
-            {
-              "source": "JUSTCALL_BLACKLIST",
-              "state": "CLEAR"
-            },
-            {
-              "source": "LOCAL_REGISTRY",
-              "state": "UNKNOWN"
-            }
-          ]
-        },
-        "WRONG_NUMBER": {
-          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
-          "sources": [
-            {
-              "source": "GHL_TAGS",
-              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
-            },
-            {
-              "source": "LOCAL_REGISTRY",
-              "state": "UNKNOWN"
-            }
-          ]
-        },
-        "PENDING_REPLY": {
-          "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT",
-          "sources": [
-            {
-              "source": "GHL_TAGS",
-              "state": "NOT_APPLICABLE_NO_PRIOR_CONTACT"
-            },
-            {
-              "source": "JUSTCALL_HISTORY",
-              "state": "CLEAR"
-            },
-            {
-              "source": "LOCAL_REGISTRY",
-              "state": "UNKNOWN"
-            }
-          ]
-        },
-        "ACTIVE_HUMAN_WORK": {
-          "state": "CLEAR",
-          "sources": [
-            {
-              "source": "GHL_TAGS",
-              "state": "CLEAR"
-            },
-            {
-              "source": "LOCAL_REGISTRY",
-              "state": "UNKNOWN"
-            }
-          ]
-        },
-        "PRIOR_OUTREACH": {
-          "state": "CLEAR",
-          "sources": [
-            {
-              "source": "JUSTCALL_HISTORY",
-              "state": "CLEAR"
-            },
-            {
-              "source": "LOCAL_REGISTRY",
-              "state": "UNKNOWN"
-            }
-          ]
-        },
-        "DUPLICATE_HISTORY": {
-          "state": "CLEAR",
-          "sources": [
-            {
-              "source": "WITHIN_PLAN",
-              "state": "CLEAR"
-            },
-            {
-              "source": "JUSTCALL_HISTORY",
-              "state": "CLEAR"
-            },
-            {
-              "source": "LOCAL_REGISTRY",
-              "state": "UNKNOWN"
-            }
-          ]
-        },
-        "PROVIDER_UNCERTAINTY": {
-          "state": "CLEAR",
-          "sources": [
-            {
-              "source": "JUSTCALL_HISTORY",
-              "state": "CLEAR"
-            },
-            {
-              "source": "LOCAL_REGISTRY",
-              "state": "UNKNOWN"
-            }
-          ]
-        },
-        "CANARY_WINDOW": {
-          "state": "CLEAR",
-          "sources": [
-            {
-              "source": "PROPERTY_TIMEZONE",
-              "state": "CLEAR"
-            }
-          ]
-        }
-      },
-      "operatorState": {
-        "opportunityId": "fOhjNPmLY1rDeIAWXQLG",
-        "contactId": "uK50fisyiqxNMnNyseMl",
-        "property": "112 Ivy Ave, Bessemer AL 35023",
-        "currentStage": "Lead Entered",
-        "currentStageId": "7067148a-2ee8-4e5b-93c8-31e0253fea68",
-        "contactPathStatus": "ESTABLISHED",
-        "contactIdentity": "Steve Parker",
-        "contactRole": "agent",
-        "priorOutboundMessages": 0,
-        "inboundReplies": 0,
-        "deliveryState": "NOT_APPLICABLE",
-        "intStatus": "NOT_SENT",
-        "callAttemptCount": 0,
-        "completedCallStatus": "NOT_COMPLETED",
-        "qualificationChecklistStatus": "NOT_STARTED",
-        "voiceMemoStatus": "NOT_RECORDED",
-        "noaStatus": "NOT_SENT",
-        "notesStatus": "NOT_PREPARED",
-        "cccStatus": "NOT_SENT",
-        "contactCardStatus": "NOT_SENT",
-        "missingPropertyFacts": [
-          "askingPrice",
-          "occupancy",
-          "condition",
-          "rent",
-          "roof",
-          "hvac"
-        ],
-        "compStatus": "NOT_STARTED",
-        "arvStatus": "NOT_STARTED",
-        "offerStatus": "NOT_STARTED",
-        "kaylaHandoffStatus": "NOT_STARTED",
-        "activeHumanWork": true,
-        "complianceStatus": "CLEAR",
-        "followUpDue": false,
-        "nextDueAction": {
-          "actionId": "action_7e195f6d093797c5",
-          "actionType": "WAIT_FOR_HUMAN_WORK",
-          "exactNextAction": "Do not overlap active human work.",
-          "whyDue": "Do not overlap active human work.",
-          "courseRule": {
-            "id": "COURSE_GUIDED_NEXT_ACTION",
-            "text": "After each completion, recalculate and display the next required action.",
-            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
-            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
-          },
-          "preparedArtifact": {
-            "type": "CHECKLIST",
-            "content": "Do not overlap active human work."
-          },
-          "behaviorLevel": "MANUAL_ASSISTED",
-          "approvalRequirement": "NONE",
-          "approvalScope": {
-            "atomic": true,
-            "scopeHash": "7e195f6d093797c53bf080509eeb359deeb7f0b31ef5c579e2b6f93038bd2e70",
-            "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
-            "doesNotAuthorize": [
-              "CALL",
-              "SECOND_SEND",
-              "CCC",
-              "CONTACT_CARD",
-              "GHL_NOTES",
-              "STAGE_MOVEMENT",
-              "FOLLOW_UP",
-              "OFFER",
-              "HANDOFF"
-            ]
-          },
-          "remainsBlocked": [
-            "ALL_OUTREACH",
-            "STAGE_MOVEMENT"
-          ],
-          "afterCompletion": "Re-read state after the human work is complete."
-        },
-        "blockedActions": [
-          "ALL_OUTREACH",
-          "STAGE_MOVEMENT"
-        ],
-        "courseProvenance": [
-          {
-            "id": "CONTACT_PATH_FIRST",
-            "text": "Establish a verified contact path before preparing INT.",
-            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
-            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
-          },
-          {
-            "id": "INT_BEFORE_CALL",
-            "text": "Send INT before either call attempt.",
-            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
-            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
-          },
-          {
-            "id": "TWO_CALLS_BEFORE_NOA",
-            "text": "Complete two unanswered call attempts before voice memo and NOA.",
-            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
-            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
-          },
-          {
-            "id": "ANSWERED_CALL_QUALIFICATION",
-            "text": "An answered call opens the qualification checklist and notes preparation.",
-            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
-            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
-          },
-          {
-            "id": "CCC_AFTER_COMPLETED_CALL",
-            "text": "Prepare CCC and the Montelli contact card after a completed call.",
-            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
-            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
-          },
-          {
-            "id": "CONTACT_MADE_CRITERIA",
-            "text": "Evaluate Contact Made only after call facts, notes, CCC, and contact card requirements are satisfied.",
-            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
-            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
-          },
-          {
-            "id": "NOA_AFTER_TWO_CALLS",
-            "text": "After two unanswered calls, complete the voice memo and prepare NOA while retaining the correct stage.",
-            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
-            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
-          },
-          {
-            "id": "OWNER_APPROVAL_ATOMIC",
-            "text": "Approval authorizes only the exact prepared action shown.",
-            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
-            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
-          },
-          {
-            "id": "COURSE_GUIDED_NEXT_ACTION",
-            "text": "After each completion, recalculate and display the next required action.",
-            "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
-            "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
-          }
-        ]
-      },
-      "operatorQueue": "ACTIVE_HUMAN_WORK",
-      "preparedAction": {
-        "actionId": "action_7e195f6d093797c5",
-        "actionType": "WAIT_FOR_HUMAN_WORK",
-        "exactNextAction": "Do not overlap active human work.",
-        "whyDue": "Do not overlap active human work.",
-        "courseRule": {
-          "id": "COURSE_GUIDED_NEXT_ACTION",
-          "text": "After each completion, recalculate and display the next required action.",
-          "source": "docs/KAYLA_CANONICAL_OPERATING_SYSTEM.md",
-          "corroboration": "docs/atlas-kayla-course-parity-spec.md#course-rules"
-        },
-        "preparedArtifact": {
-          "type": "CHECKLIST",
-          "content": "Do not overlap active human work."
-        },
-        "behaviorLevel": "MANUAL_ASSISTED",
-        "approvalRequirement": "NONE",
-        "approvalScope": {
-          "atomic": true,
-          "scopeHash": "7e195f6d093797c53bf080509eeb359deeb7f0b31ef5c579e2b6f93038bd2e70",
-          "authorizesOnly": "WAIT_FOR_HUMAN_WORK",
-          "doesNotAuthorize": [
-            "CALL",
-            "SECOND_SEND",
-            "CCC",
-            "CONTACT_CARD",
-            "GHL_NOTES",
-            "STAGE_MOVEMENT",
-            "FOLLOW_UP",
-            "OFFER",
-            "HANDOFF"
-          ]
-        },
-        "remainsBlocked": [
-          "ALL_OUTREACH",
-          "STAGE_MOVEMENT"
-        ],
-        "afterCompletion": "Re-read state after the human work is complete."
-      }
     }
   ],
   "blockerDistribution": {
-    "CANARY_WINDOW": 5
+    "CANARY_WINDOW": 5,
+    "DUPLICATE_HISTORY": 43
   },
   "sourceSnapshot": {
-    "hydrationTimestamp": "2026-08-06T17:08:52.851Z",
+    "hydrationTimestamp": "2026-08-06T18:16:48.752Z",
     "pipelineId": "nSf3NXYVkt8X4PgW9aZ3",
     "locationId": "61XPzSqRy7UKMwW9DeB8",
     "justcallBlacklistComplete": true,
@@ -1024,7 +725,5 @@
     "justcallTotalCount": 35,
     "justcallFetchedCount": 30
   },
-  "warnings": [],
-  "supersededAt": "2026-08-06T17:14:48.698Z",
-  "supersededReason": "SUPERSEDED_RECIPIENT_TYPE_TEMPLATE_CHANGE"
+  "warnings": []
 }

@@ -40,6 +40,8 @@ async function main() {
       topicId: 389,
       runbookId: 'runbook_supervised_canary_v2',
       runbookHash: '9126b05e2c39d2ee6d8fb35ed2ad065a95969badf316c65124b74315ff17b750',
+      preferredOpportunityIds: ['u55xfxyQmNrt8n0NNphS', 'cl4dSDHuMe770NhUQT0c'],
+      maxItems: 2,
     });
 
     console.log('Plan ID:', plan.planId);
@@ -53,6 +55,9 @@ async function main() {
       return {
         name: i.contactName,
         address: i.propertyAddress,
+        recipientType: i.recipientType,
+        recipientConfidence: i.recipientConfidence,
+        message: i.renderedMessage,
         tz: i.timezone,
         weekday: i.localWeekday,
         time: i.localTime,
