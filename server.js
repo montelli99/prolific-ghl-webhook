@@ -248,6 +248,7 @@ const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID || '';
 const GHL_PIPELINE_ID = process.env.GHL_PIPELINE_ID || 'nSf3NXYVkt8X4PgW9aZ3';
 const MONTELLI_USER = process.env.GHL_MONTELLI_USER_ID || 'PGfXxlXCRXs3hXN3Gq7R';
 const FORBIDDEN_PIPELINE_ID = 'ygQaJ2hi7ouJeA5HR7uu';
+const PPC_PIPELINE_ID = 'o4hvfO7adOQlLdtqPNIn';
 
 if (!GHL_PIPELINE_ID) {
   throw new Error('Refusing to start without GHL_PIPELINE_ID');
@@ -405,6 +406,60 @@ app.post('/webhook/ghl', async (req, res) => {
   }
 });
 
+// ── PPC Auto-Assignment ──
+// When Montelli calls or texts a lead, find their PPC opportunity and assign it to him
+async function autoAssignPpcLead(phoneNumber) {
+  if (!phoneNumber) return { action: 'skipped', reason: 'no phone number' };
+  
+  // Normalize phone to E.164
+  const digits = phoneNumber.replace(/\D/g, '');
+  const normalized = digits.length === 10 ? `+1${digits}` : digits.length === 11 && digits.startsWith('1') ? `+${digits}` : `+${digits}`;
+  
+  try {
+    // Search for contacts with this phone
+    const searchRes = await ghlRequest('GET', `/contacts/search?locationId=${GHL_LOCATION_ID}&query=${encodeURIComponent(normalized)}`);
+    const contacts = searchRes?.contacts || [];
+    
+    if (contacts.length === 0) {
+      return { action: 'skipped', reason: 'no contact found for phone', phone: normalized };
+    }
+    
+    // For each matching contact, find PPC pipeline opportunities
+    for (const contact of contacts) {
+      const contactId = contact.id;
+      
+      // Search for opportunities in PPC pipeline for this contact
+      const oppRes = await ghlRequest('GET', `/opportunities/search?location_id=${GHL_LOCATION_ID}&pipeline_id=${PPC_PIPELINE_ID}&contact_id=${contactId}&limit=10`);
+      const opportunities = oppRes?.opportunities || [];
+      
+      for (const opp of opportunities) {
+        // Only assign if not already assigned to Montelli
+        if (opp.assignedTo !== MONTELLI_USER) {
+          await ghlRequest('PUT', `/opportunities/${opp.id}?locationId=${GHL_LOCATION_ID}`, {
+            assignedTo: MONTELLI_USER,
+            pipelineStageId: opp.pipelineStageId // keep current stage
+          });
+          console.log(`[Atlas PPC] Assigned ${opp.name} (${opp.id}) to Montelli`);
+          
+          // Add a note
+          await ghlRequest('POST', `/contacts/${contactId}/notes`, {
+            body: `=== PPC LEAD ASSIGNED ===\n${new Date().toISOString()}\nLead auto-assigned to Montelli after phone contact.\nOpportunity: ${opp.name}\nPhone: ${normalized}`
+          });
+        }
+      }
+      
+      if (opportunities.length > 0) {
+        return { action: 'assigned', contactId, opportunitiesAssigned: opportunities.length, phone: normalized };
+      }
+    }
+    
+    return { action: 'skipped', reason: 'no PPC opportunities found for contact', phone: normalized };
+  } catch (e) {
+    console.error(`[Atlas PPC] Auto-assignment error: ${e.message}`);
+    return { action: 'error', reason: e.message, phone: normalized };
+  }
+}
+
 // ── JustCall Webhook ──
 const seenJcEvents = new Set();
 function dedupeJc(key) {
@@ -434,6 +489,15 @@ app.post('/webhook/justcall', async (req, res) => {
       // Log to GHL contact timeline with FULL details
       const callData = payload.data || {};
       const contactId = callData.contact_id || callData.ghl_contact_id;
+      
+      // PPC auto-assignment: check if caller is a PPC lead
+      const callerNumber = callData.from_number || callData.to_number || callData.contact_number;
+      if (callerNumber) {
+        autoAssignPpcLead(callerNumber).then(result => {
+          console.log(`[Atlas PPC] Call auto-assignment: ${JSON.stringify(result)}`);
+        }).catch(e => console.error(`[Atlas PPC] Call auto-assignment failed: ${e.message}`));
+      }
+      
       if (contactId) {
         const noteBody = `=== CALL COMPLETED ===\n${new Date().toISOString()}\nCall ID: ${callData.id}\nFrom: ${callData.from_number || 'unknown'}\nTo: ${callData.to_number || 'unknown'}\nDirection: ${callData.direction || 'unknown'}\nDuration: ${callData.duration || 'unknown'}s\nDisposition: ${callData.disposition || 'unknown'}\nRecording: ${callData.recording_url || 'N/A'}\nVoicemail: ${callData.voicemail_url || 'N/A'}\nNotes: ${callData.notes || 'N/A'}`;
         try {
@@ -448,6 +512,15 @@ app.post('/webhook/justcall', async (req, res) => {
     if (type === 'sms.received' || type === 'text.received') {
       const smsData = payload.data || {};
       const contactId = smsData.contact_id || smsData.ghl_contact_id;
+      
+      // PPC auto-assignment: check if sender is a PPC lead
+      const senderNumber = smsData.from_number || smsData.contact_number;
+      if (senderNumber) {
+        autoAssignPpcLead(senderNumber).then(result => {
+          console.log(`[Atlas PPC] SMS auto-assignment: ${JSON.stringify(result)}`);
+        }).catch(e => console.error(`[Atlas PPC] SMS auto-assignment failed: ${e.message}`));
+      }
+      
       if (contactId) {
         const noteBody = `=== SMS RECEIVED ===\n${new Date().toISOString()}\nFrom: ${smsData.from_number || 'unknown'}\nBody: ${(smsData.body || '').slice(0, 200)}`;
         try {
@@ -455,6 +528,29 @@ app.post('/webhook/justcall', async (req, res) => {
           console.log(`[Atlas JustCall] SMS logged to contact ${contactId}`);
         } catch (e) {
           console.error(`[Atlas JustCall] Failed to log SMS: ${e.message}`);
+        }
+      }
+    }
+
+    if (type === 'sms.sent' || type === 'text.sent') {
+      const smsData = payload.data || {};
+      const contactId = smsData.contact_id || smsData.ghl_contact_id;
+      
+      // PPC auto-assignment: when Montelli sends a text, assign the lead
+      const recipientNumber = smsData.to_number || smsData.contact_number;
+      if (recipientNumber) {
+        autoAssignPpcLead(recipientNumber).then(result => {
+          console.log(`[Atlas PPC] Outbound SMS auto-assignment: ${JSON.stringify(result)}`);
+        }).catch(e => console.error(`[Atlas PPC] Outbound SMS auto-assignment failed: ${e.message}`));
+      }
+      
+      if (contactId) {
+        const noteBody = `=== SMS SENT ===\n${new Date().toISOString()}\nTo: ${smsData.to_number || 'unknown'}\nBody: ${(smsData.body || '').slice(0, 200)}`;
+        try {
+          await ghlRequest('POST', `/contacts/${contactId}/notes`, { body: noteBody });
+          console.log(`[Atlas JustCall] Outbound SMS logged to contact ${contactId}`);
+        } catch (e) {
+          console.error(`[Atlas JustCall] Failed to log outbound SMS: ${e.message}`);
         }
       }
     }
