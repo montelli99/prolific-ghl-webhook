@@ -37,7 +37,159 @@ const RUNBOOK_ID = 'runbook_supervised_canary_v2';
 const RUNBOOK_CANONICAL_HASH = '9126b05e2c39d2ee6d8fb35ed2ad065a95969badf316c65124b74315ff17b750';
 const SECRETS_ENV_PATH = 'C:/Users/mscott/AI_Workspace/prolificcapital/secrets/.env';
 
+const PPC_PROFILE_ID = 'PPC_EWA_BEACH';
+const PPC_LOCATION_ID = 'GDq92uruRngbi9mLGGrV';
+const PPC_PIPELINE_ID = 'ril84XHGQleRgE0W0FKU';
+const PPC_CREDENTIAL_REF = 'PPC_GHL_API_KEY';
+const PPC_STAGE_AUTHORITY_PATH = 'C:/Users/mscott/AI_Workspace/prolificcapital/ghl-automations/profiles/ppc-ewa-beach/stage-authority.json';
+
+const VALID_PROFILES = Object.freeze({
+  ATLAS_OUTBOUND: { profileId: 'ATLAS_OUTBOUND', locationId: LOCATION_ID, pipelineId: PIPELINE_ID, credentialRef: 'GHL_API_TOKEN' },
+  PPC_EWA_BEACH: { profileId: PPC_PROFILE_ID, locationId: PPC_LOCATION_ID, pipelineId: PPC_PIPELINE_ID, credentialRef: PPC_CREDENTIAL_REF },
+});
+
 const ZERO_EFFECTS = Object.freeze({ providerSends: 0, ghlWrites: 0, stageMovements: 0 });
+
+// ---- Profile-aware routing ----
+
+function resolvePipelineContext(profileId) {
+  if (!profileId || typeof profileId !== 'string') {
+    return { resolved: false, reason: 'PIPELINE_PROFILE_SELECTION_REQUIRED' };
+  }
+  const normalized = String(profileId).trim().toUpperCase();
+  const profile = VALID_PROFILES[normalized];
+  if (!profile) {
+    return { resolved: false, reason: `UNKNOWN_PROFILE: ${profileId}`, validProfiles: Object.keys(VALID_PROFILES) };
+  }
+  return {
+    resolved: true,
+    profileId: profile.profileId,
+    locationId: profile.locationId,
+    pipelineId: profile.pipelineId,
+    credentialRef: profile.credentialRef,
+  };
+}
+
+function resolveProfileFromOpportunity(opportunityId, auth) {
+  if (!opportunityId) return { resolved: false, reason: 'OPPORTUNITY_ID_REQUIRED' };
+  const a = authorize(auth);
+  if (!a.authorized) return { resolved: false, reason: a.reason };
+  const token = getGhlToken('ATLAS_OUTBOUND');
+  const ppcToken = getGhlToken('PPC_EWA_BEACH');
+  if (!token && !ppcToken) return { resolved: false, reason: 'NO_GHL_CREDENTIALS' };
+
+  const results = [];
+  if (token) {
+    try {
+      const opp = ghlGetSync(token, `/opportunities/${opportunityId}`);
+      if (opp && opp.id) {
+        const locId = opp.locationId || '';
+        const pipeId = opp.pipelineId || '';
+        for (const [key, profile] of Object.entries(VALID_PROFILES)) {
+          if (profile.locationId === locId && profile.pipelineId === pipeId) {
+            return { resolved: true, profileId: profile.profileId, locationId: locId, pipelineId: pipeId, credentialRef: profile.credentialRef, opportunity: opp };
+          }
+        }
+        results.push({ locationId: locId, pipelineId: pipeId });
+      }
+    } catch (_) {}
+  }
+  if (ppcToken && token !== ppcToken) {
+    try {
+      const opp = ghlGetSync(ppcToken, `/opportunities/${opportunityId}`);
+      if (opp && opp.id) {
+        const locId = opp.locationId || '';
+        const pipeId = opp.pipelineId || '';
+        for (const [key, profile] of Object.entries(VALID_PROFILES)) {
+          if (profile.locationId === locId && profile.pipelineId === pipeId) {
+            return { resolved: true, profileId: profile.profileId, locationId: locId, pipelineId: pipeId, credentialRef: profile.credentialRef, opportunity: opp };
+          }
+        }
+        results.push({ locationId: locId, pipelineId: pipeId });
+      }
+    } catch (_) {}
+  }
+  return { resolved: false, reason: 'OPPORTUNITY_NOT_FOUND_OR_CROSS_PROFILE', searched: results };
+}
+
+// ---- GHL HTTP helpers (sync for bridge use) ----
+
+function getGhlToken(profileId) {
+  const profile = VALID_PROFILES[profileId];
+  if (!profile) return null;
+  return process.env[profile.credentialRef] || null;
+}
+
+function ghlGetSync(token, pathname) {
+  const https = require('https');
+  const result = { status: 0, body: null };
+  const req = https.request({
+    hostname: 'services.leadconnectorhq.com', path: pathname, method: 'GET',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Version: '2021-07-28' },
+    timeout: 15000,
+  }, (res) => {
+    let data = '';
+    res.on('data', (c) => { data += c; });
+    res.on('end', () => {
+      try { result.status = res.statusCode; result.body = JSON.parse(data); }
+      catch (_) { result.status = res.statusCode; result.body = data; }
+    });
+  });
+  req.on('error', () => { result.status = 0; result.body = null; });
+  req.on('timeout', () => { req.destroy(); result.status = 0; result.body = null; });
+  req.end();
+  return result.body;
+}
+
+function ghlPatchSync(token, pathname, body) {
+  const https = require('https');
+  const payload = JSON.stringify(body);
+  const result = { status: 0, body: null };
+  const req = https.request({
+    hostname: 'services.leadconnectorhq.com', path: pathname, method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Version: '2021-07-28' },
+    timeout: 15000,
+  }, (res) => {
+    let data = '';
+    res.on('data', (c) => { data += c; });
+    res.on('end', () => {
+      try { result.status = res.statusCode; result.body = JSON.parse(data); }
+      catch (_) { result.status = res.statusCode; result.body = data; }
+    });
+  });
+  req.on('error', () => { result.status = 0; result.body = null; });
+  req.on('timeout', () => { req.destroy(); result.status = 0; result.body = null; });
+  req.write(payload);
+  req.end();
+  return result;
+}
+
+// ---- PPC Stage Authority ----
+
+let _ppcStageAuthority = null;
+function loadPpcStageAuthority() {
+  if (_ppcStageAuthority) return _ppcStageAuthority;
+  try {
+    const fs = require('fs');
+    _ppcStageAuthority = JSON.parse(fs.readFileSync(PPC_STAGE_AUTHORITY_PATH, 'utf8'));
+  } catch (_) {
+    _ppcStageAuthority = { stages: [], totalStages: 0 };
+  }
+  return _ppcStageAuthority;
+}
+
+function resolvePpcStage(target) {
+  const authority = loadPpcStageAuthority();
+  const stages = authority.stages || [];
+  if (!target) return { resolved: false, reason: 'TARGET_STAGE_REQUIRED' };
+  const byId = stages.find((s) => s.stageId === String(target));
+  if (byId) return { resolved: true, stage: byId };
+  const byName = stages.find((s) => s.name.toLowerCase() === String(target).toLowerCase());
+  if (byName) return { resolved: true, stage: byName };
+  const byPosition = stages.find((s) => String(s.position) === String(target));
+  if (byPosition) return { resolved: true, stage: byPosition };
+  return { resolved: false, reason: 'PPC_STAGE_NOT_FOUND', target, availableStages: stages.map((s) => ({ position: s.position, stageId: s.stageId, name: s.name })) };
+}
 
 // Authoritative module singletons. `_setDeps` is a test-only seam that lets the
 // pre-restart harness substitute hermetic stubs; production always uses these.
@@ -509,11 +661,202 @@ function getSessionStatus(auth) {
   };
 }
 
+// ---- PPC Read-Only Tools ----
+
+function pipelineReadOpportunity(profileId, opportunityId, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  const ctx = resolvePipelineContext(profileId);
+  if (!ctx.resolved) return blocked(ctx.reason);
+  const token = getGhlToken(ctx.profileId);
+  if (!token) return blocked('NO_GHL_CREDENTIALS');
+  const opp = ghlGetSync(token, `/opportunities/${opportunityId}`);
+  if (!opp || !opp.id) return blocked('OPPORTUNITY_NOT_FOUND');
+  if (opp.locationId !== ctx.locationId || opp.pipelineId !== ctx.pipelineId) {
+    return blocked('CROSS_PROFILE_OPPORTUNITY');
+  }
+  const stageId = opp.pipelineStageId || '';
+  let stageName = null;
+  if (ctx.profileId === 'PPC_EWA_BEACH') {
+    const authority = loadPpcStageAuthority();
+    const stage = (authority.stages || []).find((s) => s.stageId === stageId);
+    if (stage) stageName = stage.name;
+  }
+  return {
+    status: 'OK',
+    profileId: ctx.profileId,
+    locationId: ctx.locationId,
+    pipelineId: ctx.pipelineId,
+    opportunityId: opp.id,
+    contactId: opp.contactId || opp.contact_id || null,
+    currentStageId: stageId,
+    currentStageName: stageName || null,
+    opportunityName: opp.name || null,
+    opportunityStatus: opp.status || null,
+    monetaryValue: opp.monetaryValue ?? opp.monetary_value ?? null,
+    assignedTo: opp.assignedTo || null,
+    effects: { ...ZERO_EFFECTS },
+  };
+}
+
+function pipelineSearchOpportunities(profileId, query, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  const ctx = resolvePipelineContext(profileId);
+  if (!ctx.resolved) return blocked(ctx.reason);
+  const token = getGhlToken(ctx.profileId);
+  if (!token) return blocked('NO_GHL_CREDENTIALS');
+  const q = query || {};
+  let path = `/opportunities/search?location_id=${encodeURIComponent(ctx.locationId)}&pipeline_id=${encodeURIComponent(ctx.pipelineId)}&limit=50`;
+  if (q.stageId) path += `&pipeline_stage_id=${encodeURIComponent(q.stageId)}`;
+  if (q.contactId) path += `&contact_id=${encodeURIComponent(q.contactId)}`;
+  if (q.query) path += `&q=${encodeURIComponent(q.query)}`;
+  const res = ghlGetSync(token, path);
+  if (!res || !res.opportunities) return blocked('SEARCH_FAILED');
+  const items = (res.opportunities || []).map((opp) => {
+    const stageId = opp.pipelineStageId || opp.pipeline_stage_id || '';
+    let stageName = null;
+    if (ctx.profileId === 'PPC_EWA_BEACH') {
+      const authority = loadPpcStageAuthority();
+      const stage = (authority.stages || []).find((s) => s.stageId === stageId);
+      if (stage) stageName = stage.name;
+    }
+    return {
+      opportunityId: opp.id,
+      contactId: opp.contactId || opp.contact_id || null,
+      currentStageId: stageId,
+      currentStageName: stageName || null,
+      opportunityName: opp.name || null,
+      opportunityStatus: opp.status || null,
+    };
+  });
+  return {
+    status: 'OK',
+    profileId: ctx.profileId,
+    locationId: ctx.locationId,
+    pipelineId: ctx.pipelineId,
+    count: items.length,
+    total: res.total || items.length,
+    items,
+    effects: { ...ZERO_EFFECTS },
+  };
+}
+
+function pipelineListStages(profileId, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  const ctx = resolvePipelineContext(profileId);
+  if (!ctx.resolved) return blocked(ctx.reason);
+  if (ctx.profileId !== 'PPC_EWA_BEACH') {
+    return blocked('PPC_STAGE_LIST_ONLY_AVAILABLE_FOR_PPC');
+  }
+  const authority = loadPpcStageAuthority();
+  const stages = (authority.stages || []).map((s) => ({
+    position: s.position,
+    stageId: s.stageId,
+    name: s.name,
+    semanticCategory: s.semanticCategory,
+    terminal: s.terminal,
+    outreachEligibility: s.outreachEligibility,
+  }));
+  return {
+    status: 'OK',
+    profileId: ctx.profileId,
+    pipelineId: ctx.pipelineId,
+    pipelineName: authority.pipelineName || 'Inbound PPC',
+    totalStages: authority.totalStages,
+    populatedStages: authority.populatedStages,
+    stages,
+    effects: { ...ZERO_EFFECTS },
+  };
+}
+
+// ---- PPC Owner-Directed Stage Move ----
+
+function pipelineMoveStage(profileId, opportunityId, targetStage, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  const ctx = resolvePipelineContext(profileId);
+  if (!ctx.resolved) return blocked(ctx.reason);
+  if (ctx.profileId !== 'PPC_EWA_BEACH') {
+    return blocked('STAGE_MOVE_ONLY_SUPPORTED_FOR_PPC');
+  }
+  const token = getGhlToken(ctx.profileId);
+  if (!token) return blocked('NO_GHL_CREDENTIALS');
+
+  const opp = ghlGetSync(token, `/opportunities/${opportunityId}`);
+  if (!opp || !opp.id) return blocked('OPPORTUNITY_NOT_FOUND');
+  if (opp.locationId !== ctx.locationId || opp.pipelineId !== ctx.pipelineId) {
+    return blocked('CROSS_PROFILE_OPPORTUNITY');
+  }
+
+  const oldStageId = opp.pipelineStageId || '';
+  const stageRes = resolvePpcStage(targetStage);
+  if (!stageRes.resolved) return blocked(stageRes.reason);
+  const targetStageId = stageRes.stage.stageId;
+  if (targetStageId === oldStageId) {
+    return { status: 'NO_OP', reason: 'ALREADY_AT_TARGET_STAGE', opportunityId, currentStageId: oldStageId, targetStageId, effects: { ...ZERO_EFFECTS } };
+  }
+
+  const beforeSnapshot = {
+    opportunityId: opp.id,
+    contactId: opp.contactId || opp.contact_id || null,
+    name: opp.name || null,
+    status: opp.status || null,
+    monetaryValue: opp.monetaryValue ?? opp.monetary_value ?? null,
+    assignedTo: opp.assignedTo || null,
+    oldStageId,
+  };
+
+  const patchResult = ghlPatchSync(token, `/opportunities/${opportunityId}`, { pipelineStageId: targetStageId });
+  if (patchResult.status < 200 || patchResult.status >= 300) {
+    return { status: 'WRITE_UNCERTAIN_NO_RETRY', reason: `GHL_PATCH_FAILED: ${patchResult.status}`, opportunityId, oldStageId, targetStageId, effects: { ...ZERO_EFFECTS } };
+  }
+
+  const readback = ghlGetSync(token, `/opportunities/${opportunityId}`);
+  if (!readback || !readback.id) {
+    return { status: 'WRITE_UNCERTAIN_NO_RETRY', reason: 'READBACK_FAILED', opportunityId, oldStageId, targetStageId, effects: { ...ZERO_EFFECTS } };
+  }
+
+  const newStageId = readback.pipelineStageId || '';
+  const sideEffects = {
+    contactIdChanged: (readback.contactId || readback.contact_id || null) !== beforeSnapshot.contactId,
+    nameChanged: (readback.name || null) !== beforeSnapshot.name,
+    statusChanged: (readback.status || null) !== beforeSnapshot.status,
+    monetaryValueChanged: (readback.monetaryValue ?? readback.monetary_value ?? null) !== beforeSnapshot.monetaryValue,
+    assignedToChanged: (readback.assignedTo || null) !== beforeSnapshot.assignedTo,
+  };
+  const hasSideEffects = Object.values(sideEffects).some(Boolean);
+
+  let newStageName = null;
+  if (ctx.profileId === 'PPC_EWA_BEACH') {
+    const authority = loadPpcStageAuthority();
+    const stage = (authority.stages || []).find((s) => s.stageId === newStageId);
+    if (stage) newStageName = stage.name;
+  }
+
+  return {
+    status: hasSideEffects ? 'STAGE_MOVED_WITH_UNEXPECTED_SIDE_EFFECTS' : 'STAGE_MOVED',
+    profileId: ctx.profileId,
+    opportunityId,
+    oldStageId: beforeSnapshot.oldStageId,
+    newStageId,
+    newStageName: newStageName || null,
+    targetStageId,
+    stageMatch: newStageId === targetStageId,
+    sideEffects,
+    effects: { providerSends: 0, ghlWrites: 1, stageMovements: 1 },
+  };
+}
+
 module.exports = {
   PIPELINE_LIVE_MODE,
   OWNER_ID,
   CHAT_ID,
   TOPIC_ID,
+  VALID_PROFILES,
+  resolvePipelineContext,
+  resolveProfileFromOpportunity,
   authorize,
   _setDeps,
   getPipelineCurrentState,
@@ -534,4 +877,10 @@ module.exports = {
   executeCanary,
   getCanaryReconciliation,
   getSessionStatus,
+  pipelineReadOpportunity,
+  pipelineSearchOpportunities,
+  pipelineListStages,
+  pipelineMoveStage,
+  loadPpcStageAuthority,
+  resolvePpcStage,
 };
