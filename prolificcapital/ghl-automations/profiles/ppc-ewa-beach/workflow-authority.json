@@ -1,0 +1,25 @@
+{
+  "profileId": "PPC_EWA_BEACH",
+  "pipelineId": "ril84XHGQleRgE0W0FKU",
+  "locationId": "GDq92uruRngbi9mLGGrV",
+  "lastVerified": "2026-08-11T20:00:00Z",
+  "workflows": [
+    {
+      "workflowId": "2ec93aed-c25d-4734-97c2-186f5ad31a81",
+      "name": "PPC Intake (inferred from API probe)",
+      "trigger": "LEAD_ENTERED_STAGE_1",
+      "knownActions": ["STAGE_ENTRY_RECORDED"],
+      "affectedStages": ["d31c50be-0148-4769-b3bd-cf32c2a16bff"],
+      "intakeRole": "PRIMARY_INTAKE",
+      "outreachRole": "NONE",
+      "confidence": "MEDIUM",
+      "unknowns": ["form_id", "funnel_id", "ad_source", "consent_checkbox", "sms_disclosure_text", "terms_url", "privacy_url"]
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-08-11T20:00:00Z",
+    "source": "GHL API probe + workflow ID from prior certification",
+    "verifiedBy": "PPC_CERTIFICATION",
+    "immutable": false
+  }
+}
