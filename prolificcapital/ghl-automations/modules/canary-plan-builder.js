@@ -14,6 +14,7 @@ const { PlanStore } = require('./plan-store');
 const { evaluateOpportunity } = require('./course-guided-action-engine');
 const { renderGreeting } = require('./greeting-renderer');
 const { classifyRecipient, RECIPIENT_TYPES } = require('./recipient-classifier');
+const { resolveProfile } = require('./account-profile-resolver');
 
 const POLICY_VERSION = 'OP-2026-08-02-v1';
 const TEMPLATE_ID = 'OWNER_APPROVED_PIPELINE_INT';
@@ -54,9 +55,11 @@ function stableHash(value) {
 
 class CanaryPlanBuilder {
   constructor(config = {}) {
-    this.ghlToken = config.ghlToken || process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '';
-    this.locationId = config.locationId || process.env.GHL_LOCATION_ID || '61XPzSqRy7UKMwW9DeB8';
-    this.pipelineId = config.pipelineId || 'nSf3NXYVkt8X4PgW9aZ3';
+    const profile = config.profileId ? resolveProfile(config.profileId) : resolveProfile('ATLAS_OUTBOUND');
+    this.profileId = profile.profileId;
+    this.ghlToken = config.ghlToken || process.env[profile.credentialRef] || '';
+    this.locationId = config.locationId || profile.locationId;
+    this.pipelineId = config.pipelineId || profile.pipelineId;
     this.suppression = config.suppression || new JustCallSuppressionReadService();
     this.history = config.history || new JustCallTextHistoryReadService({ senderSuffix: SELECTED_SENDER_SUFFIX });
     this.localRegistry = config.localRegistry || new LocalSuppressionRegistry();
@@ -89,11 +92,14 @@ class CanaryPlanBuilder {
       globalTexts = await this.history.fetchAllTexts({ perPage: 5, maxPages: 20 });
     }
 
+    const excludeIds = new Set(options.excludeOpportunityIds || []);
+
     const candidates = [];
     for (const record of production) {
       const normalized = normalizeOpportunity(record);
       if (!normalized.phone || !normalized.contactName || !normalized.propertyAddress) continue;
       if (normalized.currentStageId !== '7067148a-2ee8-4e5b-93c8-31e0253fea68') continue;
+      if (excludeIds.has(normalized.opportunityId)) continue;
 
       const timezone = derivePropertyTimezone(normalized, { now });
       if (!timezone.ok) continue;
@@ -173,7 +179,7 @@ class CanaryPlanBuilder {
         priorOutboundMessages: jcHistory?.outboundHistory === 'PRIOR_SEND_FOUND' ? 1 : 0,
         inboundReplies: jcHistory?.pendingReply === 'INBOUND_REPLY_REQUIRES_HUMAN' ? 1 : 0,
         deliveryState: jcHistory?.deliveryState || 'NOT_SENT',
-        activeHumanWork: localLookup.ACTIVE_HUMAN_WORK !== 'CLEAR',
+        activeHumanWork: localLookup.ACTIVE_HUMAN_WORK === 'BLOCKED',
         complianceStatus: compliance.passed ? 'CLEAR' : 'BLOCKED',
         missingPropertyFacts: deriveMissingPropertyFacts(normalized.raw),
       }, { renderedInt: rendered, day: timezone.currentWeekday || '[day]' });

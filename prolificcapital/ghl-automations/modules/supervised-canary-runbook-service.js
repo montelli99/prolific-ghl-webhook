@@ -13,6 +13,13 @@ const { SELECTED_SENDER_SUFFIX } = require('./kayla-course-spec');
 const { evaluateCanaryWindow } = require('./atlas-ghl-telegram-live-guards');
 const killSwitch = require('../bot/kill-switch');
 const { verifyRunbookHash, computeRunbookHash } = require('./runbook-hash');
+const { resolveProfile } = require('./account-profile-resolver');
+const {
+  QUEUE_NAMES,
+  buildOperatorQueues,
+  applyCompletion,
+  parseOperatorCommand,
+} = require('./course-guided-action-engine');
 
 const RUNBOOK_PATH = path.resolve(__dirname, '..', 'data', 'runtime', 'supervised-canary-runbook-v2.json');
 const RUNBOOK_ID = 'runbook_supervised_canary_v2';
@@ -59,6 +66,7 @@ const APPROVAL_PATTERNS = [
   /send\s+all\s+three/i,
   /send\s+items?\s+(\d+(?:\s*(?:,|and)\s*\d+)*)/i,
   /approve\s+(number\s+)?(\d+)\s+only/i,
+  /send\s+(number\s+)?(\d+)\s+only/i,
   /send\s+the\s+three\s+shown/i,
   /i\s+approve\s+items?\s+(\d+(?:\s*(?:,|and)\s*\d+)*)/i,
   /approve\s+all/i,
@@ -74,6 +82,7 @@ class SupervisedCanaryRunbookService {
     this.runbookPath = config.runbookPath || RUNBOOK_PATH;
     this.planStore = config.planStore || new PlanStore();
     this.approvalStore = config.approvalStore || new ApprovalStore();
+    this.providerConfirmationFile = config.providerConfirmationFile || path.resolve(__dirname, '..', 'data', 'runtime', 'supervised-canary-provider-confirmation.json');
     this.builder = null;
   }
 
@@ -127,28 +136,41 @@ class SupervisedCanaryRunbookService {
     return null;
   }
 
+  parseOperatorCommand(text) {
+    return parseOperatorCommand(text);
+  }
+
+  isOperatorCommand(text) {
+    return Boolean(this.parseOperatorCommand(text));
+  }
+
   validateContext(ctx = {}) {
     const errors = [];
     if (String(ctx.telegramUserId) !== OWNER_ID) errors.push('NOT_OWNER');
     if (String(ctx.chatId) !== CHAT_ID) errors.push('WRONG_CHAT');
-    if (ctx.topicId && String(ctx.topicId) !== String(TOPIC_ID)) errors.push('WRONG_TOPIC');
+    if (String(ctx.topicId) !== String(TOPIC_ID)) errors.push('WRONG_TOPIC');
     return { ok: errors.length === 0, errors, ownerId: OWNER_ID, chatId: CHAT_ID, topicId: TOPIC_ID };
   }
 
   providerConfirmationPath() {
-    return path.resolve(__dirname, '..', 'data', 'runtime', 'supervised-canary-provider-confirmation.json');
+    return this.providerConfirmationFile;
   }
 
   recordProviderConfirmation(ctx = {}) {
+    const activePlanId = this.getActivePlanId();
+    if (!activePlanId) return { recorded: false, reason: 'ACTIVE_PLAN_REQUIRED' };
     const record = {
+      recorded: true,
       ownerUserId: OWNER_ID,
       chatId: CHAT_ID,
       topicId: TOPIC_ID,
+      planId: activePlanId,
       originatingMessageId: ctx.messageId || null,
       confirmedAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + PROVIDER_CONFIRMATION_TTL_MS).toISOString(),
       reason: 'MANUAL_FUNDING_CONFIRMATION',
     };
+    record.confirmationHash = stableHash(record);
     const tmp = this.providerConfirmationPath() + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(record, null, 2) + '\n');
     fs.renameSync(tmp, this.providerConfirmationPath());
@@ -160,6 +182,8 @@ class SupervisedCanaryRunbookService {
     if (!fs.existsSync(p)) return null;
     try {
       const record = JSON.parse(fs.readFileSync(p, 'utf8'));
+      const { confirmationHash, ...payload } = record;
+      if (!confirmationHash || stableHash(payload) !== confirmationHash) return { _integrityError: true };
       if (new Date(record.expiresAt) <= new Date()) return { ...record, _expired: true };
       return record;
     } catch (e) {
@@ -204,6 +228,7 @@ class SupervisedCanaryRunbookService {
     const now = new Date();
 
     this.builder = new CanaryPlanBuilder({
+      profileId: 'ATLAS_OUTBOUND',
       ghlToken: process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '',
       locationId: '61XPzSqRy7UKMwW9DeB8',
       pipelineId: 'nSf3NXYVkt8X4PgW9aZ3',
@@ -234,7 +259,13 @@ class SupervisedCanaryRunbookService {
         };
       }
 
-      const filteredPlan = this.filterPlanToWindow(plan, windowCheck.inWindow);
+      const filtered = this.filterPlanToWindow(plan, windowCheck.inWindow);
+      const filteredPlan = filtered.items.length === plan.items.length
+        ? plan
+        : this.planStore.replacePreviewItems(plan.planId, filtered.items, {
+          filteredFromOriginalCount: plan.items.length,
+          filterReason: 'OUTSIDE_LOCAL_WINDOW',
+        });
 
       return {
         reply: this.formatPreview(filteredPlan),
@@ -264,7 +295,9 @@ class SupervisedCanaryRunbookService {
 
   filterPlanToWindow(plan, inWindowItems) {
     const allowedNumbers = new Set(inWindowItems.map(i => i.number));
-    const filteredItems = plan.items.filter(i => allowedNumbers.has(i.number));
+    const filteredItems = plan.items
+      .filter(i => allowedNumbers.has(i.number))
+      .map((item, index) => ({ ...item, number: index + 1 }));
     const filteredPlan = { ...plan, items: filteredItems, selectedCount: filteredItems.length };
     if (filteredItems.length < plan.items.length) {
       filteredPlan.filteredFromOriginalCount = plan.items.length;
@@ -330,7 +363,9 @@ class SupervisedCanaryRunbookService {
     return lines.join('\n');
   }
 
-  async handleReview(planId, question) {
+  async handleReview(planId, question, ctx = {}) {
+    const contextCheck = this.validateContext(ctx);
+    if (!contextCheck.ok) return { reply: `Review denied: ${contextCheck.errors.join(', ')}.` };
     const plan = this.planStore.loadPlan(planId);
     if (!plan) return { reply: 'Plan not found. It may have expired or been superseded.' };
 
@@ -355,6 +390,7 @@ class SupervisedCanaryRunbookService {
         if (!item) return { reply: `Item ${num} not found in this plan.` };
         return { reply: `Number ${num} (${item.contactName}) is classified as *${item.contactRole}* based on Atlas/Propwire source record classification.` };
       case 'showText':
+        if (!num) return { reply: plan.items.map(candidate => `*Message for number ${candidate.number}:*\n\n${candidate.renderedMessage}`).join('\n\n') };
         if (!item) return { reply: `Item ${num} not found in this plan.` };
         return { reply: `*Message for number ${num}:*\n\n${item.renderedMessage}` };
       case 'removeItem':
@@ -391,6 +427,22 @@ class SupervisedCanaryRunbookService {
     if (!plan.ownerId || !plan.chatId || !plan.topicId || !plan.originatingMessageId || !plan.runbookId || !plan.runbookHash) {
       return { reply: 'Plan lacks trusted provenance (owner/chat/topic/message/runbook). Cannot approve.' };
     }
+    if (this.planStore.computePlanHash(plan) !== plan.planHash) {
+      return { reply: 'Plan hash no longer matches the persisted approval-bound actions. Cannot approve.' };
+    }
+    const runbook = this.loadRunbook();
+    if (!runbook || runbook._hashMismatch || plan.runbookHash !== runbook.canonicalHash) {
+      return { reply: 'Runbook provenance no longer matches this plan. Cannot approve.' };
+    }
+    if (plan.policyVersion !== POLICY_VERSION || plan.templateId !== TEMPLATE_ID) {
+      return { reply: 'Plan policy or template no longer matches the frozen canary baseline. Cannot approve.' };
+    }
+    if (!plan.runtimeRevision || plan.runtimeRevision !== this.getCurrentRuntimeRevision()) {
+      return { reply: 'Plan runtime revision no longer matches the active code. Generate a fresh plan before approval.' };
+    }
+    if (/\b(stop|pause|cancel|abort|don'?t\s*send|do\s+not\s+send|never\s+mind)\b/i.test(text)) {
+      return { reply: 'Approval denied because the message contains cancellation or pause language.' };
+    }
 
     const parsed = this.parseApproval(text);
     if (!parsed || parsed.items.length === 0) {
@@ -398,35 +450,80 @@ class SupervisedCanaryRunbookService {
     }
 
     const validItems = parsed.items.filter(n => plan.items.some(i => i.number === n));
-    if (validItems.length === 0) {
-      return { reply: `None of the specified items (${parsed.items.join(', ')}) exist in this plan. Valid items: ${plan.items.map(i => i.number).join(', ')}.` };
+    if (validItems.length !== parsed.items.length) {
+      return { reply: `Approval is atomic and cannot silently omit invalid items. Requested: ${parsed.items.join(', ')}. Valid items: ${plan.items.map(i => i.number).join(', ')}.` };
     }
 
-    const approval = this.approvalStore.createApproval({
-      planId: plan.planId,
-      planHash: plan.planHash,
-      selectedItems: validItems,
-      ownerUserId: OWNER_ID,
-      chatId: CHAT_ID,
-      topicId: TOPIC_ID,
-      originatingMessageId: ctx.messageId || null,
-      approvalText: text,
-      policyVersion: plan.policyVersion,
-    });
+    const selected = validItems.map(number => plan.items.find(item => item.number === number));
+    const windowCheck = this.evaluateSelectedWindows(selected, new Date());
+    if (windowCheck.outOfWindow.length > 0) {
+      return { reply: `Approval denied because ${windowCheck.outOfWindow.length} selected item(s) are outside their current property-local send window. Generate a fresh plan. Remaining PAUSED.` };
+    }
+    const providerConfirmation = this.loadProviderConfirmation();
+    if (!providerConfirmation || providerConfirmation._expired || providerConfirmation._integrityError) {
+      return { reply: 'Approval denied: a current integrity-verified manual JustCall readiness confirmation is required. Remaining PAUSED.' };
+    }
+    if (providerConfirmation.ownerUserId !== OWNER_ID || providerConfirmation.chatId !== CHAT_ID || String(providerConfirmation.topicId) !== String(TOPIC_ID)) {
+      return { reply: 'Approval denied: provider confirmation is not bound to the trusted owner/chat/topic session. Remaining PAUSED.' };
+    }
+    if (providerConfirmation.planId !== plan.planId) {
+      return { reply: 'Approval denied: provider confirmation belongs to a different canary plan. Remaining PAUSED.' };
+    }
+    const invalidAction = selected.find(item => item?.preparedAction?.actionType !== 'SEND_INT');
+    if (invalidAction || !plan.canaryScope?.allowedActionTypes?.includes('SEND_INT')) {
+      return { reply: 'The first supervised canary authorizes exact INT actions only. No downstream action was approved.' };
+    }
+    const actionScopes = selected.map(item => ({
+      itemNumber: item.number,
+      actionId: item.preparedAction.actionId,
+      actionType: item.preparedAction.actionType,
+      scopeHash: item.preparedAction.approvalScope.scopeHash,
+      authorizesOnly: item.preparedAction.approvalScope.authorizesOnly,
+    }));
 
-    this.planStore.updateStatus(planId, 'APPROVED_PENDING_EXECUTION', {
-      approvedAt: new Date().toISOString(),
-      approvedBy: OWNER_ID,
-    });
+    let approval;
+    try {
+      approval = this.approvalStore.createApproval({
+        planId: plan.planId,
+        planHash: plan.planHash,
+        selectedItems: validItems,
+        actionScopes,
+        ownerUserId: OWNER_ID,
+        chatId: CHAT_ID,
+        topicId: TOPIC_ID,
+        originatingMessageId: ctx.messageId || null,
+        approvalText: text,
+        policyVersion: plan.policyVersion,
+      });
+    } catch (error) {
+      return { reply: `Approval was not recorded: ${error.message}. Plan remains pending and PAUSED.` };
+    }
+
+    try {
+      this.planStore.updateStatus(planId, 'APPROVED_PENDING_EXECUTION', {
+        approvedAt: new Date().toISOString(),
+        approvedBy: OWNER_ID,
+        approvedActionIds: actionScopes.map(scope => scope.actionId),
+        approvalId: approval.approvalId,
+        approvalHash: approval.approvalHash,
+        providerConfirmationHash: providerConfirmation.confirmationHash,
+        executable: false,
+      }, { expectedStatus: 'PREVIEW_PENDING_APPROVAL' });
+    } catch (error) {
+      this.approvalStore.revokeApproval(approval.approvalId, `PLAN_TRANSITION_FAILED: ${error.message}`);
+      return { reply: `Approval was revoked because the plan transition failed: ${error.message}. Remaining PAUSED.` };
+    }
 
     return {
-      reply: `*Approved.*\n\nPlan: \`${plan.planId.slice(0, 16)}\`\nItems: ${validItems.join(', ')}\nApproval: \`${approval.approvalId.slice(0, 16)}\`\n\nTo execute, transition the kill switch to CANARY_ALLOWED and say "Execute the approved plan."`,
+      reply: `*INT approval recorded.*\n\nPlan: \`${plan.planId.slice(0, 16)}\`\nItems: ${validItems.join(', ')}\nApproval: \`${approval.approvalId.slice(0, 16)}\`\nAuthorized only: ${actionScopes.map(scope => scope.actionType).join(', ')}\n\nCalls, second sends, CCC, contact cards, notes, stage movement, follow-up, offers, and handoffs remain blocked. Kill switch remains PAUSED.`,
       approval,
       plan,
     };
   }
 
-  async handleCancel(planId) {
+  async handleCancel(planId, ctx = {}) {
+    const contextCheck = this.validateContext(ctx);
+    if (!contextCheck.ok) return { reply: `Cancellation denied: ${contextCheck.errors.join(', ')}.` };
     const plan = this.planStore.loadPlan(planId);
     if (plan) {
       this.planStore.supersedePlan(planId, 'cancelled by owner');
@@ -434,6 +531,81 @@ class SupervisedCanaryRunbookService {
       if (approval) this.approvalStore.revokeApproval(approval.approvalId, 'plan cancelled');
     }
     return { reply: 'Cancelled. Plan superseded, approval revoked if present. Remaining PAUSED.' };
+  }
+
+  async handleOperatorCommand(text, ctx = {}) {
+    const command = this.parseOperatorCommand(text);
+    if (!command) return { reply: 'I did not recognize that Pipeline operator request.' };
+    const contextCheck = this.validateContext(ctx);
+    if (!contextCheck.ok) return { reply: `Operator request denied: ${contextCheck.errors.join(', ')}.` };
+
+    const planId = this.getActivePlanId();
+    if (!planId) return { reply: 'No active supervised plan. Say "Begin the first supervised canary" to prepare an INT-only plan.' };
+    const plan = this.planStore.loadPlan(planId);
+    const states = (plan.items || []).map(item => item.operatorState).filter(Boolean);
+
+    if (command.type === 'QUEUE') {
+      const queues = buildOperatorQueues(states);
+      return { reply: this.formatOperatorQueues(queues, command.queue) };
+    }
+
+    const requestedNumber = Number((text.match(/(?:number|item)\s+(\d+)/i) || [])[1] || 0);
+    let item = requestedNumber ? plan.items.find(candidate => candidate.number === requestedNumber) : null;
+    if (!item && plan.items.length === 1) item = plan.items[0];
+    if (!item) return { reply: `Specify an item number. Active items: ${plan.items.map(candidate => candidate.number).join(', ')}.` };
+
+    if (command.type === 'COMPLETE') {
+      const event = { type: command.event };
+      const currentAction = buildOperatorQueues([item.operatorState]);
+      const current = QUEUE_NAMES.flatMap(name => currentAction[name]).find(Boolean);
+      if (command.attempt && current?.actionType !== `CALL_ATTEMPT_${command.attempt}`) {
+        return { reply: `Completion not recorded: call attempt ${command.attempt} is not the current due action. Current action: ${current?.actionType || 'unknown'}. Remaining PAUSED.` };
+      }
+      let recalculated;
+      try {
+        recalculated = applyCompletion(item.operatorState, event);
+      } catch (error) {
+        return { reply: `Completion not recorded: ${error.message}. Remaining PAUSED.` };
+      }
+      this.planStore.updateOperatorState(planId, item.opportunityId, recalculated.state, {
+        type: event.type,
+        queue: recalculated.queue,
+        source: 'OWNER_MANUAL_CONFIRMATION',
+      });
+      return { reply: this.formatNextAction(recalculated.queueItem, 'Manual completion recorded locally for coaching. No GHL or provider write occurred.') };
+    }
+
+    const evaluatedQueues = buildOperatorQueues([item.operatorState]);
+    const current = QUEUE_NAMES.flatMap(name => evaluatedQueues[name]).find(Boolean);
+    return { reply: this.formatNextAction(current, 'The requested action is prepared only when its course prerequisites are satisfied.') };
+  }
+
+  formatOperatorQueues(queues, selectedQueue = 'ALL') {
+    const names = selectedQueue === 'ALL' ? QUEUE_NAMES : [selectedQueue];
+    const lines = ['*Course-Guided Pipeline Work Queue*', 'State: PAUSED — coaching and preparation only', ''];
+    for (const name of names) {
+      const items = queues[name] || [];
+      if (items.length === 0) continue;
+      lines.push(`*${name}* (${items.length})`);
+      for (const item of items) {
+        lines.push(`• ${item.property} — ${item.contact.name} (${item.currentStage})`);
+        lines.push(`  Next: ${item.exactNextAction}`);
+        lines.push(`  Why: ${item.whyDue}`);
+        lines.push(`  Rule: ${item.courseRule.id}`);
+        lines.push(`  Approval: ${item.approvalRequirement}`);
+        lines.push(`  After: ${item.afterCompletion}`);
+      }
+      lines.push('');
+    }
+    if (lines.length === 3) lines.push('No items are currently in that queue.');
+    lines.push('_No send, GHL write, task creation, or stage movement occurred._');
+    return lines.join('\n');
+  }
+
+  formatNextAction(item, prefix = '') {
+    if (!item) return 'No next action could be calculated from the current state.';
+    const lines = [prefix, `*${item.property} — ${item.contact.name}*`, `Stage: ${item.currentStage}`, `Next: ${item.exactNextAction}`, `Why: ${item.whyDue}`, `Course rule: ${item.courseRule.id}`, `Approval: ${item.approvalRequirement}`, `After completion: ${item.afterCompletion}`, `Blocked: ${item.remainsBlocked.join(', ') || 'none'}`, '', '_PAUSED — no external action occurred._'];
+    return lines.filter(Boolean).join('\n');
   }
 
   getActivePlanId() {

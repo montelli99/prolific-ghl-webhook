@@ -288,7 +288,7 @@ function getMemoryProvenance() {
 
 function listSafeCanaryCandidates() {
   const builder = new deps.CanaryPlanBuilder({
-    ghlToken: process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '',
+    profileId: 'ATLAS_OUTBOUND',
     locationId: LOCATION_ID,
     pipelineId: PIPELINE_ID,
   });
