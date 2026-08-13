@@ -70,7 +70,7 @@ function resolvePipelineContext(profileId) {
   };
 }
 
-function resolveProfileFromOpportunity(opportunityId, auth) {
+async function resolveProfileFromOpportunity(opportunityId, auth) {
   if (!opportunityId) return { resolved: false, reason: 'OPPORTUNITY_ID_REQUIRED' };
   const a = authorize(auth);
   if (!a.authorized) return { resolved: false, reason: a.reason };
@@ -81,7 +81,8 @@ function resolveProfileFromOpportunity(opportunityId, auth) {
   const results = [];
   if (token) {
     try {
-      const opp = ghlGetSync(token, `/opportunities/${opportunityId}`);
+      const res = await ghlGet(token, `/opportunities/${opportunityId}`);
+      const opp = res.body?.opportunity || res.body;
       if (opp && opp.id) {
         const locId = opp.locationId || '';
         const pipeId = opp.pipelineId || '';
@@ -96,7 +97,8 @@ function resolveProfileFromOpportunity(opportunityId, auth) {
   }
   if (ppcToken && token !== ppcToken) {
     try {
-      const opp = ghlGetSync(ppcToken, `/opportunities/${opportunityId}`);
+      const res = await ghlGet(ppcToken, `/opportunities/${opportunityId}`);
+      const opp = res.body?.opportunity || res.body;
       if (opp && opp.id) {
         const locId = opp.locationId || '';
         const pipeId = opp.pipelineId || '';
@@ -112,7 +114,7 @@ function resolveProfileFromOpportunity(opportunityId, auth) {
   return { resolved: false, reason: 'OPPORTUNITY_NOT_FOUND_OR_CROSS_PROFILE', searched: results };
 }
 
-// ---- GHL HTTP helpers (sync for bridge use) ----
+// ---- GHL HTTP helpers (async) ----
 
 function getGhlToken(profileId) {
   const profile = VALID_PROFILES[profileId];
@@ -120,48 +122,37 @@ function getGhlToken(profileId) {
   return process.env[profile.credentialRef] || null;
 }
 
-function ghlGetSync(token, pathname) {
-  const https = require('https');
-  const result = { status: 0, body: null };
-  const req = https.request({
-    hostname: 'services.leadconnectorhq.com', path: pathname, method: 'GET',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Version: '2021-07-28' },
-    timeout: 15000,
-  }, (res) => {
-    let data = '';
-    res.on('data', (c) => { data += c; });
-    res.on('end', () => {
-      try { result.status = res.statusCode; result.body = JSON.parse(data); }
-      catch (_) { result.status = res.statusCode; result.body = data; }
+function ghlRequest(method, token, pathname, body) {
+  return new Promise((resolve) => {
+    const https = require('https');
+    const payload = body ? JSON.stringify(body) : null;
+    const opts = {
+      hostname: 'services.leadconnectorhq.com', path: pathname, method,
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Version: '2021-07-28' },
+      timeout: 15000,
+    };
+    if (payload) opts.headers['Content-Length'] = Buffer.byteLength(payload);
+    const req = https.request(opts, (res) => {
+      let data = '';
+      res.on('data', (c) => { data += c; });
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        catch (_) { resolve({ status: res.statusCode, body: data }); }
+      });
     });
+    req.on('error', (e) => resolve({ status: 0, body: null, error: e.message }));
+    req.on('timeout', () => { req.destroy(); resolve({ status: 0, body: null, error: 'timeout' }); });
+    if (payload) req.write(payload);
+    req.end();
   });
-  req.on('error', () => { result.status = 0; result.body = null; });
-  req.on('timeout', () => { req.destroy(); result.status = 0; result.body = null; });
-  req.end();
-  return result.body;
 }
 
-function ghlPatchSync(token, pathname, body) {
-  const https = require('https');
-  const payload = JSON.stringify(body);
-  const result = { status: 0, body: null };
-  const req = https.request({
-    hostname: 'services.leadconnectorhq.com', path: pathname, method: 'PATCH',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Version: '2021-07-28' },
-    timeout: 15000,
-  }, (res) => {
-    let data = '';
-    res.on('data', (c) => { data += c; });
-    res.on('end', () => {
-      try { result.status = res.statusCode; result.body = JSON.parse(data); }
-      catch (_) { result.status = res.statusCode; result.body = data; }
-    });
-  });
-  req.on('error', () => { result.status = 0; result.body = null; });
-  req.on('timeout', () => { req.destroy(); result.status = 0; result.body = null; });
-  req.write(payload);
-  req.end();
-  return result;
+function ghlGet(token, pathname) {
+  return ghlRequest('GET', token, pathname);
+}
+
+function ghlPut(token, pathname, body) {
+  return ghlRequest('PUT', token, pathname, body);
 }
 
 // ---- PPC Stage Authority ----
@@ -663,14 +654,15 @@ function getSessionStatus(auth) {
 
 // ---- PPC Read-Only Tools ----
 
-function pipelineReadOpportunity(profileId, opportunityId, auth) {
+async function pipelineReadOpportunity(profileId, opportunityId, auth) {
   const a = authorize(auth);
   if (!a.authorized) return blocked(a.reason);
   const ctx = resolvePipelineContext(profileId);
   if (!ctx.resolved) return blocked(ctx.reason);
   const token = getGhlToken(ctx.profileId);
   if (!token) return blocked('NO_GHL_CREDENTIALS');
-  const opp = ghlGetSync(token, `/opportunities/${opportunityId}`);
+  const res = await ghlGet(token, `/opportunities/${opportunityId}`);
+  const opp = res.body?.opportunity || res.body;
   if (!opp || !opp.id) return blocked('OPPORTUNITY_NOT_FOUND');
   if (opp.locationId !== ctx.locationId || opp.pipelineId !== ctx.pipelineId) {
     return blocked('CROSS_PROFILE_OPPORTUNITY');
@@ -699,7 +691,7 @@ function pipelineReadOpportunity(profileId, opportunityId, auth) {
   };
 }
 
-function pipelineSearchOpportunities(profileId, query, auth) {
+async function pipelineSearchOpportunities(profileId, query, auth) {
   const a = authorize(auth);
   if (!a.authorized) return blocked(a.reason);
   const ctx = resolvePipelineContext(profileId);
@@ -711,9 +703,9 @@ function pipelineSearchOpportunities(profileId, query, auth) {
   if (q.stageId) path += `&pipeline_stage_id=${encodeURIComponent(q.stageId)}`;
   if (q.contactId) path += `&contact_id=${encodeURIComponent(q.contactId)}`;
   if (q.query) path += `&q=${encodeURIComponent(q.query)}`;
-  const res = ghlGetSync(token, path);
-  if (!res || !res.opportunities) return blocked('SEARCH_FAILED');
-  const items = (res.opportunities || []).map((opp) => {
+  const res = await ghlGet(token, path);
+  if (!res.body || !res.body.opportunities) return blocked('SEARCH_FAILED');
+  const items = (res.body.opportunities || []).map((opp) => {
     const stageId = opp.pipelineStageId || opp.pipeline_stage_id || '';
     let stageName = null;
     if (ctx.profileId === 'PPC_EWA_BEACH') {
@@ -736,7 +728,7 @@ function pipelineSearchOpportunities(profileId, query, auth) {
     locationId: ctx.locationId,
     pipelineId: ctx.pipelineId,
     count: items.length,
-    total: res.total || items.length,
+    total: res.body.total || items.length,
     items,
     effects: { ...ZERO_EFFECTS },
   };
@@ -773,7 +765,7 @@ function pipelineListStages(profileId, auth) {
 
 // ---- PPC Owner-Directed Stage Move ----
 
-function pipelineMoveStage(profileId, opportunityId, targetStage, auth) {
+async function pipelineMoveStage(profileId, opportunityId, targetStage, auth) {
   const a = authorize(auth);
   if (!a.authorized) return blocked(a.reason);
   const ctx = resolvePipelineContext(profileId);
@@ -784,7 +776,8 @@ function pipelineMoveStage(profileId, opportunityId, targetStage, auth) {
   const token = getGhlToken(ctx.profileId);
   if (!token) return blocked('NO_GHL_CREDENTIALS');
 
-  const opp = ghlGetSync(token, `/opportunities/${opportunityId}`);
+  const oppRes = await ghlGet(token, `/opportunities/${opportunityId}`);
+  const opp = oppRes.body?.opportunity || oppRes.body;
   if (!opp || !opp.id) return blocked('OPPORTUNITY_NOT_FOUND');
   if (opp.locationId !== ctx.locationId || opp.pipelineId !== ctx.pipelineId) {
     return blocked('CROSS_PROFILE_OPPORTUNITY');
@@ -808,12 +801,13 @@ function pipelineMoveStage(profileId, opportunityId, targetStage, auth) {
     oldStageId,
   };
 
-  const patchResult = ghlPatchSync(token, `/opportunities/${opportunityId}`, { pipelineStageId: targetStageId });
+  const patchResult = await ghlPut(token, `/opportunities/${opportunityId}`, { pipelineStageId: targetStageId });
   if (patchResult.status < 200 || patchResult.status >= 300) {
     return { status: 'WRITE_UNCERTAIN_NO_RETRY', reason: `GHL_PATCH_FAILED: ${patchResult.status}`, opportunityId, oldStageId, targetStageId, effects: { ...ZERO_EFFECTS } };
   }
 
-  const readback = ghlGetSync(token, `/opportunities/${opportunityId}`);
+  const readbackRes = await ghlGet(token, `/opportunities/${opportunityId}`);
+  const readback = readbackRes.body?.opportunity || readbackRes.body;
   if (!readback || !readback.id) {
     return { status: 'WRITE_UNCERTAIN_NO_RETRY', reason: 'READBACK_FAILED', opportunityId, oldStageId, targetStageId, effects: { ...ZERO_EFFECTS } };
   }
