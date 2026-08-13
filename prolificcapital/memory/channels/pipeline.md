@@ -81,6 +81,36 @@ PPC_AUTOMATIC_STAGE_MOVEMENT = OFF. Do not independently move opportunities beca
 
 PPC_AUTOMATIC_FIRST_CONTACT_SMS = BLOCKED_CONSENT_UNVERIFIED. PPC_AUTOMATIC_CALLS = OFF. This blocks automatic first-contact SMS, NOT pipeline management. Do not tell Montelli "I cannot manage this lead because consent is unresolved." Consent blocks SMS, not stage control.
 
+## Outreach Policy Must Affect Advice
+
+Even for a real PPC lead, do not casually advise that OpenClaw should send an automatic first-contact SMS as though that capability is live. You may explain: "Course workflow calls for PIN first, but automatic first-contact SMS is currently blocked pending consent verification." Pipeline management remains available. Keep these separate.
+
+## Certification / Test Artifact Guard
+
+If a contact or opportunity has any of these tags: `do_not_contact_prospect`, `owner_controlled_test`, or `pipeline_stage_certification` — treat it as a TEST_ARTIFACT. Do NOT recommend: sending SMS, placing calls, following normal seller cadence, or any outreach. The correct recommendation is: NO OUTREACH, NO STAGE CHANGE unless the owner explicitly directs a certification action. Identify it as a certification artifact in your response.
+
+## PPC Advisory Authority Precedence
+
+For PPC_EWA_BEACH advice, use this explicit precedence:
+
+1. Current fresh GHL evidence (pipeline_read_opportunity, pipeline_search_opportunities).
+2. Owner-provided current interaction evidence (what Montelli just told you).
+3. PPC stage authority (profiles/ppc-ewa-beach/stage-authority.json).
+4. PPC script authority (profiles/ppc-ewa-beach/script-authority.json).
+5. PPC workflow authority (profiles/ppc-ewa-beach/workflow-authority.json).
+6. PPC compliance profile (profiles/ppc-ewa-beach/compliance-profile.json).
+7. PPC-specific course/Kayla memory.
+
+DO NOT use Atlas stage/script authority to fill PPC gaps. If PPC authority does not answer something, say UNKNOWN / NOT YET MAPPED. Do not fall back to Atlas because it seems similar.
+
+## Profile-Scoped Knowledge
+
+PPC request → use PPC authority only. Atlas request → use Atlas authority only. Shared generic safety rules may be reused. But Atlas stage semantics, Atlas INT scripts, and Atlas outreach cadence must NOT leak into PPC recommendations. PPC uses PIN/PNOA/PCC/PC/PGC/PPH scripts, not INT. PPC stage names are PPC-native (e.g., "New Lead / Call ASAP", not "Lead Entered").
+
+## Stage/Script Guidance Tools Require ProfileId
+
+The `pipeline_stage_guidance` and `pipeline_kayla_script` tools require a `profileId` parameter. Always pass the correct profileId matching the current pipeline context. For PPC_EWA_BEACH, these tools return PPC stage authority data and PPC scripts (PIN, PNOA, PCC, PC, PGC, PPH). For ATLAS_OUTBOUND, they return Kayla course spec data and Atlas scripts (INT, etc.). Never call these tools without a profileId.
+
 ## Stage Authority
 
 Current live PPC pipeline: 30 stages. Stage IDs are authoritative. Positions are display/order information and may change when stages are inserted. Never invent a stage ID. Never fuzzy-map a requested stage to a semantically different stage for a write. If a stage's semantic authority is incomplete, report the live stage and note that detailed automation semantics are not yet fully mapped.

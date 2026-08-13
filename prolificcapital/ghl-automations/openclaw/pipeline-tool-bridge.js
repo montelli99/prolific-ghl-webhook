@@ -352,7 +352,30 @@ function getPipelineWorkSummary() {
   };
 }
 
-function getStageGuidance(stage) {
+function getStageGuidance(profileId, stage) {
+  if (profileId === 'PPC_EWA_BEACH') {
+    const authority = loadPpcStageAuthority();
+    const s = (authority.stages || []).find((x) => x.position === Number(stage));
+    if (!s) return { status: 'BLOCKED', reason: 'INVALID_STAGE', validRange: `1-${authority.totalStages}`, effects: { ...ZERO_EFFECTS } };
+    return {
+      status: 'OK',
+      profileId: 'PPC_EWA_BEACH',
+      stage: s.position,
+      name: s.name,
+      semanticCategory: s.semanticCategory,
+      outreachEligibility: s.outreachEligibility,
+      nextExpectedAction: s.nextExpectedAction,
+      humanWorkExpected: s.humanWorkExpected,
+      automationExpected: s.automationExpected,
+      terminal: s.terminal,
+      allowedScripts: s.allowedScripts || [],
+      permittedWrites: s.permittedWrites || [],
+      prohibitedWrites: s.prohibitedWrites || [],
+      confidence: s.confidence,
+      provenance: s.provenance,
+      effects: { ...ZERO_EFFECTS },
+    };
+  }
   let stages;
   try {
     stages = deps.spec.loadKaylaCourseSpec().stages;
@@ -365,6 +388,7 @@ function getStageGuidance(stage) {
   if (Array.isArray(s)) {
     return {
       status: 'OK',
+      profileId: 'ATLAS_OUTBOUND',
       stage: Number(s[0]),
       name: s[1],
       mode: s[2],
@@ -375,6 +399,7 @@ function getStageGuidance(stage) {
   }
   return {
     status: 'OK',
+    profileId: 'ATLAS_OUTBOUND',
     stage: s.order,
     name: s.stageName,
     mode: s.mode,
@@ -385,7 +410,43 @@ function getStageGuidance(stage) {
   };
 }
 
-function getKaylaScript(stage) {
+function getKaylaScript(profileId, stage) {
+  if (profileId === 'PPC_EWA_BEACH') {
+    const authority = loadPpcStageAuthority();
+    const s = (authority.stages || []).find((x) => x.position === Number(stage));
+    if (!s) return { status: 'BLOCKED', reason: 'INVALID_STAGE', validRange: `1-${authority.totalStages}`, effects: { ...ZERO_EFFECTS } };
+    const allowedScripts = s.allowedScripts || [];
+    if (allowedScripts.length === 0) {
+      return {
+        status: 'OK',
+        profileId: 'PPC_EWA_BEACH',
+        stage: s.position,
+        stageName: s.name,
+        scripts: [],
+        note: 'No PPC scripts defined for this stage.',
+        effects: { ...ZERO_EFFECTS },
+      };
+    }
+    let scriptAuthority;
+    try {
+      const fs = require('fs');
+      scriptAuthority = JSON.parse(fs.readFileSync('C:/Users/mscott/AI_Workspace/prolificcapital/ghl-automations/profiles/ppc-ewa-beach/script-authority.json', 'utf8'));
+    } catch (_) {
+      scriptAuthority = { scripts: {} };
+    }
+    const scripts = allowedScripts.map((name) => {
+      const def = (scriptAuthority.scripts || {})[name];
+      return def ? { name, fullName: def.fullName, body: def.body, channel: def.channel, trigger: def.trigger, timing: def.timing, humanVsAutomated: def.humanVsAutomated, ownerApprovalRequired: def.ownerApprovalRequired, complianceRequirements: def.complianceRequirements || [] } : { name, note: 'Script definition not found in PPC script authority.' };
+    });
+    return {
+      status: 'PREVIEW_ONLY',
+      profileId: 'PPC_EWA_BEACH',
+      stage: s.position,
+      stageName: s.name,
+      scripts,
+      effects: { ...ZERO_EFFECTS },
+    };
+  }
   let spec;
   try {
     spec = deps.spec.loadKaylaCourseSpec();
@@ -399,6 +460,7 @@ function getKaylaScript(stage) {
   const script = (spec && spec.shortcuts && spec.shortcuts.find((c) => c.name === shortcutName)) || null;
   return {
     status: 'PREVIEW_ONLY',
+    profileId: 'ATLAS_OUTBOUND',
     stage: Number(Array.isArray(s) ? s[0] : s.order),
     stageName: Array.isArray(s) ? s[1] : s.stageName,
     shortcut: shortcutName || null,
