@@ -697,6 +697,209 @@ app.post('/api/pipeline', (req, res) => {
   }
 });
 
+// ── JustCall Webhook ──
+const GHL_JC_TOKEN = process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '';
+const GHL_JC_LOCATION_ID = process.env.GHL_LOCATION_ID || '61XPzSqRy7UKMwW9DeB8';
+const MONTELLI_USER_ID = process.env.GHL_MONTELLI_USER_ID || 'PGfXxlXCRXs3hXN3Gq7R';
+const PPC_PIPELINE_ID = 'o4hvfO7adOQlLdtqPNIn';
+const JC_DEDUPE_MAX = 5000;
+
+// GHL HTTP helper (native https, no SDK dependency)
+function ghlJcRequest(method, path, body) {
+  return new Promise((ok, fail) => {
+    const https = require('https');
+    const data = body ? JSON.stringify(body) : null;
+    const opts = {
+      hostname: 'services.leadconnectorhq.com',
+      path,
+      method,
+      headers: {
+        Authorization: `Bearer ${GHL_JC_TOKEN}`,
+        Version: '2023-02-21',
+        Accept: 'application/json',
+        ...(data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}),
+      }
+    };
+    const req = https.request(opts, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try { ok(JSON.parse(d)); } catch { ok({ _raw: d }); }
+      });
+    });
+    req.on('error', fail);
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+// PPC Auto-Assignment: when Montelli calls/texts a lead, assign their PPC opportunity to him
+async function autoAssignPpcLead(phoneNumber) {
+  if (!phoneNumber) return { action: 'skipped', reason: 'no phone number' };
+  const digits = phoneNumber.replace(/\D/g, '');
+  const normalized = digits.length === 10 ? `+1${digits}` : digits.length === 11 && digits.startsWith('1') ? `+${digits}` : `+${digits}`;
+  try {
+    const searchRes = await ghlJcRequest('GET', `/contacts/search?locationId=${GHL_JC_LOCATION_ID}&query=${encodeURIComponent(normalized)}`);
+    const contacts = searchRes?.contacts || [];
+    if (contacts.length === 0) return { action: 'skipped', reason: 'no contact found for phone', phone: normalized };
+    for (const contact of contacts) {
+      const contactId = contact.id;
+      const oppRes = await ghlJcRequest('GET', `/opportunities/search?location_id=${GHL_JC_LOCATION_ID}&pipeline_id=${PPC_PIPELINE_ID}&contact_id=${contactId}&limit=10`);
+      const opportunities = oppRes?.opportunities || [];
+      for (const opp of opportunities) {
+        if (opp.assignedTo !== MONTELLI_USER_ID) {
+          await ghlJcRequest('PUT', `/opportunities/${opp.id}?locationId=${GHL_JC_LOCATION_ID}`, {
+            assignedTo: MONTELLI_USER_ID,
+            pipelineStageId: opp.pipelineStageId
+          });
+          console.log(`[Atlas PPC] Assigned ${opp.name} (${opp.id}) to Montelli`);
+          await ghlJcRequest('POST', `/contacts/${contactId}/notes`, {
+            body: `=== PPC LEAD ASSIGNED ===\n${new Date().toISOString()}\nLead auto-assigned to Montelli after phone contact.\nOpportunity: ${opp.name}\nPhone: ${normalized}`
+          });
+        }
+      }
+      if (opportunities.length > 0) return { action: 'assigned', contactId, opportunitiesAssigned: opportunities.length, phone: normalized };
+    }
+    return { action: 'skipped', reason: 'no PPC opportunities found for contact', phone: normalized };
+  } catch (e) {
+    console.error(`[Atlas PPC] Auto-assignment error: ${e.message}`);
+    return { action: 'error', reason: e.message, phone: normalized };
+  }
+}
+
+const seenJcEvents = new Set();
+function dedupeJc(key) {
+  if (seenJcEvents.has(key)) return true;
+  seenJcEvents.add(key);
+  if (seenJcEvents.size > JC_DEDUPE_MAX) {
+    const arr = Array.from(seenJcEvents);
+    seenJcEvents.clear();
+    arr.slice(-JC_DEDUPE_MAX / 2).forEach(k => seenJcEvents.add(k));
+  }
+  return false;
+}
+
+app.post('/webhook/justcall', async (req, res) => {
+  res.status(200).json({ received: true });
+  try {
+    const payload = req.body;
+    const type = payload.type || payload.event;
+    const eventId = payload.data?.id || payload.data?.call_sid || payload.request_id || Math.random();
+    if (dedupeJc(`${type}:${eventId}`)) {
+      console.log(`[Atlas JustCall] Duplicate event skipped: ${type}:${eventId}`);
+      return;
+    }
+    console.log(`[Atlas JustCall] ${type}: ${JSON.stringify(payload.data || {}).slice(0, 100)}`);
+
+    if (type === 'call.completed' || type === 'call.ended') {
+      const callData = payload.data || {};
+      const contactId = callData.contact_id || callData.ghl_contact_id;
+      const callerNumber = callData.from_number || callData.to_number || callData.contact_number;
+      if (callerNumber) {
+        autoAssignPpcLead(callerNumber).then(result => {
+          console.log(`[Atlas PPC] Call auto-assignment: ${JSON.stringify(result)}`);
+        }).catch(e => console.error(`[Atlas PPC] Call auto-assignment failed: ${e.message}`));
+      }
+      if (contactId) {
+        const noteBody = `=== CALL COMPLETED ===\n${new Date().toISOString()}\nCall ID: ${callData.id}\nFrom: ${callData.from_number || 'unknown'}\nTo: ${callData.to_number || 'unknown'}\nDirection: ${callData.direction || 'unknown'}\nDuration: ${callData.duration || 'unknown'}s\nDisposition: ${callData.disposition || 'unknown'}\nRecording: ${callData.recording_url || 'N/A'}\nVoicemail: ${callData.voicemail_url || 'N/A'}\nNotes: ${callData.notes || 'N/A'}`;
+        try {
+          await ghlJcRequest('POST', `/contacts/${contactId}/notes`, { body: noteBody });
+          console.log(`[Atlas JustCall] Call logged to contact ${contactId}`);
+        } catch (e) {
+          console.error(`[Atlas JustCall] Failed to log call: ${e.message}`);
+        }
+      }
+    }
+
+    if (type === 'sms.received' || type === 'text.received') {
+      const smsData = payload.data || {};
+      const contactId = smsData.contact_id || smsData.ghl_contact_id;
+      const senderNumber = smsData.from_number || smsData.contact_number;
+      if (senderNumber) {
+        autoAssignPpcLead(senderNumber).then(result => {
+          console.log(`[Atlas PPC] SMS auto-assignment: ${JSON.stringify(result)}`);
+        }).catch(e => console.error(`[Atlas PPC] SMS auto-assignment failed: ${e.message}`));
+      }
+      if (contactId) {
+        const noteBody = `=== SMS RECEIVED ===\n${new Date().toISOString()}\nFrom: ${smsData.from_number || 'unknown'}\nBody: ${(smsData.body || '').slice(0, 200)}`;
+        try {
+          await ghlJcRequest('POST', `/contacts/${contactId}/notes`, { body: noteBody });
+          console.log(`[Atlas JustCall] SMS logged to contact ${contactId}`);
+        } catch (e) {
+          console.error(`[Atlas JustCall] Failed to log SMS: ${e.message}`);
+        }
+      }
+    }
+
+    if (type === 'sms.sent' || type === 'text.sent') {
+      const smsData = payload.data || {};
+      const contactId = smsData.contact_id || smsData.ghl_contact_id;
+      const recipientNumber = smsData.to_number || smsData.contact_number;
+      if (recipientNumber) {
+        autoAssignPpcLead(recipientNumber).then(result => {
+          console.log(`[Atlas PPC] Outbound SMS auto-assignment: ${JSON.stringify(result)}`);
+        }).catch(e => console.error(`[Atlas PPC] Outbound SMS auto-assignment failed: ${e.message}`));
+      }
+      if (contactId) {
+        const noteBody = `=== SMS SENT ===\n${new Date().toISOString()}\nTo: ${smsData.to_number || 'unknown'}\nBody: ${(smsData.body || '').slice(0, 200)}`;
+        try {
+          await ghlJcRequest('POST', `/contacts/${contactId}/notes`, { body: noteBody });
+          console.log(`[Atlas JustCall] Outbound SMS logged to contact ${contactId}`);
+        } catch (e) {
+          console.error(`[Atlas JustCall] Failed to log outbound SMS: ${e.message}`);
+        }
+      }
+    }
+
+    if (type === 'call.ai_report') {
+      const aiData = payload.data || {};
+      const callId = aiData.id;
+      const callScore = aiData.call_score;
+      const callSummary = aiData.call_summary;
+      const customerSentiment = aiData.customer_sentiment;
+      const callTags = (aiData.tags || []).join(', ');
+      const callMoments = aiData.call_moments || [];
+      const transcription = aiData.call_transcription || [];
+      const contactId = aiData.contact_id || aiData.ghl_contact_id;
+
+      if (!contactId) {
+        console.log(`[Atlas JustCall] No contactId in AI report`);
+        return;
+      }
+
+      let transcriptionText = '';
+      if (transcription.length > 0) {
+        transcriptionText = transcription.map(seg => {
+          const speaker = seg.speaker || seg.role || 'Speaker';
+          const text = seg.text || seg.message || '';
+          const time = seg.start_time || '';
+          return `[${time}] ${speaker}: ${text}`;
+        }).join('\n');
+      }
+
+      let momentsText = '';
+      if (callMoments.length > 0) {
+        momentsText = callMoments.map(m => {
+          const time = m.start_time || '';
+          const title = m.title || 'Moment';
+          const desc = m.description || '';
+          return `• [${time}] ${title}: ${desc}`;
+        }).join('\n');
+      }
+
+      const noteBody = `=== AI COACHING REPORT ===\n${new Date().toISOString()}\nCall ID: ${callId}\nCall Score: ${callScore || 'N/A'}/100\nCustomer Sentiment: ${customerSentiment || 'N/A'}\nTags: ${callTags || 'none'}\n\n--- SUMMARY ---\n${callSummary || 'No summary'}\n\n${momentsText ? '--- KEY MOMENTS ---\n' + momentsText + '\n\n' : ''}${transcriptionText ? '--- TRANSCRIPT ---\n' + transcriptionText.slice(0, 3000) + (transcriptionText.length > 3000 ? '\n[...truncated]' : '') : ''}`;
+      try {
+        await ghlJcRequest('POST', `/contacts/${contactId}/notes`, { body: noteBody });
+        console.log(`[Atlas JustCall] Full AI coaching + transcript logged to contact ${contactId}`);
+      } catch (e) {
+        console.error(`[Atlas JustCall] Failed to log AI report: ${e.message}`);
+      }
+    }
+  } catch (err) {
+    console.error('JustCall webhook error:', err.message);
+  }
+});
+
 // Health check
 app.get('/', (req, res) => res.json({
   service: 'AI REI Pipeline Engine',
@@ -704,6 +907,7 @@ app.get('/', (req, res) => res.json({
   baseUrl: `${req.protocol}://${req.get('host')}`,
   endpoints: {
     webhook: 'POST /webhook/ghl',
+    justcallWebhook: 'POST /webhook/justcall',
     api: 'POST /api/pipeline',
     ghlPipelines: 'GET /api/ghl/pipelines/:userId',
     ghlSync: 'POST /api/ghl/sync-stages/:userId',
@@ -753,6 +957,7 @@ app.get('/health/atlas', (req, res) => {
 app.listen(PORT, () => {
   console.log(`AI REI Pipeline Engine v1.0 on port ${PORT}`);
   console.log(`GHL webhook: POST /webhook/ghl`);
+  console.log(`JustCall webhook: POST /webhook/justcall`);
   console.log(`GHL stages: POST /api/ghl/sync-stages/:userId`);
   console.log(`GHL import: POST /api/ghl/import/:userId`);
 });
