@@ -968,15 +968,16 @@ async function getPpcCallQueue(profileId, auth) {
   if (!token) return blocked('NO_GHL_CREDENTIALS');
 
   const allOpps = [];
-  let offset = 0;
-  const limit = 100;
+  let startAfter = null;
+  const limit = 50;
   while (true) {
-    const path = `/opportunities/search?location_id=${encodeURIComponent(ctx.locationId)}&pipeline_id=${encodeURIComponent(ctx.pipelineId)}&limit=${limit}&offset=${offset}`;
+    let path = `/opportunities/search?location_id=${encodeURIComponent(ctx.locationId)}&pipeline_id=${encodeURIComponent(ctx.pipelineId)}&limit=${limit}`;
+    if (startAfter) path += `&startAfter=${encodeURIComponent(startAfter)}`;
     const res = await ghlGet(token, path);
     const opps = (res.body && res.body.opportunities) || [];
     allOpps.push(...opps);
     if (opps.length < limit) break;
-    offset += limit;
+    startAfter = opps[opps.length - 1].id;
   }
 
   const authority = loadPpcStageAuthority();
