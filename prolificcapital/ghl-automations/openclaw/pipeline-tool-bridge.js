@@ -917,6 +917,197 @@ async function pipelineMoveStage(profileId, opportunityId, targetStage, auth) {
   };
 }
 
+// ---- PPC Call Queue ----
+
+const PPC_CALL_QUEUE_PRIORITY = Object.freeze([
+  { queue: 1, label: 'New Leads', stageIds: ['d31c50be-0148-4769-b3bd-cf32c2a16bff'], reason: 'First contact — highest priority' },
+  { queue: 2, label: 'First No-Answer', stageIds: ['1a0d789b-c11d-47a2-9152-6a7ce07dc833'], reason: 'One call attempted, no answer — retry' },
+  { queue: 3, label: 'Second No-Answer', stageIds: ['f03f27b9-f3c1-4534-b07e-8cc3c9186f7a'], reason: 'Two calls attempted, no answer — final attempt' },
+  { queue: 4, label: 'Awaiting Photos', stageIds: ['0bac4afa-7cd0-4019-84ad-6f2a2dc33422'], reason: 'Contacted, awaiting property photos' },
+  { queue: 5, label: 'Active Pipeline', stageIds: [
+    '5147c1cf-0a9f-450a-86d8-02e9c75db4e5', '0b1c890d-3aa8-4efd-836d-35e7e34cda71',
+    '3dacb3fc-3b4c-44d8-b9ab-035cd00affec', 'f2477c53-33fd-4d43-8e6d-9602acea1b29',
+    'd708b2ef-f165-45d2-be87-7f54168a5229', '64e95e56-7cb7-41a9-a41c-39bbb860f47b',
+    '956b8f91-ff30-47da-93db-3ea1c6ddb3d8', '01c72a0c-3b1d-4044-87af-5f1effd7cc05',
+    '2da16bfe-a6c1-4db0-9168-4d1e24a31224', '6f3f0d9d-94bc-4f6f-a818-43ff67daa1da',
+    'bc3ba84e-e2e8-47ed-aa2f-d7ebcff5c67c', 'c105ac70-54bb-4f24-8e18-0944d8838ec4',
+    'e2c0f6fd-78a7-40a0-86c3-75dfd7f7154c', '9d6055d4-ee83-4d66-a040-25839088a842',
+    'b2633c5b-b9b3-46fe-b443-2f1e3733f1be', '0ee5dd0b-452c-42a8-9108-c785b70cdbc9',
+    '0f5e612a-098a-412e-b525-0b03228d9539',
+  ], reason: 'Active deal progression' },
+  { queue: 6, label: 'Ghosted / Stalled', stageIds: ['09033988-d393-45f4-922b-a822b1d79045'], reason: 'Interested but unresponsive — periodic follow-up' },
+  { queue: 7, label: 'Salvage / Reactivation', stageIds: [
+    '65f819d1-cca3-4d9f-b0ab-d68da038dab3', '1e91c3bd-046b-415b-92a7-dd3e68eb5792',
+    'b68533d0-239b-478d-bcec-d4a570f951e1', '021339c8-15ea-459b-8120-bd76ebe802cb',
+    '6b8304d7-1d63-475e-ba7e-7fbefeabbedb',
+  ], reason: 'Closed/lost — salvage if owner policy allows' },
+]);
+
+const PPC_CALL_QUEUE_EXCLUDED_STAGE_IDS = Object.freeze([
+  '8612fe47-5020-4286-bb66-89e2cd1f544b', 'acf40262-df1f-4632-932b-efef7ea2ee18', 'a5e1a75d-4d47-4212-995a-ffe9dd00fe43',
+]);
+
+const PPC_CALL_QUEUE_EXCLUDED_TAGS = Object.freeze([
+  'do_not_contact_prospect', 'owner_controlled_test', 'pipeline_stage_certification',
+]);
+
+function getPpcCallQueuePriority(stageId) {
+  for (const q of PPC_CALL_QUEUE_PRIORITY) {
+    if (q.stageIds.includes(stageId)) return q;
+  }
+  return null;
+}
+
+async function getPpcCallQueue(profileId, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  if (profileId !== 'PPC_EWA_BEACH') return blocked('CALL_QUEUE_PPC_ONLY');
+  const ctx = resolvePipelineContext(profileId);
+  if (!ctx.resolved) return blocked(ctx.reason);
+  const token = getGhlToken(ctx.profileId);
+  if (!token) return blocked('NO_GHL_CREDENTIALS');
+
+  const allOpps = [];
+  let offset = 0;
+  const limit = 100;
+  while (true) {
+    const path = `/opportunities/search?location_id=${encodeURIComponent(ctx.locationId)}&pipeline_id=${encodeURIComponent(ctx.pipelineId)}&limit=${limit}&offset=${offset}`;
+    const res = await ghlGet(token, path);
+    const opps = (res.body && res.body.opportunities) || [];
+    allOpps.push(...opps);
+    if (opps.length < limit) break;
+    offset += limit;
+  }
+
+  const authority = loadPpcStageAuthority();
+  const queues = {};
+  for (const q of PPC_CALL_QUEUE_PRIORITY) {
+    queues[q.queue] = { queue: q.queue, label: q.label, reason: q.reason, count: 0, items: [] };
+  }
+
+  for (const opp of allOpps) {
+    const stageId = opp.pipelineStageId || opp.pipeline_stage_id || '';
+    if (PPC_CALL_QUEUE_EXCLUDED_STAGE_IDS.includes(stageId)) continue;
+    const tags = (opp.contact && opp.contact.tags) || [];
+    if (tags.some((t) => PPC_CALL_QUEUE_EXCLUDED_TAGS.includes(t))) continue;
+    const priority = getPpcCallQueuePriority(stageId);
+    if (!priority) continue;
+    const stage = (authority.stages || []).find((s) => s.stageId === stageId);
+    queues[priority.queue].items.push({
+      opportunityId: opp.id,
+      contactId: opp.contactId || opp.contact_id || null,
+      contactName: (opp.contact && opp.contact.name) || null,
+      contactPhone: (opp.contact && opp.contact.phone) || null,
+      currentStageId: stageId,
+      currentStageName: stage ? stage.name : null,
+      opportunityName: opp.name || null,
+      opportunityStatus: opp.status || null,
+      monetaryValue: opp.monetaryValue ?? opp.monetary_value ?? null,
+      assignedTo: opp.assignedTo || null,
+      createdAt: opp.createdAt || null,
+      lastActionDate: opp.lastActionDate || null,
+      lastStageChangeAt: opp.lastStageChangeAt || null,
+    });
+    queues[priority.queue].count++;
+  }
+
+  const result = Object.values(queues).filter((q) => q.count > 0);
+  return {
+    status: 'OK',
+    profileId: ctx.profileId,
+    totalEligible: result.reduce((sum, q) => sum + q.count, 0),
+    totalExcluded: allOpps.length - result.reduce((sum, q) => sum + q.count, 0),
+    queues: result,
+    effects: { ...ZERO_EFFECTS },
+  };
+}
+
+async function getPpcCallCard(profileId, opportunityId, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  if (profileId !== 'PPC_EWA_BEACH') return blocked('CALL_CARD_PPC_ONLY');
+  const ctx = resolvePipelineContext(profileId);
+  if (!ctx.resolved) return blocked(ctx.reason);
+  const token = getGhlToken(ctx.profileId);
+  if (!token) return blocked('NO_GHL_CREDENTIALS');
+
+  const res = await ghlGet(token, `/opportunities/${opportunityId}`);
+  const opp = res.body?.opportunity || res.body;
+  if (!opp || !opp.id) return blocked('OPPORTUNITY_NOT_FOUND');
+  if (opp.locationId !== ctx.locationId || opp.pipelineId !== ctx.pipelineId) {
+    return blocked('CROSS_PROFILE_OPPORTUNITY');
+  }
+
+  const tags = (opp.contact && opp.contact.tags) || [];
+  if (tags.some((t) => PPC_CALL_QUEUE_EXCLUDED_TAGS.includes(t))) {
+    return blocked('TEST_ARTIFACT_EXCLUDED_FROM_CALL_QUEUE');
+  }
+
+  const stageId = opp.pipelineStageId || '';
+  const authority = loadPpcStageAuthority();
+  const stage = (authority.stages || []).find((s) => s.stageId === stageId);
+  const priority = getPpcCallQueuePriority(stageId);
+
+  let scriptAuthority;
+  try {
+    const fs = require('fs');
+    scriptAuthority = JSON.parse(fs.readFileSync('C:/Users/mscott/AI_Workspace/prolificcapital/ghl-automations/profiles/ppc-ewa-beach/script-authority.json', 'utf8'));
+  } catch (_) {
+    scriptAuthority = { scripts: {}, firstContactChannel: {} };
+  }
+
+  const allowedScripts = stage ? (stage.allowedScripts || []) : [];
+  const scripts = allowedScripts.map((name) => {
+    const def = (scriptAuthority.scripts || {})[name];
+    return def ? { name, fullName: def.fullName, body: def.body, channel: def.channel, timing: def.timing, humanVsAutomated: def.humanVsAutomated } : { name, note: 'Script definition not found.' };
+  });
+
+  const possibleOutcomes = [];
+  if (stageId === 'd31c50be-0148-4769-b3bd-cf32c2a16bff') {
+    possibleOutcomes.push(
+      { outcome: 'Answered — seller engaged', nextStage: 'Called Once, No Answer', nextStageId: '1a0d789b-c11d-47a2-9152-6a7ce07dc833', note: 'After call, move here if follow-up needed' },
+      { outcome: 'Answered — sending photos', nextStage: 'Awaiting Photos', nextStageId: '0bac4afa-7cd0-4019-84ad-6f2a2dc33422', note: 'Seller agreed to send property photos' },
+      { outcome: 'No answer', nextStage: 'Called Once, No Answer', nextStageId: '1a0d789b-c11d-47a2-9152-6a7ce07dc833', note: 'No answer on first attempt' },
+      { outcome: 'Wrong number / bad number', nextStage: 'Changed Number - Find on Batch', nextStageId: '1e91c3bd-046b-415b-92a7-dd3e68eb5792', note: 'Number is disconnected or wrong person' },
+      { outcome: 'Not interested', nextStage: 'Changed Mind', nextStageId: '021339c8-15ea-459b-8120-bd76ebe802cb', note: 'Seller declined to proceed' },
+    );
+  } else if (stageId === '1a0d789b-c11d-47a2-9152-6a7ce07dc833') {
+    possibleOutcomes.push(
+      { outcome: 'Answered — seller engaged', nextStage: 'Awaiting Photos', nextStageId: '0bac4afa-7cd0-4019-84ad-6f2a2dc33422', note: 'Contact made, seller sending photos' },
+      { outcome: 'No answer again', nextStage: 'Called Another Day, No Answer', nextStageId: 'f03f27b9-f3c1-4534-b07e-8cc3c9186f7a', note: 'Second no-answer attempt' },
+    );
+  }
+
+  return {
+    status: 'OK',
+    profileId: ctx.profileId,
+    opportunityId: opp.id,
+    contactId: opp.contactId || opp.contact_id || null,
+    contactName: (opp.contact && opp.contact.name) || null,
+    contactPhone: (opp.contact && opp.contact.phone) || null,
+    contactEmail: (opp.contact && opp.contact.email) || null,
+    contactTags: tags,
+    currentStageId: stageId,
+    currentStageName: stage ? stage.name : null,
+    opportunityName: opp.name || null,
+    opportunityStatus: opp.status || null,
+    monetaryValue: opp.monetaryValue ?? opp.monetary_value ?? null,
+    assignedTo: opp.assignedTo || null,
+    createdAt: opp.createdAt || null,
+    lastActionDate: opp.lastActionDate || null,
+    lastStageChangeAt: opp.lastStageChangeAt || null,
+    queuePriority: priority ? priority.queue : null,
+    queueLabel: priority ? priority.label : null,
+    queueReason: priority ? priority.reason : null,
+    courseSequence: stage ? (stage.courseSequence || null) : null,
+    automationPolicy: stage ? (stage.automationPolicy || null) : null,
+    nextExpectedAction: stage ? stage.nextExpectedAction : null,
+    allowedScripts: scripts,
+    possibleOutcomes,
+    effects: { ...ZERO_EFFECTS },
+  };
+}
+
 module.exports = {
   PIPELINE_LIVE_MODE,
   OWNER_ID,
@@ -951,4 +1142,6 @@ module.exports = {
   pipelineMoveStage,
   loadPpcStageAuthority,
   resolvePpcStage,
+  getPpcCallQueue,
+  getPpcCallCard,
 };
