@@ -47,7 +47,7 @@ You have access to dedicated pipeline tools registered in the OpenClaw gateway. 
 
 1. **NEVER use exec/PowerShell/curl for GHL API calls.** Use the pipeline tools.
 2. **NO DIRECT SMS TOOL EXISTS.** Production SMS requires canary plan + owner approval.
-3. **PPC_EWA_BEACH** has 29 stages. **ATLAS_OUTBOUND** has 21 stages.
+3. **PPC_EWA_BEACH** has 30 stages. **ATLAS_OUTBOUND** has 21 stages.
 4. **Stage movement is OWNER-DIRECTED only.** Requires explicit owner authorization.
 5. **Automatic outreach is BLOCKED** (CONSENT_NOT_VERIFIABLE for PPC).
 6. **Answer naturally.** Use tools when relevant, answer conversationally otherwise.
