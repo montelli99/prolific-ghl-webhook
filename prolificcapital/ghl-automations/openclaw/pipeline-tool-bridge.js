@@ -1227,6 +1227,84 @@ async function getPpcCallCard(profileId, opportunityId, auth) {
   };
 }
 
+async function getPpcRecentCall(profileId, contactPhone, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  if (profileId !== 'PPC_EWA_BEACH') return blocked('RECENT_CALL_PPC_ONLY');
+
+  let jcKey = ''; let jcSecret = '';
+  try {
+    const fs = require('fs');
+    const envContent = fs.readFileSync('C:/Users/mscott/AI_Workspace/prolificcapital/secrets/.env', 'utf8');
+    for (const line of envContent.split('\n')) {
+      if (line.startsWith('JUSTCALL_API_KEY=')) jcKey = line.split('=').slice(1).join('=').trim();
+      if (line.startsWith('JUSTCALL_API_SECRET=')) jcSecret = line.split('=').slice(1).join('=').trim();
+    }
+  } catch (_) {
+    return blocked('NO_JUSTCALL_CREDENTIALS');
+  }
+  if (!jcKey || !jcSecret) return blocked('NO_JUSTCALL_CREDENTIALS');
+
+  const https = require('https');
+  function jcGet(pathname) {
+    return new Promise((resolve) => {
+      const opts = { hostname: 'api.justcall.io', path: pathname, method: 'GET', headers: { 'Authorization': jcKey + ':' + jcSecret, 'Content-Type': 'application/json', 'Accept': 'application/json' }, timeout: 15000 };
+      const req = https.request(opts, (res) => { let data = ''; res.on('data', (c) => { data += c; }); res.on('end', () => { try { resolve({ status: res.statusCode, body: JSON.parse(data) }); } catch (_) { resolve({ status: res.statusCode, body: data }); } }); });
+      req.on('error', (e) => resolve({ status: 0, body: null, error: e.message }));
+      req.on('timeout', () => { req.destroy(); resolve({ status: 0, body: null, error: 'timeout' }); });
+      req.end();
+    });
+  }
+
+  const normalizedPhone = (contactPhone || '').replace(/\D/g, '');
+  const callsRes = await jcGet('/v2.1/calls?per_page=10&direction=OUTGOING');
+  const calls = (callsRes.body && callsRes.body.data) || [];
+
+  let matchedCall = null;
+  for (const call of calls) {
+    const callTo = (call.contact_number || call.to || '').replace(/\D/g, '');
+    if (callTo === normalizedPhone || callTo === normalizedPhone.replace(/^1/, '')) {
+      matchedCall = call;
+      break;
+    }
+  }
+
+  if (!matchedCall) {
+    return { status: 'OK', profileId, found: false, message: 'No recent JustCall call found for this phone number.', effects: { ...ZERO_EFFECTS } };
+  }
+
+  const callDetail = matchedCall;
+  const callInfo = callDetail.call_info || {};
+  const callDuration = callDetail.call_duration || {};
+
+  return {
+    status: 'OK',
+    profileId,
+    found: true,
+    callId: callDetail.id,
+    callSid: callDetail.call_sid || null,
+    direction: (callInfo.direction || 'Outgoing').toLowerCase(),
+    fromNumber: callDetail.justcall_number || null,
+    toNumber: callDetail.contact_number || null,
+    answered: (callInfo.type || '').toLowerCase() === 'answered',
+    status: callInfo.status || null,
+    disposition: callInfo.disposition || null,
+    duration: callDuration.total_duration || 0,
+    friendlyDuration: callDuration.friendly_duration || null,
+    ringTime: callDuration.ring_time || 0,
+    conversationTime: callDuration.conversation_time || 0,
+    recordingUrl: callInfo.recording || null,
+    transcriptAvailable: false,
+    transcriptNote: 'AI Review Assist add-on required for transcript access',
+    callDate: callDetail.call_date || null,
+    callTime: callDetail.call_time || null,
+    agentName: callDetail.agent_name || null,
+    justcallLineName: callDetail.justcall_line_name || null,
+    contactName: callDetail.contact_name || null,
+    effects: { ...ZERO_EFFECTS },
+  };
+}
+
 module.exports = {
   PIPELINE_LIVE_MODE,
   OWNER_ID,
@@ -1263,4 +1341,5 @@ module.exports = {
   resolvePpcStage,
   getPpcCallQueue,
   getPpcCallCard,
+  getPpcRecentCall,
 };
