@@ -72,11 +72,11 @@ async function main() {
   console.log('\n--- STAGE AUTHORITY ---');
   const auth = JSON.parse(fs.readFileSync(STAGE_AUTH_PATH, 'utf8'));
   check('Stage authority loads', !!auth);
-  check('29 stages', auth.totalStages === 29);
+  check('30 stages', auth.totalStages === 30);
   check('Pipeline ID matches', auth.pipelineId === PPC_PIPE);
   check('Location ID matches', auth.locationId === PPC_LOC);
   check('Stage 1 ID correct', auth.stages[0].stageId === 'd31c50be-0148-4769-b3bd-cf32c2a16bff');
-  check('Stage 29 ID correct', auth.stages[28].stageId === 'a5e1a75d-4d47-4212-995a-ffe9dd00fe43');
+  check('Stage 30 ID correct', auth.stages[29].stageId === 'a5e1a75d-4d47-4212-995a-ffe9dd00fe43');
 
   // 3. Bridge loads
   console.log('\n--- BRIDGE ---');

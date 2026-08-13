@@ -3,9 +3,9 @@
   "pipelineName": "Inbound PPC",
   "locationId": "GDq92uruRngbi9mLGGrV",
   "profileId": "PPC_EWA_BEACH",
-  "totalStages": 29,
-  "populatedStages": 24,
-  "lastVerified": "2026-08-12T19:50:00Z",
+  "totalStages": 30,
+  "populatedStages": 25,
+  "lastVerified": "2026-08-13T01:40:00Z",
   "stages": [
     {
       "position": 1,
@@ -17,9 +17,16 @@
       "humanWorkExpected": true,
       "automationExpected": false,
       "terminal": false,
-      "allowedScripts": ["PIN"],
-      "permittedWrites": ["stage_progression_to_2_or_4"],
-      "prohibitedWrites": ["skip_to_later_stages", "send_outbound_cold_templates"],
+      "allowedScripts": [
+        "PIN"
+      ],
+      "permittedWrites": [
+        "stage_progression_to_2_or_4"
+      ],
+      "prohibitedWrites": [
+        "skip_to_later_stages",
+        "send_outbound_cold_templates"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
@@ -33,9 +40,16 @@
       "humanWorkExpected": true,
       "automationExpected": false,
       "terminal": false,
-      "allowedScripts": ["PNOA"],
-      "permittedWrites": ["stage_progression_to_3_or_4"],
-      "prohibitedWrites": ["regress_to_1", "skip_to_5+"],
+      "allowedScripts": [
+        "PNOA"
+      ],
+      "permittedWrites": [
+        "stage_progression_to_3_or_4"
+      ],
+      "prohibitedWrites": [
+        "regress_to_1",
+        "skip_to_5+"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
@@ -49,9 +63,15 @@
       "humanWorkExpected": true,
       "automationExpected": false,
       "terminal": false,
-      "allowedScripts": ["PNOA"],
-      "permittedWrites": ["progression_to_4_or_22_or_28"],
-      "prohibitedWrites": ["regress_to_1_or_2"],
+      "allowedScripts": [
+        "PNOA"
+      ],
+      "permittedWrites": [
+        "progression_to_4_or_22_or_28"
+      ],
+      "prohibitedWrites": [
+        "regress_to_1_or_2"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
@@ -65,9 +85,15 @@
       "humanWorkExpected": false,
       "automationExpected": true,
       "terminal": false,
-      "allowedScripts": ["PPH"],
-      "permittedWrites": ["progression_to_5"],
-      "prohibitedWrites": ["regress_to_1_2_3"],
+      "allowedScripts": [
+        "PPH"
+      ],
+      "permittedWrites": [
+        "progression_to_5"
+      ],
+      "prohibitedWrites": [
+        "regress_to_1_2_3"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
@@ -82,8 +108,12 @@
       "automationExpected": false,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_6_or_22"],
-      "prohibitedWrites": ["send_seller_scripts"],
+      "permittedWrites": [
+        "progression_to_6_or_22"
+      ],
+      "prohibitedWrites": [
+        "send_seller_scripts"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
@@ -98,8 +128,12 @@
       "automationExpected": false,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_7_or_22"],
-      "prohibitedWrites": ["regress_to_1_5"],
+      "permittedWrites": [
+        "progression_to_7_or_22"
+      ],
+      "prohibitedWrites": [
+        "regress_to_1_5"
+      ],
       "confidence": "MEDIUM",
       "provenance": "GHL_LIVE_API_FETCH"
     },
@@ -114,8 +148,12 @@
       "automationExpected": false,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_8"],
-      "prohibitedWrites": ["skip_to_10+"],
+      "permittedWrites": [
+        "progression_to_8"
+      ],
+      "prohibitedWrites": [
+        "skip_to_10+"
+      ],
       "confidence": "MEDIUM",
       "provenance": "STAGE_NAME_INFERENCE"
     },
@@ -130,8 +168,12 @@
       "automationExpected": true,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_9_or_10"],
-      "prohibitedWrites": ["regress"],
+      "permittedWrites": [
+        "progression_to_9_or_10"
+      ],
+      "prohibitedWrites": [
+        "regress"
+      ],
       "confidence": "MEDIUM",
       "provenance": "GHL_LIVE_API_FETCH"
     },
@@ -146,8 +188,12 @@
       "automationExpected": false,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_10_or_28"],
-      "prohibitedWrites": ["regress"],
+      "permittedWrites": [
+        "progression_to_10_or_28"
+      ],
+      "prohibitedWrites": [
+        "regress"
+      ],
       "confidence": "MEDIUM",
       "provenance": "STAGE_NAME_INFERENCE"
     },
@@ -161,9 +207,15 @@
       "humanWorkExpected": true,
       "automationExpected": false,
       "terminal": false,
-      "allowedScripts": ["PGC"],
-      "permittedWrites": ["progression_to_11_or_12_or_28"],
-      "prohibitedWrites": ["regress_to_1_9"],
+      "allowedScripts": [
+        "PGC"
+      ],
+      "permittedWrites": [
+        "progression_to_11_or_12_or_28"
+      ],
+      "prohibitedWrites": [
+        "regress_to_1_9"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
@@ -178,8 +230,12 @@
       "automationExpected": false,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_12_or_28"],
-      "prohibitedWrites": ["regress_to_1_10"],
+      "permittedWrites": [
+        "progression_to_12_or_28"
+      ],
+      "prohibitedWrites": [
+        "regress_to_1_10"
+      ],
       "confidence": "MEDIUM",
       "provenance": "GHL_LIVE_API_FETCH"
     },
@@ -194,8 +250,12 @@
       "automationExpected": false,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_13_or_14"],
-      "prohibitedWrites": ["regress"],
+      "permittedWrites": [
+        "progression_to_13_or_14"
+      ],
+      "prohibitedWrites": [
+        "regress"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
@@ -210,8 +270,12 @@
       "automationExpected": true,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_14"],
-      "prohibitedWrites": ["regress"],
+      "permittedWrites": [
+        "progression_to_14"
+      ],
+      "prohibitedWrites": [
+        "regress"
+      ],
       "confidence": "MEDIUM",
       "provenance": "STAGE_NAME_INFERENCE"
     },
@@ -226,13 +290,37 @@
       "automationExpected": false,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_15"],
-      "prohibitedWrites": ["regress"],
-      "confidence": "HIGH",
-      "provenance": "STAGE_NAME_EXPLICIT"
+      "permittedWrites": [
+        "progression_to_16"
+      ],
+      "prohibitedWrites": [
+        "regress"
+      ],
+      "confidence": "MEDIUM",
+      "provenance": "STAGE_NAME_INFERENCE"
     },
     {
       "position": 15,
+      "stageId": "bc3ba84e-e2e8-47ed-aa2f-d7ebcff5c67c",
+      "name": "Sent PSA for signature",
+      "semanticCategory": "CONTRACT_SIGNING",
+      "outreachEligibility": "AWAITING_SIGNATURE",
+      "nextExpectedAction": "WAIT_FOR_PSA_SIGNATURE",
+      "humanWorkExpected": false,
+      "automationExpected": true,
+      "terminal": false,
+      "allowedScripts": [],
+      "permittedWrites": [
+        "progression_to_18"
+      ],
+      "prohibitedWrites": [
+        "regress"
+      ],
+      "confidence": "MEDIUM",
+      "provenance": "GHL_LIVE_API_FETCH"
+    },
+    {
+      "position": 16,
       "stageId": "c105ac70-54bb-4f24-8e18-0944d8838ec4",
       "name": "Under Contract with Us",
       "semanticCategory": "UNDER_CONTRACT",
@@ -242,13 +330,17 @@
       "automationExpected": false,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_16"],
-      "prohibitedWrites": ["regress"],
+      "permittedWrites": [
+        "progression_to_18"
+      ],
+      "prohibitedWrites": [
+        "regress"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
     {
-      "position": 16,
+      "position": 17,
       "stageId": "e2c0f6fd-78a7-40a0-86c3-75dfd7f7154c",
       "name": "Buyers Contacted",
       "semanticCategory": "BUYERS_CONTACTED",
@@ -258,13 +350,17 @@
       "automationExpected": false,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_17_or_24"],
-      "prohibitedWrites": ["regress"],
+      "permittedWrites": [
+        "progression_to_19_or_24"
+      ],
+      "prohibitedWrites": [
+        "regress"
+      ],
       "confidence": "MEDIUM",
       "provenance": "STAGE_NAME_INFERENCE"
     },
     {
-      "position": 17,
+      "position": 18,
       "stageId": "9d6055d4-ee83-4d66-a040-25839088a842",
       "name": "Buyers Performing Inspection",
       "semanticCategory": "DUE_DILIGENCE",
@@ -274,13 +370,17 @@
       "automationExpected": true,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_18_or_19"],
-      "prohibitedWrites": ["regress"],
+      "permittedWrites": [
+        "progression_to_20_or_19"
+      ],
+      "prohibitedWrites": [
+        "regress"
+      ],
       "confidence": "MEDIUM",
       "provenance": "STAGE_NAME_INFERENCE"
     },
     {
-      "position": 18,
+      "position": 19,
       "stageId": "b2633c5b-b9b3-46fe-b443-2f1e3733f1be",
       "name": "Earnest Money Wired",
       "semanticCategory": "EMD_RECEIVED",
@@ -290,13 +390,17 @@
       "automationExpected": true,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_19"],
-      "prohibitedWrites": ["regress"],
+      "permittedWrites": [
+        "progression_to_21"
+      ],
+      "prohibitedWrites": [
+        "regress"
+      ],
       "confidence": "MEDIUM",
       "provenance": "STAGE_NAME_INFERENCE"
     },
     {
-      "position": 19,
+      "position": 20,
       "stageId": "0ee5dd0b-452c-42a8-9108-c785b70cdbc9",
       "name": "Title Cleared",
       "semanticCategory": "TITLE_CLEARED",
@@ -306,13 +410,17 @@
       "automationExpected": false,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_20"],
-      "prohibitedWrites": ["regress"],
+      "permittedWrites": [
+        "progression_to_22"
+      ],
+      "prohibitedWrites": [
+        "regress"
+      ],
       "confidence": "MEDIUM",
       "provenance": "STAGE_NAME_INFERENCE"
     },
     {
-      "position": 20,
+      "position": 21,
       "stageId": "0f5e612a-098a-412e-b525-0b03228d9539",
       "name": "Closing Date Aligned",
       "semanticCategory": "CLOSING_SCHEDULED",
@@ -322,13 +430,17 @@
       "automationExpected": false,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_29"],
-      "prohibitedWrites": ["regress"],
+      "permittedWrites": [
+        "progression_to_31"
+      ],
+      "prohibitedWrites": [
+        "regress"
+      ],
       "confidence": "MEDIUM",
       "provenance": "STAGE_NAME_INFERENCE"
     },
     {
-      "position": 21,
+      "position": 22,
       "stageId": "09033988-d393-45f4-922b-a822b1d79045",
       "name": "Interested, No Response",
       "semanticCategory": "INTERESTED_GHOSTED",
@@ -338,13 +450,17 @@
       "automationExpected": true,
       "terminal": false,
       "allowedScripts": [],
-      "permittedWrites": ["progression_to_28_or_reengage"],
-      "prohibitedWrites": ["aggressive_outreach"],
+      "permittedWrites": [
+        "progression_to_30_or_reengage"
+      ],
+      "prohibitedWrites": [
+        "aggressive_outreach"
+      ],
       "confidence": "MEDIUM",
       "provenance": "STAGE_NAME_INFERENCE"
     },
     {
-      "position": 22,
+      "position": 23,
       "stageId": "65f819d1-cca3-4d9f-b0ab-d68da038dab3",
       "name": "No comps",
       "semanticCategory": "ARCHIVED_STUCK",
@@ -354,13 +470,17 @@
       "automationExpected": false,
       "terminal": true,
       "allowedScripts": [],
-      "permittedWrites": ["reopen_if_comps_found"],
-      "prohibitedWrites": ["progress_to_contract_stages"],
+      "permittedWrites": [
+        "reopen_if_comps_found"
+      ],
+      "prohibitedWrites": [
+        "progress_to_contract_stages"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
     {
-      "position": 23,
+      "position": 24,
       "stageId": "1e91c3bd-046b-415b-92a7-dd3e68eb5792",
       "name": "Changed Number - Find on Batch",
       "semanticCategory": "CONTACT_UPDATE_NEEDED",
@@ -370,13 +490,18 @@
       "automationExpected": false,
       "terminal": true,
       "allowedScripts": [],
-      "permittedWrites": ["archive_or_reopen_with_new_number"],
-      "prohibitedWrites": ["send_sms", "place_call"],
+      "permittedWrites": [
+        "archive_or_reopen_with_new_number"
+      ],
+      "prohibitedWrites": [
+        "send_sms",
+        "place_call"
+      ],
       "confidence": "MEDIUM",
       "provenance": "GHL_LIVE_API_FETCH"
     },
     {
-      "position": 24,
+      "position": 25,
       "stageId": "8612fe47-5020-4286-bb66-89e2cd1f544b",
       "name": "Under Contract with Another Buyer",
       "semanticCategory": "CLOSED_LOST_COMPETITOR",
@@ -386,13 +511,17 @@
       "automationExpected": true,
       "terminal": true,
       "allowedScripts": [],
-      "permittedWrites": ["archive"],
-      "prohibitedWrites": ["reopen"],
+      "permittedWrites": [
+        "archive"
+      ],
+      "prohibitedWrites": [
+        "reopen"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
     {
-      "position": 25,
+      "position": 26,
       "stageId": "acf40262-df1f-4632-932b-efef7ea2ee18",
       "name": "Decided to List",
       "semanticCategory": "CLOSED_LOST_LISTED",
@@ -402,13 +531,17 @@
       "automationExpected": true,
       "terminal": true,
       "allowedScripts": [],
-      "permittedWrites": ["archive"],
-      "prohibitedWrites": ["reopen"],
+      "permittedWrites": [
+        "archive"
+      ],
+      "prohibitedWrites": [
+        "reopen"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
     {
-      "position": 26,
+      "position": 27,
       "stageId": "b68533d0-239b-478d-bcec-d4a570f951e1",
       "name": "Overpriced",
       "semanticCategory": "CLOSED_LOST_OVERPRICED",
@@ -418,13 +551,17 @@
       "automationExpected": false,
       "terminal": true,
       "allowedScripts": [],
-      "permittedWrites": ["archive"],
-      "prohibitedWrites": ["reopen_without_price_change"],
+      "permittedWrites": [
+        "archive"
+      ],
+      "prohibitedWrites": [
+        "reopen_without_price_change"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
     {
-      "position": 27,
+      "position": 28,
       "stageId": "021339c8-15ea-459b-8120-bd76ebe802cb",
       "name": "Changed Mind",
       "semanticCategory": "CLOSED_LOST_WITHDREW",
@@ -434,13 +571,17 @@
       "automationExpected": true,
       "terminal": true,
       "allowedScripts": [],
-      "permittedWrites": ["archive"],
-      "prohibitedWrites": ["reopen"],
+      "permittedWrites": [
+        "archive"
+      ],
+      "prohibitedWrites": [
+        "reopen"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
     {
-      "position": 28,
+      "position": 29,
       "stageId": "6b8304d7-1d63-475e-ba7e-7fbefeabbedb",
       "name": "Seller Declined",
       "semanticCategory": "CLOSED_LOST_DECLINED",
@@ -450,13 +591,17 @@
       "automationExpected": true,
       "terminal": true,
       "allowedScripts": [],
-      "permittedWrites": ["archive"],
-      "prohibitedWrites": ["reopen"],
+      "permittedWrites": [
+        "archive"
+      ],
+      "prohibitedWrites": [
+        "reopen"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     },
     {
-      "position": 29,
+      "position": 30,
       "stageId": "a5e1a75d-4d47-4212-995a-ffe9dd00fe43",
       "name": "Property Sold",
       "semanticCategory": "CLOSED_WON",
@@ -466,15 +611,19 @@
       "automationExpected": true,
       "terminal": true,
       "allowedScripts": [],
-      "permittedWrites": ["archive"],
-      "prohibitedWrites": ["reopen"],
+      "permittedWrites": [
+        "archive"
+      ],
+      "prohibitedWrites": [
+        "reopen"
+      ],
       "confidence": "HIGH",
       "provenance": "STAGE_NAME_EXPLICIT"
     }
   ],
   "invariants": [
     "Stage progression must follow logical sequence (no skipping from 1 to 10)",
-    "Terminal stages (22-29) block further outreach",
+    "Terminal stages (23-30) block further outreach",
     "Unknown stage semantics block write operations",
     "Stage ID must match this authority file"
   ],
