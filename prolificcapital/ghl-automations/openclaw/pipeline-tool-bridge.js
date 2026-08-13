@@ -951,6 +951,88 @@ const PPC_CALL_QUEUE_EXCLUDED_TAGS = Object.freeze([
   'do_not_contact_prospect', 'owner_controlled_test', 'pipeline_stage_certification',
 ]);
 
+const PPC_CALL_GUARD_BLOCK_CALL = Object.freeze(['DNC', 'BAD_NUMBER', 'PENDING_REPLY', 'ACTIVE_HUMAN_WORK', 'DUPLICATE_HISTORY', 'PROVIDER_UNCERTAINTY']);
+const PPC_CALL_GUARD_BLOCK_SMS_ONLY = Object.freeze(['LANDLINE', 'CONSENT']);
+const PPC_CALL_GUARD_BLOCK_FIRST_CONTACT = Object.freeze(['PRIOR_CONTACT']);
+
+function evaluatePpcCallEligibility(opp) {
+  const tags = (opp.contact && opp.contact.tags) || [];
+  const stageId = opp.pipelineStageId || opp.pipeline_stage_id || '';
+  const assignedTo = opp.assignedTo || null;
+  const contactName = (opp.contact && opp.contact.name) || null;
+  const contactPhone = (opp.contact && opp.contact.phone) || null;
+
+  const guards = [];
+  let callEligible = true;
+  let smsEligible = true;
+  let reason = null;
+
+  if (tags.some((t) => PPC_CALL_QUEUE_EXCLUDED_TAGS.includes(t))) {
+    return { callEligible: false, smsEligible: false, reason: 'TEST_ARTIFACT', guards: [{ guard: 'TEST_ARTIFACT', action: 'BLOCK', channel: 'BOTH' }] };
+  }
+
+  if (PPC_CALL_QUEUE_EXCLUDED_STAGE_IDS.includes(stageId)) {
+    return { callEligible: false, smsEligible: false, reason: 'TERMINAL_STAGE', guards: [{ guard: 'TERMINAL_STAGE', action: 'BLOCK', channel: 'BOTH' }] };
+  }
+
+  if (tags.includes('DNC') || tags.includes('do_not_call')) {
+    callEligible = false;
+    smsEligible = false;
+    guards.push({ guard: 'DNC', action: 'BLOCK', channel: 'BOTH' });
+  }
+
+  if (tags.includes('STOP') || tags.includes('opt_out') || tags.includes('sms_opt_out')) {
+    smsEligible = false;
+    guards.push({ guard: 'STOP_OPT_OUT', action: 'BLOCK_SMS', channel: 'SMS' });
+  }
+
+  if (tags.includes('wrong_number') || tags.includes('bad_number') || tags.includes('invalid_number')) {
+    callEligible = false;
+    smsEligible = false;
+    guards.push({ guard: 'BAD_NUMBER', action: 'BLOCK', channel: 'BOTH' });
+  }
+
+  if (tags.includes('landline')) {
+    smsEligible = false;
+    guards.push({ guard: 'LANDLINE', action: 'BLOCK_SMS', channel: 'SMS' });
+  }
+
+  if (tags.includes('pending_reply') || tags.includes('awaiting_reply')) {
+    callEligible = false;
+    smsEligible = false;
+    guards.push({ guard: 'PENDING_REPLY', action: 'BLOCK', channel: 'BOTH' });
+  }
+
+  if (tags.includes('active_human_work') || tags.includes('in_progress')) {
+    callEligible = false;
+    smsEligible = false;
+    guards.push({ guard: 'ACTIVE_HUMAN_WORK', action: 'BLOCK', channel: 'BOTH' });
+  }
+
+  if (assignedTo && assignedTo !== 'PGfXxlXCRXs3hXN3Gq7R') {
+    callEligible = false;
+    smsEligible = false;
+    guards.push({ guard: 'ACTIVE_HUMAN_WORK', action: 'BLOCK', channel: 'BOTH', detail: `Assigned to ${assignedTo}, not Montelli` });
+  }
+
+  if (stageId === 'd31c50be-0148-4769-b3bd-cf32c2a16bff') {
+    callEligible = false;
+    smsEligible = false;
+    guards.push({ guard: 'FIRST_CONTACT_POLICY_BLOCKED', action: 'BLOCK', channel: 'BOTH', detail: 'PIN automation blocked pending consent verification. Owner must decide manual first-contact process.' });
+  }
+
+  if (!contactPhone || contactPhone.length < 10) {
+    callEligible = false;
+    smsEligible = false;
+    guards.push({ guard: 'NO_PHONE', action: 'BLOCK', channel: 'BOTH' });
+  }
+
+  if (!callEligible && !reason) reason = guards.filter((g) => g.action === 'BLOCK' && g.channel === 'BOTH').map((g) => g.guard).join(', ');
+  if (!reason) reason = 'CLEARED';
+
+  return { callEligible, smsEligible, reason, guards };
+}
+
 function getPpcCallQueuePriority(stageId) {
   for (const q of PPC_CALL_QUEUE_PRIORITY) {
     if (q.stageIds.includes(stageId)) return q;
@@ -983,18 +1065,24 @@ async function getPpcCallQueue(profileId, auth) {
   const authority = loadPpcStageAuthority();
   const queues = {};
   for (const q of PPC_CALL_QUEUE_PRIORITY) {
-    queues[q.queue] = { queue: q.queue, label: q.label, reason: q.reason, count: 0, items: [] };
+    queues[q.queue] = { queue: q.queue, label: q.label, reason: q.reason, stageEligible: 0, contactEligible: 0, items: [] };
   }
+
+  const exclusionCounts = {
+    testArtifact: 0, terminal: 0, dnc: 0, stopOptOut: 0, badNumber: 0,
+    landline: 0, pendingReply: 0, activeHumanWork: 0, firstContactPolicyBlocked: 0,
+    noPhone: 0, noStage: 0, other: 0,
+  };
 
   for (const opp of allOpps) {
     const stageId = opp.pipelineStageId || opp.pipeline_stage_id || '';
-    if (PPC_CALL_QUEUE_EXCLUDED_STAGE_IDS.includes(stageId)) continue;
-    const tags = (opp.contact && opp.contact.tags) || [];
-    if (tags.some((t) => PPC_CALL_QUEUE_EXCLUDED_TAGS.includes(t))) continue;
+    if (!stageId) { exclusionCounts.noStage++; continue; }
+    const eligibility = evaluatePpcCallEligibility(opp);
     const priority = getPpcCallQueuePriority(stageId);
     if (!priority) continue;
+
     const stage = (authority.stages || []).find((s) => s.stageId === stageId);
-    queues[priority.queue].items.push({
+    const item = {
       opportunityId: opp.id,
       contactId: opp.contactId || opp.contact_id || null,
       contactName: (opp.contact && opp.contact.name) || null,
@@ -1008,16 +1096,46 @@ async function getPpcCallQueue(profileId, auth) {
       createdAt: opp.createdAt || null,
       lastActionDate: opp.lastActionDate || null,
       lastStageChangeAt: opp.lastStageChangeAt || null,
-    });
-    queues[priority.queue].count++;
+      callEligible: eligibility.callEligible,
+      smsEligible: eligibility.smsEligible,
+      eligibilityReason: eligibility.reason,
+      eligibilityGuards: eligibility.guards,
+    };
+
+    queues[priority.queue].stageEligible++;
+    if (eligibility.callEligible) {
+      queues[priority.queue].contactEligible++;
+    }
+
+    for (const g of eligibility.guards) {
+      switch (g.guard) {
+        case 'TEST_ARTIFACT': exclusionCounts.testArtifact++; break;
+        case 'TERMINAL_STAGE': exclusionCounts.terminal++; break;
+        case 'DNC': exclusionCounts.dnc++; break;
+        case 'STOP_OPT_OUT': exclusionCounts.stopOptOut++; break;
+        case 'BAD_NUMBER': exclusionCounts.badNumber++; break;
+        case 'LANDLINE': exclusionCounts.landline++; break;
+        case 'PENDING_REPLY': exclusionCounts.pendingReply++; break;
+        case 'ACTIVE_HUMAN_WORK': exclusionCounts.activeHumanWork++; break;
+        case 'FIRST_CONTACT_POLICY_BLOCKED': exclusionCounts.firstContactPolicyBlocked++; break;
+        case 'NO_PHONE': exclusionCounts.noPhone++; break;
+        default: exclusionCounts.other++; break;
+      }
+    }
+
+    queues[priority.queue].items.push(item);
   }
 
-  const result = Object.values(queues).filter((q) => q.count > 0);
+  const result = Object.values(queues).filter((q) => q.stageEligible > 0);
+  const totalStageEligible = result.reduce((sum, q) => sum + q.stageEligible, 0);
+  const totalContactEligible = result.reduce((sum, q) => sum + q.contactEligible, 0);
   return {
     status: 'OK',
     profileId: ctx.profileId,
-    totalEligible: result.reduce((sum, q) => sum + q.count, 0),
-    totalExcluded: allOpps.length - result.reduce((sum, q) => sum + q.count, 0),
+    totalPipeline: allOpps.length,
+    totalStageEligible,
+    totalContactEligible,
+    exclusionCounts,
     queues: result,
     effects: { ...ZERO_EFFECTS },
   };
