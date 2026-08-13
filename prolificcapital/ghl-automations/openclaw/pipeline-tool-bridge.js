@@ -237,6 +237,15 @@ function authorize(auth) {
   if (ctx.mode && ctx.mode !== PIPELINE_LIVE_MODE) {
     return { authorized: false, reason: 'PIPELINE_LIVE_MODE_REQUIRED' };
   }
+  if (ctx.platformOwnerVerified) {
+    if (String(ctx.chatId || '') !== CHAT_ID) {
+      return { authorized: false, reason: 'GROUP_REQUIRED' };
+    }
+    if (String(ctx.topicId || '') !== TOPIC_ID) {
+      return { authorized: false, reason: 'TOPIC_389_REQUIRED' };
+    }
+    return { authorized: true };
+  }
   if (String(ctx.telegramUserId || '') !== OWNER_ID) {
     return { authorized: false, reason: 'OWNER_REQUIRED' };
   }
