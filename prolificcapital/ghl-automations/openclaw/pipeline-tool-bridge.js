@@ -1227,7 +1227,7 @@ async function getPpcCallCard(profileId, opportunityId, auth) {
   };
 }
 
-async function getPpcRecentCall(profileId, contactPhone, auth) {
+async function getPpcRecentCall(profileId, contactPhone, auth, selectedAt) {
   const a = authorize(auth);
   if (!a.authorized) return blocked(a.reason);
   if (profileId !== 'PPC_EWA_BEACH') return blocked('RECENT_CALL_PPC_ONLY');
@@ -1260,17 +1260,32 @@ async function getPpcRecentCall(profileId, contactPhone, auth) {
   const callsRes = await jcGet('/v2.1/calls?per_page=10&direction=OUTGOING');
   const calls = (callsRes.body && callsRes.body.data) || [];
 
+  const SELECTED_AT_TOLERANCE_SECONDS = 60;
+  let selectedAtMs = 0;
+  if (selectedAt) {
+    selectedAtMs = typeof selectedAt === 'number' ? selectedAt : new Date(selectedAt).getTime();
+  }
+
   let matchedCall = null;
   for (const call of calls) {
     const callTo = (call.contact_number || call.to || '').replace(/\D/g, '');
-    if (callTo === normalizedPhone || callTo === normalizedPhone.replace(/^1/, '')) {
-      matchedCall = call;
-      break;
+    if (callTo !== normalizedPhone && callTo !== normalizedPhone.replace(/^1/, '')) continue;
+
+    if (selectedAtMs > 0) {
+      const callDate = call.call_date || '';
+      const callTime = call.call_time || '';
+      const callDateTime = callDate && callTime ? new Date(callDate + 'T' + callTime + 'Z').getTime() : 0;
+      if (callDateTime > 0 && callDateTime < (selectedAtMs - SELECTED_AT_TOLERANCE_SECONDS * 1000)) {
+        continue;
+      }
     }
+
+    matchedCall = call;
+    break;
   }
 
   if (!matchedCall) {
-    return { status: 'OK', profileId, found: false, message: 'No recent JustCall call found for this phone number.', effects: { ...ZERO_EFFECTS } };
+    return { status: 'OK', profileId, found: false, message: 'No fresh JustCall call found for this phone number after the seller was selected.', effects: { ...ZERO_EFFECTS } };
   }
 
   const callDetail = matchedCall;
