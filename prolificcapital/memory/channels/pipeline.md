@@ -85,18 +85,48 @@ PPC_AUTOMATIC_FIRST_CONTACT_SMS = BLOCKED_CONSENT_UNVERIFIED. PPC_AUTOMATIC_CALL
 
 Even for a real PPC lead, do not casually advise that OpenClaw should send an automatic first-contact SMS as though that capability is live. You may explain: "Course workflow calls for PIN first, but automatic first-contact SMS is currently blocked pending consent verification." Pipeline management remains available. Keep these separate.
 
+## Course Workflow vs Automation Capability
+
+These are DISTINCT concepts. Do not conflate them:
+
+- **COURSE-DESIGNED WORKFLOW:** What the PPC course says should happen (e.g., PIN SMS → delivery → manual call). This is the authoritative playbook.
+- **CURRENT AUTOMATION CAPABILITY:** What OpenClaw is currently permitted to automate (e.g., PIN automation blocked pending consent verification).
+
+If course authority says PIN-first and PIN automation is blocked, the correct advice is: "The PPC playbook calls for PIN before the call, but automatic PIN sending is currently disabled pending consent verification." Do NOT silently mutate the course workflow into CALL_FIRST merely because automation is blocked. Do not make legal conclusions beyond established policy.
+
 ## Certification / Test Artifact Guard
 
 If a contact or opportunity has any of these tags: `do_not_contact_prospect`, `owner_controlled_test`, or `pipeline_stage_certification` — treat it as a TEST_ARTIFACT. Do NOT recommend: sending SMS, placing calls, following normal seller cadence, or any outreach. The correct recommendation is: NO OUTREACH, NO STAGE CHANGE unless the owner explicitly directs a certification action. Identify it as a certification artifact in your response.
+
+Check `contactTags` from `pipeline_read_opportunity` output. If any test-artifact tag is present, suppress all outreach recommendations.
 
 ## PPC Advisory Authority Precedence
 
 For PPC_EWA_BEACH advice, use this explicit precedence:
 
-1. Current fresh GHL evidence (pipeline_read_opportunity, pipeline_search_opportunities).
-2. Owner-provided current interaction evidence (what Montelli just told you).
-3. PPC stage authority (profiles/ppc-ewa-beach/stage-authority.json).
-4. PPC script authority (profiles/ppc-ewa-beach/script-authority.json).
+1. **Safety / test-artifact guard** — check contactTags first. If test artifact, stop.
+2. Current fresh GHL evidence (pipeline_read_opportunity, pipeline_search_opportunities).
+3. Owner-provided current interaction evidence (what Montelli just told you).
+4. **COURSE_EXPLICIT** PPC authority (script-authority.json with confidence: COURSE_EXPLICIT).
+5. PPC stage authority (profiles/ppc-ewa-beach/stage-authority.json).
+6. PPC workflow authority (profiles/ppc-ewa-beach/workflow-authority.json).
+7. PPC compliance profile (profiles/ppc-ewa-beach/compliance-profile.json).
+8. PPC-specific course/Kayla memory.
+
+COURSE_EXPLICIT evidence outranks STAGE_NAME_EXPLICIT or inferred behavior. If stage-authority.json and script-authority.json conflict on the same stage, script-authority.json with COURSE_EXPLICIT confidence wins.
+
+DO NOT use Atlas stage/script authority to fill PPC gaps. If PPC authority does not answer something, say UNKNOWN / NOT YET MAPPED. Do not fall back to Atlas because it seems similar.
+
+## PPC Stage Names and IDs
+
+PPC stage names and IDs are authoritative. Never use ordinal positions (Stage 2, Stage 4) as durable semantics — positions change when stages are inserted. Always use exact stage names and IDs.
+
+Current PPC Stage 1: "New Lead / Call ASAP" (`d31c50be-0148-4769-b3bd-cf32c2a16bff`)
+Current PPC Stage 2: "Called Once, No Answer" (`1a0d789b-c11d-47a2-9152-6a7ce07dc833`)
+Current PPC Stage 3: "Called Another Day, No Answer" (`f03f27b9-f3c1-4534-b07e-8cc3c9186f7a`)
+Current PPC Stage 4: "Awaiting Photos" (`0bac4afa-7cd0-4019-84ad-6f2a2dc33422`)
+
+There is NO stage named "Contact Made" or "No Answer" in the PPC pipeline. Do not invent stage names.
 5. PPC workflow authority (profiles/ppc-ewa-beach/workflow-authority.json).
 6. PPC compliance profile (profiles/ppc-ewa-beach/compliance-profile.json).
 7. PPC-specific course/Kayla memory.

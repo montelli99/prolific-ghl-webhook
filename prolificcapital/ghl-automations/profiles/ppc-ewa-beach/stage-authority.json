@@ -13,22 +13,25 @@
       "name": "New Lead / Call ASAP",
       "semanticCategory": "NEW_LEAD",
       "outreachEligibility": "ELIGIBLE_FIRST_CONTACT",
-      "nextExpectedAction": "CALL_FIRST",
+      "nextExpectedAction": "SEND_PIN_THEN_CALL",
+      "courseSequence": "PIN_SMS → DELIVERY → MANUAL_CALL",
       "humanWorkExpected": true,
-      "automationExpected": false,
+      "automationExpected": true,
+      "automationPolicy": "PIN_AUTOMATION_BLOCKED_CONSENT_UNVERIFIED",
       "terminal": false,
       "allowedScripts": [
         "PIN"
       ],
       "permittedWrites": [
-        "stage_progression_to_2_or_4"
+        "stage_progression_to_called_once_no_answer",
+        "stage_progression_to_awaiting_photos"
       ],
       "prohibitedWrites": [
         "skip_to_later_stages",
         "send_outbound_cold_templates"
       ],
       "confidence": "HIGH",
-      "provenance": "STAGE_NAME_EXPLICIT"
+      "provenance": "COURSE_EXPLICIT"
     },
     {
       "position": 2,
