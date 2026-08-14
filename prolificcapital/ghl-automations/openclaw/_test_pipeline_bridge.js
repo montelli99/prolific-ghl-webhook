@@ -42,6 +42,7 @@ const EXPECTED_METHODS = [
   'pipelineReadOpportunity', 'pipelineSearchOpportunities', 'pipelineListStages', 'pipelineMoveStage',
   'loadPpcStageAuthority', 'resolvePpcStage', 'getPpcCallQueue', 'getPpcCallCard', 'getPpcRecentCall',
   'getPpcCallContext', 'startPpcCallIntelligence', 'getPpcCallIntelligence', 'applyPpcDnc', 'applyPpcWrongNumber',
+  'getPpcCallingDeskStatus',
 ];
 
 const ALLOWED_EXPORTS = new Set([
