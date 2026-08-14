@@ -78,8 +78,23 @@ Before non-trivial work, inspect the current local operating files first:
 - `USER.md`
 - `TOOLS.md`
 - relevant `memory/*.md` files for the task
+- `docs/WEBHOOK_REGISTRY.md` — canonical webhook URLs, endpoints, and purposes
 
 Do not ask the user what tools, skills, or abilities are available until those current local sources have been checked.
+
+## Webhooks — CRITICAL
+
+**All webhooks route through a single Render server:** `https://prolific-ghl-webhook.onrender.com`
+
+**Before answering any webhook question**, read `docs/WEBHOOK_REGISTRY.md`. Never guess a webhook URL or purpose.
+
+| Service | Webhook URL | Config Location |
+|---------|-------------|-----------------|
+| JustCall | `/webhook/justcall` | JustCall UI → APIs and Webhooks → Webhook Settings |
+| GHL | `/webhook/ghl` | GHL Settings → Webhooks |
+| GHL Stage | `/webhook/ghl/stage-transition` | GHL Settings → Webhooks |
+
+**JustCall webhooks are configured in the JustCall app UI, NOT via API.**
 
 ## Contact Card
 
@@ -107,7 +122,7 @@ This returns the current card status, fields, hashes, and readiness. Do not answ
   - No preview. No approval. No phases. Just send.
 - To check card status: `node ghl-automations/openclaw/pipeline-contact-card.cjs status`
 - Self-test is separate from production canary. No prospect, no GHL write, no stage movement.
-- Owner-controlled test recipient: ending 0891
+- Owner-controlled test recipient: +15718140891 (ends 0891, 814 prefix — NOT 601)
 - 10DLC verified, MMS enabled, business approved.
 
 **Stale claims to reject:**
@@ -181,23 +196,36 @@ Atlas contact identity must be proven before any write. Shared phone numbers, ge
 
 Atlas artifact authorization uses one versioned canonical hashing implementation. Raw-file hashes are diagnostic only unless explicitly declared. Immutable artifacts and manifests are never edited to repair a hash mismatch. A mismatch requires provenance investigation and a new attestation, replacement artifact, or child manifest.
 
-Current clean rollout manifest:
+**AUTHORITATIVE OPERATING STATE — READ THIS FIRST:**
+`memory/PROLIFICCLAWD_PIPELINE_CURRENT_STATE.md` is the authoritative current-state summary for the Atlas import and PPC pipeline. Do not quote counts from this AGENTS.md's historical Atlas narrative as current state. AGENTS.md is guidance, not an operational dashboard; current counts/live state always come from the CURRENT STATE memory file, verified runtime artifacts, and live tools, in that order.
+
+- Atlas Import: COMPLETE (`FINAL_FIFTY_FIVE_RESUME_PASSED_ATLAS_IMPORT_COMPLETE`)
+- Atlas-valid opportunities: 206 (NOT 149)
+- Remaining executable rows: 0
+- Blocked rows: `import-ready:69` (SOURCE_DATA_CONFLICT), `import-ready:217` (PERMANENT_IDENTITY_AMBIGUITY), `import-ready:273` (PERMANENT_IDENTITY_AMBIGUITY)
+- Closeout artifact: `lead-tracking/atlas-deals/reconciliations/atlas-production-import-closeout-20260730-b969c160bb0b.json`
+- No canary is pending or blocked; the import is finished. Reject stale claims of "149 opportunities", "clean eligible rows 58/57", "final-58 unexecuted", or "synthetic canary blocked".
+
+Historical narrative of the import follows for audit reference only; none of its intermediate counts are current. Do not answer operational questions from it.
+
+Current clean rollout manifest (historical):
 - Path: `lead-tracking/atlas-deals/manifests/atlas-clean-rollout-20260729-532b0d1f34e1.json`
 - Hash: `532b0d1f34e10b502fe49aa2db7e7b2dae02bacbd82aa1d4bde039805ea5b91d`
 - Parent manifest hash: `7494e5af022c1c6c6ccfe5322705961d39b9d52abfcb7b3023959a8314252c1f`
 - Source hash: `028fb019b0e70c695451ca3077df6269e72b1403d2a32a774eb6a5a24494e01b`
 - Field-map hash: `f3b3f867a0b3dbf7420c816fd007a23a69f137cd3b65abedcf3e0e15b20af5ae`
-- Current executable clean eligible rows: 58, subject to fresh read-only ledger verification, successful canary reconciliation, and owner approval before any future import. The authorized final-59 execution attempt stopped before writes because the final-60 prewrite-stop artifact hash gate failed; the corrected final-59 review then excluded `import-ready:273`.
+- Historical snapshot at that time: executable clean eligible rows then 58, subject to fresh read-only ledger verification, successful canary reconciliation, and owner approval before any future import. The authorized final-59 execution attempt stopped before writes because the final-60 prewrite-stop artifact hash gate failed; the corrected final-59 review then excluded `import-ready:273`.
 
 Verified production results:
 - Completed imports: one-row canary, three-row reuse batch, twenty-row controlled batch, fifty-row controlled batch, a stopped partial 75-row attempt with 22 reconciled opportunities, a stopped partial 53-row resume attempt with 46 reconciled opportunities, and a completed 7-row resume batch
-- Physical GHL opportunities imported so far: 149 Atlas-valid opportunities, plus 7 unrelated target-pipeline opportunities observed during reconciliation
-- Fully reconciled valid opportunities: 149
+- Historical snapshot: physical GHL opportunities imported at that stage totalled 149 Atlas-valid opportunities, plus 7 unrelated target-pipeline opportunities observed during reconciliation
+- Historical fully-reconciled count: 149, superseded by 206 (import COMPLETE)
+- Historical snapshot at that time: 149 fully reconciled valid opportunities
 - Remediation-required opportunities: 0
 - Total contacts created so far: 115
 - Total contact reuse decisions: 35
 - Remaining clean unimported rows represented by stopped final-60 manifest: 60
-- Current executable clean unimported rows: 57, excluding `import-ready:217`, `import-ready:273`, and completed canary row `import-ready:230`
+- Historical snapshot at that time: 57 executable clean unimported rows, excluding `import-ready:217`, `import-ready:273`, and completed canary row `import-ready:230`
 - Blocked malformed/questionable rows: 38
 - Original preflight-blocked rows: 25
 - Property fields on contacts: 0
@@ -218,9 +246,9 @@ Atlas live adapter state:
 - Permitted writes: contact create and opportunity create only
 - Forbidden writes: contact update, opportunity update, notes, tasks, workflows, SMS, email, calls, voicemail, and conversation messages
 - `LIVE_MANIFEST` requires a successful canary artifact plus fresh owner authorization; environment variables alone do not authorize writes
-- Current final-58 remains unexecuted with production writes 0
+- Historical: final-58 was then unexecuted with production writes 0
 - Latest adapter validation: 129/129 live-client matrix cases covered, deterministic local HTTP stub only for mutation tests, read-only live validation `AUTH_READY`, field contract `lead-tracking/atlas-deals/reconciliations/atlas-live-opportunity-field-contract-6c32d8b4c096.json`, canary selection required `lead-tracking/atlas-deals/reconciliations/atlas-live-canary-selection-required-e0410e884a8f.json`
-- Synthetic canary is blocked because no pre-existing internal `ATLAS E2E CANARY` contact exists and creating one is not authorized; owner must select exactly one real final-58 row for `LIVE_CANARY`
+- Historical: at that time a synthetic canary was blocked because no pre-existing internal `ATLAS E2E CANARY` contact existed and creating one was not authorized; the owner then had to select exactly one real final-58 row for `LIVE_CANARY`
 - Row `import-ready:230` completed as the fresh owner-approved one-row LIVE_CANARY. Manifest `lead-tracking/atlas-deals/manifests/atlas-live-canary-row230-20260730-64efceffac46.json`, reconciliation `lead-tracking/atlas-deals/reconciliations/atlas-live-canary-row230-passed-57e800b84cff.json`, opportunity `iPQfs1bnZmJeAVRISQWa`, contacts created/updated 0, outreach 0, stopped after one row. Remaining 57 rows require fresh owner approval.
 - Controlled final-57 LIVE_MANIFEST attempt stopped before writes. Child manifest `lead-tracking/atlas-deals/manifests/atlas-final-57-after-row230-canary-20260730-474008f199e6.json`, stop artifact `lead-tracking/atlas-deals/reconciliations/atlas-final-57-live-import-final-fifty-seven-stopped-prewrite-failure-47410948b586.json`, stop reason canary row marker did not resolve exactly once in pre-write marker-resolution gate. Rows attempted 0, rows completed 0, additional production writes 0.
 - Canary marker-resolution gate repaired with zero production writes. Root cause: `/opportunities/search` list payloads omit/partially omit opportunity custom fields; direct opportunity readback has source-row marker `import-ready:230` on field ID `bNUaLqPpKB2IY7nMx1Gh`. Canonical proof now hydrates the full pipeline and requires exactly one durable canary match. Existing final-57 child manifest preflight passed; artifact `lead-tracking/atlas-deals/reconciliations/atlas-final-57-live-import-preflight-passed-1da4dff25908.json`. Final-57 import not executed yet.
@@ -311,6 +339,18 @@ If the user asked for repo-grounded facts, do not answer from general knowledge 
 - When the user points you to a source of truth such as an inbox, file, memory entry, log, repo, URL, or account, inspect that source directly before theorizing.
 - If the user repeats an instruction, stop proposing alternatives and execute that instruction unless there is a hard technical blocker.
 - Do not invent or surface personal identifiers, emails, accounts, or private facts unless they were directly provided in the current task context or verified from an authorized local source.
+
+### Current-State Source Of Truth Order
+
+When asked for live operational state, counts, or desk status, resolve in this order and do not skip upward to weaker sources:
+
+1. Live runtime output from the installed CLI/tools: `desk status` (reserved command), `node ghl-automations/openclaw/pipeline-contact-card.cjs status`, kill-switch reads, bridge/tool output
+2. `memory/PROLIFICCLAWD_PIPELINE_CURRENT_STATE.md` (authoritative current-state summary, supersedes all older summaries)
+3. `HANDOFFS.json` and `memory/status/*.json` (semi-controlled operational records)
+4. AGENTS.md, this file — guidance and historical audit narrative; **never quote its intermediate/historical counts (149, 58, 57, final-58, canary-blocked) as current state**
+5. General knowledge — never for live counts
+
+If a documented count conflicts with live tool output, trust the live tool output and say so explicitly. AGENTS.md is not an operational dashboard.
 
 ### Bounded Task Rules
 

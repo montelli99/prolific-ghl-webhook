@@ -1777,6 +1777,66 @@ async function getPpcRecentCall(profileId, contactPhone, auth, selectedAt) {
   };
 }
 
+async function getPpcCallingDeskStatus(auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+
+  let state;
+  try {
+    const deskState = require('../modules/calling-desk-state.js');
+    state = deskState.loadCallingDeskState();
+  } catch (_) {
+    state = null;
+  }
+
+  let safeCallable = null;
+  let queueError = null;
+  try {
+    const token = getGhlToken('PPC_EWA_BEACH');
+    if (token) {
+      const queueResult = await getPpcCallQueue('PPC_EWA_BEACH', auth);
+      if (queueResult.status === 'OK') {
+        safeCallable = queueResult.totalContactEligible != null ? queueResult.totalContactEligible : null;
+      } else {
+        queueError = queueResult.reason || queueResult.status;
+      }
+    } else {
+      queueError = 'NO_GHL_CREDENTIALS';
+    }
+  } catch (_) {
+    queueError = 'QUEUE_READ_FAILED';
+  }
+
+  let lastReviewStatus = 'none';
+  let lastReviewError = null;
+  if (state && state.lastMatchedCallId) {
+    try {
+      const ci = getPpcCallIntelligence(String(state.lastMatchedCallId), auth);
+      if (ci && ci.status === 'complete') lastReviewStatus = 'complete';
+      else if (ci && ci.status === 'processing') lastReviewStatus = 'processing';
+      else if (ci && ci.status === 'failed') { lastReviewStatus = 'failed'; lastReviewError = ci.lastError || null; }
+      else if (ci && ci.status === 'missing') lastReviewStatus = 'processing';
+      else if (ci && ci.lastError) { lastReviewStatus = 'failed'; lastReviewError = ci.lastError; }
+    } catch (_) {
+      lastReviewStatus = 'unknown';
+    }
+  }
+
+  return {
+    status: 'OK',
+    gateway: 'Online',
+    activeSeller: state ? (state.activeSellerName || null) : null,
+    activePhone: state ? (state.activePhone || null) : null,
+    activeStageName: state ? (state.activeStageName || null) : null,
+    safeCallable,
+    queueError,
+    lastMatchedCallId: state ? (state.lastMatchedCallId || null) : null,
+    lastReviewStatus,
+    lastReviewError,
+    qualificationAvailable: state ? Boolean(state.lastMatchedCallId) : false,
+  };
+}
+
 async function applyPpcDnc(profileId, contactId, opportunityId, auth) {
   const a = authorize(auth);
   if (!a.authorized) return blocked(a.reason);
@@ -1925,6 +1985,7 @@ module.exports = {
   getPpcCallContext,
   getPpcRecentCall,
   getPpcPostCallSyncStatus,
+  getPpcCallingDeskStatus,
   startPpcCallIntelligence,
   getPpcCallIntelligence,
   applyPpcDnc,
