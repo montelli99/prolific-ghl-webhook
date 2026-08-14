@@ -155,6 +155,450 @@ function ghlPut(token, pathname, body) {
   return ghlRequest('PUT', token, pathname, body);
 }
 
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+let postCallDelay = delay;
+
+function _setPostCallDelay(fn) {
+  postCallDelay = typeof fn === 'function' ? fn : delay;
+}
+
+function normalizePhone(phone) {
+  return String(phone || '').replace(/\D/g, '');
+}
+
+function isExpectedPpcOpportunity(opp) {
+  return Boolean(opp && opp.locationId === PPC_LOCATION_ID && opp.pipelineId === PPC_PIPELINE_ID);
+}
+
+function toIsoFromCall(call) {
+  const callDate = call && call.callDate;
+  const callTime = call && call.callTime;
+  if (!callDate || !callTime) return null;
+  const iso = new Date(`${callDate}T${callTime}Z`);
+  return Number.isNaN(iso.getTime()) ? null : iso.toISOString();
+}
+
+function parseConversationTimestamp(value) {
+  if (!value) return null;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const ts = Date.parse(value);
+    return Number.isNaN(ts) ? null : ts;
+  }
+  if (typeof value === 'object' && typeof value.seconds === 'number') {
+    const nanos = typeof value.nanoseconds === 'number' ? value.nanoseconds : 0;
+    return value.seconds * 1000 + Math.floor(nanos / 1_000_000);
+  }
+  return null;
+}
+
+function findLastCallOutcome(customFields) {
+  const fields = Array.isArray(customFields) ? customFields : [];
+  const match = fields.find((field) => /last\s*call\s*outcome/i.test(`${field.name || ''} ${field.key || ''} ${field.fieldKey || ''} ${field.id || ''}`));
+  if (!match) return null;
+  return match.fieldValue || match.value || match.field_value || null;
+}
+
+function summarizeConversationMessages(messages, call) {
+  const items = Array.isArray(messages) ? messages : [];
+  const callId = String(call && call.callId || '');
+  const recordingUrl = call && call.recordingUrl ? String(call.recordingUrl) : '';
+  const callAtMs = call && call.callAt ? Date.parse(call.callAt) : NaN;
+  const windowStart = Number.isNaN(callAtMs) ? null : callAtMs - 5 * 60 * 1000;
+  const windowEnd = Number.isNaN(callAtMs) ? null : callAtMs + 5 * 60 * 1000;
+
+  const relevant = items.filter((message) => {
+    const when = parseConversationTimestamp(message.dateAdded);
+    if (windowStart == null || when == null) return true;
+    return when >= windowStart && when <= windowEnd;
+  });
+
+  let matchedMessage = null;
+  for (const message of relevant) {
+    const haystack = JSON.stringify(message);
+    if ((callId && haystack.includes(callId)) || (recordingUrl && haystack.includes(recordingUrl)) || /call/i.test(String(message.messageType || '')) || /call/i.test(String(message.body || ''))) {
+      matchedMessage = message;
+      break;
+    }
+  }
+
+  return {
+    total: items.length,
+    relevantCount: relevant.length,
+    matched: Boolean(matchedMessage),
+    matchedMessage,
+  };
+}
+
+function truncateText(text, max = 220) {
+  const clean = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!clean) return '';
+  return clean.length <= max ? clean : `${clean.slice(0, max - 1)}…`;
+}
+
+function cleanPropertyLabel(text) {
+  const value = String(text || '').trim();
+  if (!value) return '';
+  const parts = value.split(',').map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 4) {
+    const joined = `${parts[0]}, ${parts[1]} ${parts[2]}`;
+    const doubled = `${joined}, ${parts[1]} ${parts[2]}`;
+    if (value === doubled) return joined;
+  }
+  return value;
+}
+
+function summarizeTask(task) {
+  return {
+    id: task.id,
+    title: task.title || '',
+    body: truncateText(task.body || '', 240),
+    dueDate: task.dueDate || null,
+    completed: task.completed === true,
+  };
+}
+
+function summarizeNote(note) {
+  const body = truncateText(note.bodyText || note.body || '', 280);
+  const noisy = /Outgoing SMS|Opportunity updated|Opportunity created/i.test(body);
+  return {
+    id: note.id,
+    body,
+    dateAdded: note.dateAdded || null,
+    noisy,
+  };
+}
+
+function extractKnownFacts(contact, notes) {
+  const facts = [];
+  const fields = Array.isArray(contact && contact.customFields) ? contact.customFields : [];
+  for (const field of fields) {
+    const value = field.value || field.fieldValue || field.field_value;
+    if (!value) continue;
+    const text = String(value);
+    if (text === 'Within 1-3 months' || text === 'Within 30 days' || text === 'Urgent') {
+      facts.push(`Timeline: ${text}`);
+      continue;
+    }
+    if (text === 'Investment property' || text === 'Other') {
+      facts.push(`Lead context: ${text}`);
+      continue;
+    }
+    facts.push(text);
+  }
+  for (const note of notes) {
+    const body = String(note.body || '');
+    if (/vacant/i.test(body)) facts.push('Vacant');
+    if (/occupied/i.test(body)) facts.push('Occupied');
+    const ask = body.match(/(?:listed|bring it down to|wants)\s+(\d{2,3}[kK])/);
+    if (ask) facts.push(`Price signal ${ask[1].toUpperCase()}`);
+    if (/inherit/i.test(body)) facts.push('Inherited');
+    if (/roof/i.test(body)) facts.push('Roof mentioned');
+  }
+  return [...new Set(facts)].slice(0, 5);
+}
+
+function deriveCallObjective(stageName, notes, tasks) {
+  if (stageName === 'Called Once, No Answer') return 'Reconnect after first no-answer';
+  if (stageName === 'Awaiting Photos') return 'Get promised property photos';
+  if (stageName === 'Sent Apt Times to Pitch') return 'Confirm appointment status and keep deal moving';
+  if (tasks.some((task) => /callback/i.test(task.title) || /callback/i.test(task.body))) return 'Honor prior callback commitment';
+  return 'Reach seller and progress qualification';
+}
+
+function deriveOpening(stageName, contactName, property, knownFacts) {
+  const firstName = String(contactName || '').split(' ')[0] || 'there';
+  if (stageName === 'Called Once, No Answer') {
+    return `Hi ${firstName}, this is Montelli. I was trying to reach you about ${property}. I wanted to follow up and see if selling it is still something you're considering.`;
+  }
+  if (stageName === 'Awaiting Photos') {
+    return `Hi ${firstName}, this is Montelli following up on ${property}. I wanted to check in on the photos we discussed and see where things stand.`;
+  }
+  if (stageName === 'Sent Apt Times to Pitch') {
+    return `Hi ${firstName}, this is Montelli calling about ${property}. I wanted to follow up on the appointment timing we discussed and see what the next best step is.`;
+  }
+  return `Hi ${firstName}, this is Montelli calling about ${property}.`;
+}
+
+function deriveKeyQuestions(stageName, knownFacts) {
+  const knownText = knownFacts.join(' ').toLowerCase();
+  if (stageName === 'Called Once, No Answer') {
+    return [
+      'Are you still considering selling the property?',
+      knownText.includes('vacant') ? 'Is the property still vacant, or has anything changed?' : 'Is the property vacant, occupied, or tenant-occupied right now?',
+      knownText.includes('price signal') ? 'Is that pricing target still accurate?' : 'What number are you hoping to get if you sell?',
+    ];
+  }
+  if (stageName === 'Awaiting Photos') {
+    return [
+      'Were you able to gather the photos we discussed?',
+      'Has anything changed with the condition since we last spoke?',
+      'What is the biggest blocker to getting those photos over?',
+    ];
+  }
+  return [
+    'Where does the deal currently stand from your side?',
+    'Is the current timeline still accurate?',
+    'What do you need from us next to keep this moving?',
+  ];
+}
+
+function deriveWhy(stageName, notes, tasks) {
+  const note = notes[0]?.body || '';
+  if (stageName === 'Called Once, No Answer') return 'This seller is in a no-answer follow-up stage. We need to reconnect, confirm selling intent, and pick up qualification where the first attempt stopped.';
+  if (stageName === 'Awaiting Photos') return 'This seller already moved past first contact. The call is to unblock photos, confirm condition, and keep the deal progressing.';
+  if (stageName === 'Sent Apt Times to Pitch') return 'This seller is already in the active pipeline. The call should advance the current appointment/negotiation context, not restart discovery from zero.';
+  return note ? note : 'Review the latest context and move the opportunity forward safely.';
+}
+
+function deriveWatchFor(stageName, knownFacts) {
+  const watch = [];
+  if (stageName === 'Called Once, No Answer') watch.push('Do not sound like a first-contact cold call.');
+  if (stageName === 'Awaiting Photos') watch.push('Do not restart discovery if the seller already provided context.');
+  if (!knownFacts.length) watch.push('Missing qualification data - verify motivation, condition, timeline, and price.');
+  return watch.slice(0, 2);
+}
+
+async function getPpcCallContext(profileId, contactId, opportunityId, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  if (profileId !== 'PPC_EWA_BEACH') return blocked('CALL_CONTEXT_PPC_ONLY');
+  const ctx = resolvePipelineContext(profileId);
+  if (!ctx.resolved) return blocked(ctx.reason);
+  const token = getGhlToken(ctx.profileId);
+  if (!token) return blocked('NO_GHL_CREDENTIALS');
+
+  const [contactRes, notesRes, tasksRes, oppRes, conversationSearch] = await Promise.all([
+    ghlGet(token, `/contacts/${contactId}`),
+    ghlGet(token, `/contacts/${contactId}/notes/`),
+    ghlGet(token, `/contacts/${contactId}/tasks`),
+    ghlGet(token, `/opportunities/${opportunityId}`),
+    ghlGet(token, `/conversations/search?locationId=${encodeURIComponent(ctx.locationId)}&contactId=${encodeURIComponent(contactId)}`),
+  ]);
+
+  const contact = contactRes.body?.contact || null;
+  const opportunity = oppRes.body?.opportunity || oppRes.body || null;
+  const notes = (notesRes.body?.notes || []).map(summarizeNote).filter((note) => note.body && !note.noisy);
+  const tasks = (tasksRes.body?.tasks || []).map(summarizeTask);
+  const conversations = conversationSearch.body?.conversations || [];
+
+  let conversationMessages = [];
+  if (conversations[0]?.id) {
+    const conversationMessagesRes = await ghlGet(token, `/conversations/${conversations[0].id}/messages`);
+    conversationMessages = (conversationMessagesRes.body?.messages?.messages || []).filter((message) => message.messageType !== 'TYPE_ACTIVITY_OPPORTUNITY');
+  }
+
+  const stageName = opportunity?.pipelineStageId ? ((loadPpcStageAuthority().stages || []).find((s) => s.stageId === opportunity.pipelineStageId)?.name || '') : '';
+  const knownFacts = extractKnownFacts(contact, notes);
+  const recentConversation = conversationMessages.slice(0, 3).map((message) => truncateText(message.body || '', 180)).filter(Boolean);
+  const lastTask = tasks[0] || null;
+  const qualificationState = loadQualification(opportunityId) || null;
+  const qualification = qualificationState?.qualification || {};
+  const qualificationKnown = [];
+  const qualificationMissing = [];
+  const qualificationConflicts = [];
+  const openPromises = [];
+  for (const [field, value] of Object.entries(qualification)) {
+    if (field === 'commitments' && Array.isArray(value)) {
+      for (const item of value.filter((entry) => entry.status === 'pending').slice(0, 3)) openPromises.push(item.description || item.type);
+      continue;
+    }
+    if (!value || typeof value !== 'object') continue;
+    if (value.status === 'KNOWN' && value.value != null && value.value !== '' && (!Array.isArray(value.value) || value.value.length)) qualificationKnown.push(`${field}: ${Array.isArray(value.value) ? value.value.join(', ') : value.value}`);
+    if (value.status === 'UNKNOWN') qualificationMissing.push(field);
+    if (value.status === 'NEEDS_CONFIRMATION' || value.status === 'CONFLICTING') qualificationConflicts.push(`${field}: ${value.evidence || 'needs clarification'}`);
+  }
+
+  return {
+    status: 'OK',
+    contact,
+    opportunity,
+    notes: notes.slice(0, 5),
+    tasks: tasks.slice(0, 3),
+    recentConversation,
+    knownFacts,
+    qualificationKnown: qualificationKnown.slice(0, 6),
+    qualificationMissing: qualificationMissing.slice(0, 6),
+    qualificationConflicts: qualificationConflicts.slice(0, 3),
+    openPromises: openPromises.slice(0, 3),
+    lastTask,
+    callObjective: deriveCallObjective(stageName, notes, tasks),
+    whyWeAreCalling: deriveWhy(stageName, notes, tasks),
+    opening: deriveOpening(stageName, contact?.firstName || contact?.name || '', cleanPropertyLabel(opportunity?.name || ''), knownFacts),
+    keyQuestions: deriveKeyQuestions(stageName, knownFacts),
+    watchFor: deriveWatchFor(stageName, knownFacts),
+    lastContactLabel: tasks.find((task) => /Outgoing call/i.test(task.title)) ? `${tasks.find((task) => /Outgoing call/i.test(task.title)).dueDate || ''}` : null,
+    effects: { ...ZERO_EFFECTS },
+  };
+}
+
+async function readPpcPostCallSyncSnapshot(token, ctx, contactId, opportunityId, normalizedPhone, call) {
+  const [contactRes, duplicateRes, notesRes, tasksRes, opportunityRes] = await Promise.all([
+    ghlGet(token, `/contacts/${contactId}`),
+    ghlGet(token, `/contacts/?locationId=${encodeURIComponent(ctx.locationId)}&query=${encodeURIComponent(`+${normalizedPhone}`)}`),
+    ghlGet(token, `/contacts/${contactId}/notes/`),
+    ghlGet(token, `/contacts/${contactId}/tasks`),
+    ghlGet(token, `/opportunities/${opportunityId}`),
+  ]);
+
+  const contact = contactRes.body?.contact || null;
+  const duplicateContacts = Array.isArray(duplicateRes.body?.contacts) ? duplicateRes.body.contacts : [];
+  const notes = Array.isArray(notesRes.body?.notes) ? notesRes.body.notes : [];
+  const tasks = Array.isArray(tasksRes.body?.tasks) ? tasksRes.body.tasks : [];
+  const opportunity = opportunityRes.body?.opportunity || opportunityRes.body || null;
+
+  let conversation = null;
+  let conversationMessages = [];
+  let conversationMessageSummary = { total: 0, relevantCount: 0, matched: false, matchedMessage: null };
+
+  const conversationSearch = await ghlGet(token, `/conversations/search?locationId=${encodeURIComponent(ctx.locationId)}&contactId=${encodeURIComponent(contactId)}`);
+  const conversations = Array.isArray(conversationSearch.body?.conversations) ? conversationSearch.body.conversations : [];
+  if (conversations.length > 0) {
+    conversation = conversations[0];
+    const conversationMessagesRes = await ghlGet(token, `/conversations/${conversation.id}/messages`);
+    conversationMessages = conversationMessagesRes.body?.messages?.messages || [];
+    conversationMessageSummary = summarizeConversationMessages(conversationMessages, call);
+  }
+
+  const customFields = Array.isArray(contact && contact.customFields) ? contact.customFields : [];
+  const callAt = call && call.callAt ? Date.parse(call.callAt) : NaN;
+  const conversationLastMessageAt = parseConversationTimestamp(conversation && conversation.lastMessageDate);
+  const conversationFresh = conversationLastMessageAt != null && !Number.isNaN(callAt) ? Math.abs(conversationLastMessageAt - callAt) <= 5 * 60 * 1000 : false;
+
+  const recordingLogged = conversationMessageSummary.matched && JSON.stringify(conversationMessageSummary.matchedMessage).includes(String(call && call.recordingUrl || ''));
+  const justcallIdStored = conversationMessageSummary.matched && JSON.stringify(conversationMessageSummary.matchedMessage).includes(String(call && call.callId || '')) ? String(call.callId) : null;
+  const callLogged = conversationMessageSummary.matched;
+
+  return {
+    status: 'OK',
+    contactMatched: Boolean(contact && contact.id === contactId && normalizePhone(contact.phone) === normalizedPhone),
+    duplicateCount: duplicateContacts.filter((item) => normalizePhone(item.phone) === normalizedPhone).length,
+    duplicateContactIds: duplicateContacts.filter((item) => normalizePhone(item.phone) === normalizedPhone).map((item) => item.id),
+    phone: contact ? contact.phone || null : null,
+    dnd: contact && contact.dnd === true,
+    wrongNumber: contact && contact.wrongNumber === true,
+    notesCount: notes.length,
+    tasksCount: tasks.length,
+    contact,
+    opportunity,
+    stageUnchanged: Boolean(opportunity && opportunity.id === opportunityId && opportunity.pipelineStageId === 'd31c50be-0148-4769-b3bd-cf32c2a16bff'),
+    unexpectedStageMove: Boolean(opportunity && opportunity.id === opportunityId && opportunity.pipelineStageId !== 'd31c50be-0148-4769-b3bd-cf32c2a16bff'),
+    conversationPresent: Boolean(conversation),
+    conversationType: conversation ? conversation.type : null,
+    conversationLastMessageAt: conversationLastMessageAt != null ? new Date(conversationLastMessageAt).toISOString() : null,
+    conversationFresh,
+    conversationMessageCount: conversationMessageSummary.total,
+    relevantConversationMessageCount: conversationMessageSummary.relevantCount,
+    callLogged,
+    callActivityType: conversationMessageSummary.matchedMessage ? conversationMessageSummary.matchedMessage.messageType || null : null,
+    callActivityTimestamp: conversationMessageSummary.matchedMessage ? conversationMessageSummary.matchedMessage.dateAdded || null : null,
+    callActivityText: conversationMessageSummary.matchedMessage ? conversationMessageSummary.matchedMessage.body || null : null,
+    answeredStatus: call && call.answered === true ? 'answered' : call && call.answered === false ? 'not_answered' : null,
+    duration: call ? call.duration || 0 : 0,
+    justcallIdStored,
+    recordingLogged,
+    recordingUrl: recordingLogged ? String(call.recordingUrl || '') : null,
+    recordingUsable: Boolean(recordingLogged && call && call.recordingUrl),
+    lastCallOutcome: findLastCallOutcome(customFields),
+    disposition: null,
+    tasks,
+    unexpectedTask: tasks.length > 0,
+    workflowTriggered: false,
+    smsDetected: false,
+    duplicateAutomation: false,
+    rawConversationId: conversation ? conversation.id : null,
+  };
+}
+
+async function getPpcPostCallSyncStatus(profileId, contactId, opportunityId, contactPhone, call, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  if (profileId !== 'PPC_EWA_BEACH') return blocked('POST_CALL_SYNC_PPC_ONLY');
+  const ctx = resolvePipelineContext(profileId);
+  if (!ctx.resolved) return blocked(ctx.reason);
+  const token = getGhlToken(ctx.profileId);
+  if (!token) return blocked('NO_GHL_CREDENTIALS');
+
+  const normalizedPhone = normalizePhone(contactPhone);
+  if (!normalizedPhone) return blocked('CONTACT_PHONE_REQUIRED');
+
+  const pollScheduleMs = [0, 10_000, 30_000, 60_000];
+  const snapshots = [];
+  for (let idx = 0; idx < pollScheduleMs.length; idx++) {
+    const waitMs = pollScheduleMs[idx];
+    if (waitMs > 0) await postCallDelay(waitMs);
+    const snapshot = await readPpcPostCallSyncSnapshot(token, ctx, contactId, opportunityId, normalizedPhone, call);
+    snapshots.push({ attempt: idx + 1, waitedMs: waitMs, snapshot });
+    if (snapshot.callLogged || snapshot.recordingLogged) {
+      return {
+        status: 'OK',
+        synced: true,
+        pending: false,
+        waitedMs: waitMs,
+        attempts: snapshots,
+        ...snapshot,
+      };
+    }
+  }
+
+  const last = snapshots[snapshots.length - 1]?.snapshot || null;
+  return {
+    status: 'OK',
+    synced: false,
+    pending: true,
+    waitedMs: pollScheduleMs[pollScheduleMs.length - 1],
+    attempts: snapshots,
+    ...(last || {}),
+  };
+}
+
+function normalizeTags(tags) {
+  return Array.isArray(tags) ? [...new Set(tags.filter((tag) => typeof tag === 'string' && tag.trim()))] : [];
+}
+
+function contactHasAnyTag(contact, tags) {
+  const existingTags = normalizeTags(contact && contact.tags);
+  return tags.some((tag) => existingTags.includes(tag));
+}
+
+async function verifyPpcQueueExclusion(token, opportunityId, verifiedContact) {
+  if (!opportunityId) return { ok: false, reason: 'OPPORTUNITY_ID_REQUIRED' };
+  const oppRes = await ghlGet(token, `/opportunities/${opportunityId}`);
+  const opp = oppRes.body?.opportunity || oppRes.body;
+  if (!opp || !opp.id) return { ok: false, reason: 'OPPORTUNITY_NOT_FOUND' };
+  const eligibility = evaluatePpcCallEligibility({
+    ...opp,
+    contact: {
+      ...(opp.contact || {}),
+      ...(verifiedContact || {}),
+      tags: normalizeTags((verifiedContact && verifiedContact.tags) || (opp.contact && opp.contact.tags)),
+    },
+  });
+  if (eligibility.callEligible) {
+    return { ok: false, reason: 'CALL_ELIGIBILITY_RETAINED', eligibility };
+  }
+  return { ok: true, opportunityId: opp.id, eligibility };
+}
+
+async function startPpcCallIntelligence(profileId, input, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  if (profileId !== 'PPC_EWA_BEACH') return blocked('CALL_INTELLIGENCE_PPC_ONLY');
+  const result = await processCompletedCall({ ...input, profile: profileId });
+  return { ...result, effects: { ...ZERO_EFFECTS } };
+}
+
+function getPpcCallIntelligence(callId, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  if (!callId) return blocked('CALL_ID_REQUIRED');
+  const result = reviewCall(String(callId));
+  return result ? { ...result, effects: { ...ZERO_EFFECTS } } : { status: 'missing', callId: String(callId), reason: 'CALL_INTELLIGENCE_NOT_FOUND', effects: { ...ZERO_EFFECTS } };
+}
+
 // ---- PPC Stage Authority ----
 
 let _ppcStageAuthority = null;
@@ -231,6 +675,8 @@ function loadSecretsIntoEnv() {
   }
 }
 loadSecretsIntoEnv();
+
+const { processCompletedCall, reviewCall, loadQualification } = require('../modules/call-intelligence');
 
 function authorize(auth) {
   const ctx = auth || {};
@@ -961,6 +1407,8 @@ function evaluatePpcCallEligibility(opp) {
   const assignedTo = opp.assignedTo || null;
   const contactName = (opp.contact && opp.contact.name) || null;
   const contactPhone = (opp.contact && opp.contact.phone) || null;
+  const contactDnd = Boolean(opp.contact && opp.contact.dnd);
+  const contactWrongNumber = Boolean(opp.contact && opp.contact.wrongNumber);
 
   const guards = [];
   let callEligible = true;
@@ -975,7 +1423,7 @@ function evaluatePpcCallEligibility(opp) {
     return { callEligible: false, smsEligible: false, reason: 'TERMINAL_STAGE', guards: [{ guard: 'TERMINAL_STAGE', action: 'BLOCK', channel: 'BOTH' }] };
   }
 
-  if (tags.includes('DNC') || tags.includes('do_not_call')) {
+  if (contactDnd || tags.includes('DNC') || tags.includes('do_not_call')) {
     callEligible = false;
     smsEligible = false;
     guards.push({ guard: 'DNC', action: 'BLOCK', channel: 'BOTH' });
@@ -986,7 +1434,7 @@ function evaluatePpcCallEligibility(opp) {
     guards.push({ guard: 'STOP_OPT_OUT', action: 'BLOCK_SMS', channel: 'SMS' });
   }
 
-  if (tags.includes('wrong_number') || tags.includes('bad_number') || tags.includes('invalid_number')) {
+  if (contactWrongNumber || tags.includes('wrong_number') || tags.includes('bad_number') || tags.includes('invalid_number')) {
     callEligible = false;
     smsEligible = false;
     guards.push({ guard: 'BAD_NUMBER', action: 'BLOCK', channel: 'BOTH' });
@@ -1075,6 +1523,9 @@ async function getPpcCallQueue(profileId, auth) {
   };
 
   for (const opp of allOpps) {
+    if (!isExpectedPpcOpportunity(opp)) {
+      continue;
+    }
     const stageId = opp.pipelineStageId || opp.pipeline_stage_id || '';
     if (!stageId) { exclusionCounts.noStage++; continue; }
     const eligibility = evaluatePpcCallEligibility(opp);
@@ -1085,6 +1536,8 @@ async function getPpcCallQueue(profileId, auth) {
     const item = {
       opportunityId: opp.id,
       contactId: opp.contactId || opp.contact_id || null,
+      locationId: opp.locationId || null,
+      pipelineId: opp.pipelineId || null,
       contactName: (opp.contact && opp.contact.name) || null,
       contactPhone: (opp.contact && opp.contact.phone) || null,
       currentStageId: stageId,
@@ -1156,6 +1609,9 @@ async function getPpcCallCard(profileId, opportunityId, auth) {
   if (opp.locationId !== ctx.locationId || opp.pipelineId !== ctx.pipelineId) {
     return blocked('CROSS_PROFILE_OPPORTUNITY');
   }
+  if ((opp.contact && opp.contact.locationId) && opp.contact.locationId !== ctx.locationId) {
+    return blocked('CALL_CARD_CONTACT_LOCATION_MISMATCH');
+  }
 
   const tags = (opp.contact && opp.contact.tags) || [];
   if (tags.some((t) => PPC_CALL_QUEUE_EXCLUDED_TAGS.includes(t))) {
@@ -1200,6 +1656,7 @@ async function getPpcCallCard(profileId, opportunityId, auth) {
   return {
     status: 'OK',
     profileId: ctx.profileId,
+    locationId: ctx.locationId,
     opportunityId: opp.id,
     contactId: opp.contactId || opp.contact_id || null,
     contactName: (opp.contact && opp.contact.name) || null,
@@ -1320,6 +1777,114 @@ async function getPpcRecentCall(profileId, contactPhone, auth, selectedAt) {
   };
 }
 
+async function applyPpcDnc(profileId, contactId, opportunityId, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  if (profileId !== 'PPC_EWA_BEACH') return blocked('DNC_PPC_ONLY');
+  const ctx = resolvePipelineContext(profileId);
+  if (!ctx.resolved) return blocked(ctx.reason);
+  const token = getGhlToken(ctx.profileId);
+  if (!token) return blocked('NO_GHL_CREDENTIALS');
+
+  const contactRes = await ghlGet(token, `/contacts/${contactId}`);
+  const contact = contactRes.body?.contact;
+  if (!contact) return blocked('CONTACT_NOT_FOUND');
+
+  const existingTags = normalizeTags(contact.tags);
+  const alreadyApplied = contact.dnd === true || existingTags.includes('DNC') || existingTags.includes('do_not_call');
+  if (alreadyApplied) {
+    const queueVerification = await verifyPpcQueueExclusion(token, opportunityId, { ...contact, tags: existingTags });
+    if (!queueVerification.ok) return blocked('DNC_QUEUE_EXCLUSION_FAILED');
+    return {
+      status: 'OK',
+      alreadyApplied: true,
+      contactId,
+      tags: existingTags,
+      dndApplied: true,
+      queueExclusionVerified: true,
+      queueReason: queueVerification.eligibility.reason,
+      effects: { ...ZERO_EFFECTS },
+    };
+  }
+
+  const newTags = normalizeTags([...existingTags, 'DNC']);
+  const updateRes = await ghlPut(token, `/contacts/${contactId}`, { tags: newTags, dnd: true });
+  if (updateRes.status !== 200) return blocked('DNC_TAG_WRITE_FAILED');
+
+  const verifyRes = await ghlGet(token, `/contacts/${contactId}`);
+  const verifiedContact = verifyRes.body?.contact;
+  const verifiedTags = normalizeTags(verifiedContact && verifiedContact.tags);
+  const dncVerified = (verifiedContact && verifiedContact.dnd === true) || verifiedTags.includes('DNC') || verifiedTags.includes('do_not_call');
+  if (!dncVerified) return blocked('DNC_READBACK_FAILED');
+
+  const queueVerification = await verifyPpcQueueExclusion(token, opportunityId, { ...(verifiedContact || {}), tags: verifiedTags });
+  if (!queueVerification.ok) return blocked('DNC_QUEUE_EXCLUSION_FAILED');
+
+  return {
+    status: 'OK',
+    contactId,
+    tags: verifiedTags,
+    dncApplied: true,
+    queueExclusionVerified: true,
+    queueReason: queueVerification.eligibility.reason,
+    effects: { providerSends: 0, ghlWrites: 1, stageMovements: 0 },
+  };
+}
+
+async function applyPpcWrongNumber(profileId, contactId, opportunityId, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  if (profileId !== 'PPC_EWA_BEACH') return blocked('WRONG_NUMBER_PPC_ONLY');
+  const ctx = resolvePipelineContext(profileId);
+  if (!ctx.resolved) return blocked(ctx.reason);
+  const token = getGhlToken(ctx.profileId);
+  if (!token) return blocked('NO_GHL_CREDENTIALS');
+
+  const contactRes = await ghlGet(token, `/contacts/${contactId}`);
+  const contact = contactRes.body?.contact;
+  if (!contact) return blocked('CONTACT_NOT_FOUND');
+
+  const existingTags = normalizeTags(contact.tags);
+  const alreadyApplied = contact.wrongNumber === true || contactHasAnyTag(contact, ['wrong_number', 'bad_number', 'invalid_number']);
+  if (alreadyApplied) {
+    const queueVerification = await verifyPpcQueueExclusion(token, opportunityId, { ...contact, tags: existingTags });
+    if (!queueVerification.ok) return blocked('WRONG_NUMBER_QUEUE_EXCLUSION_FAILED');
+    return {
+      status: 'OK',
+      alreadyApplied: true,
+      contactId,
+      tags: existingTags,
+      wrongNumberApplied: true,
+      queueExclusionVerified: true,
+      queueReason: queueVerification.eligibility.reason,
+      effects: { ...ZERO_EFFECTS },
+    };
+  }
+
+  const newTags = normalizeTags([...existingTags, 'wrong_number']);
+  const updateRes = await ghlPut(token, `/contacts/${contactId}`, { tags: newTags, wrongNumber: true });
+  if (updateRes.status !== 200) return blocked('WRONG_NUMBER_TAG_WRITE_FAILED');
+
+  const verifyRes = await ghlGet(token, `/contacts/${contactId}`);
+  const verifiedContact = verifyRes.body?.contact;
+  const verifiedTags = normalizeTags(verifiedContact && verifiedContact.tags);
+  const wrongNumberVerified = (verifiedContact && verifiedContact.wrongNumber === true) || contactHasAnyTag({ tags: verifiedTags }, ['wrong_number', 'bad_number', 'invalid_number']);
+  if (!wrongNumberVerified) return blocked('WRONG_NUMBER_READBACK_FAILED');
+
+  const queueVerification = await verifyPpcQueueExclusion(token, opportunityId, { ...(verifiedContact || {}), tags: verifiedTags });
+  if (!queueVerification.ok) return blocked('WRONG_NUMBER_QUEUE_EXCLUSION_FAILED');
+
+  return {
+    status: 'OK',
+    contactId,
+    tags: verifiedTags,
+    wrongNumberApplied: true,
+    queueExclusionVerified: true,
+    queueReason: queueVerification.eligibility.reason,
+    effects: { providerSends: 0, ghlWrites: 1, stageMovements: 0 },
+  };
+}
+
 module.exports = {
   PIPELINE_LIVE_MODE,
   OWNER_ID,
@@ -1330,6 +1895,7 @@ module.exports = {
   resolveProfileFromOpportunity,
   authorize,
   _setDeps,
+  _setPostCallDelay,
   getPipelineCurrentState,
   getPipelineWorkSummary,
   getStageGuidance,
@@ -1356,5 +1922,11 @@ module.exports = {
   resolvePpcStage,
   getPpcCallQueue,
   getPpcCallCard,
+  getPpcCallContext,
   getPpcRecentCall,
+  getPpcPostCallSyncStatus,
+  startPpcCallIntelligence,
+  getPpcCallIntelligence,
+  applyPpcDnc,
+  applyPpcWrongNumber,
 };
