@@ -4,10 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
+const DEFAULT_RUNTIME_DIR = path.resolve(__dirname, '..', '..', 'data', 'runtime');
+const DEFAULT_WHISPER_BIN = path.join(DEFAULT_RUNTIME_DIR, 'whispercpp-runtime', 'Release', 'whisper-cli.exe');
+const DEFAULT_WHISPER_MODEL = path.join(DEFAULT_RUNTIME_DIR, 'whispercpp-models', 'ggml-base.en.bin');
+
 class WhisperCppTranscriptionProvider {
   constructor(options = {}) {
-    this.bin = options.bin || process.env.WHISPER_CPP_BIN || '';
-    this.model = options.model || process.env.WHISPER_MODEL || '';
+    this.bin = options.bin || process.env.WHISPER_CPP_BIN || DEFAULT_WHISPER_BIN;
+    this.model = options.model || process.env.WHISPER_MODEL || DEFAULT_WHISPER_MODEL;
     this.ffmpeg = options.ffmpeg || process.env.FFMPEG_BIN || 'ffmpeg';
     this.language = options.language || 'en';
     this.threads = options.threads || '8';
