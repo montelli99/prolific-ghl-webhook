@@ -362,6 +362,52 @@ function deriveWatchFor(stageName, knownFacts) {
   return watch.slice(0, 2);
 }
 
+// Deterministic first-name derivation: seller first name from authoritative
+// contact data, never the owner name, never invented.
+function deriveFirstName(contact, contactName) {
+  if (contact && typeof contact === 'object') {
+    const first = contact.firstName || contact.first_name;
+    if (first && String(first).trim()) return String(first).trim().split(' ')[0];
+    const full = contact.name;
+    if (full && String(full).trim()) return String(full).trim().split(' ')[0];
+  }
+  const name = String(contactName || '').trim();
+  if (!name) return null;
+  return name.split(' ')[0];
+}
+
+// Stage-aware voicemail scripts (IF THEY DON'T ANSWER). Deterministic; never a
+// first-contact script when the seller is already deep in the pipeline.
+function deriveVoicemailScript(stageName, firstName, property, openPromises) {
+  const name = firstName || 'there';
+  const prop = String(property || 'the property').trim();
+  const hasPhotoPromise = Array.isArray(openPromises) && openPromises.some((p) => /photo|picture|image/i.test(String(p)));
+  if (stageName === 'Awaiting Photos' || stageName === 'Called Once, No Answer' || (Array.isArray(openPromises) && openPromises.length)) {
+    const detail = hasPhotoPromise ? ` I wanted to check in on the photos we discussed.` : ` I wanted to follow up and see if selling it is still something you're considering.`;
+    return `Hi ${name}, this is Montelli calling about ${prop}.${detail} Give me a call back when you get a chance. Thanks.`;
+  }
+  if (stageName === 'Sent Apt Times to Pitch' || /pipeline|negotiat|offer|appointment/i.test(stageName)) {
+    return `Hi ${name}, this is Montelli following up about ${prop}. I wanted to check on the next step we discussed. Give me a call when you get a chance.`;
+  }
+  return `Hi ${name}, this is Montelli calling about ${prop}. Give me a call back when you get a chance. Thanks.`;
+}
+
+// Copy-ready SMS shortcuts (TEXT IF NO ANSWER). Never auto-sends.
+function deriveSmsText(stageName, firstName, property, openPromises, callback, appointment) {
+  const name = firstName || 'there';
+  const prop = String(property || 'the property').trim();
+  const hasPhotoPromise = Array.isArray(openPromises) && openPromises.some((p) => /photo|picture|image/i.test(String(p)));
+  if (hasPhotoPromise || stageName === 'Awaiting Photos') {
+    return `Hi ${name}, just following up on the photos for ${prop}. Send them over whenever you get a chance and I'll take a look.`;
+  }
+  if (callback) return `Hi ${name}, this is Montelli. I'll follow up ${callback} like we discussed about ${prop}. Give me a call or text when you get a chance.`;
+  if (appointment) return `Hi ${name}, confirming ${appointment} for ${prop}. I'll follow up if anything changes.`;
+  if (stageName === 'Sent Apt Times to Pitch' || /pipeline|negotiat|offer|appointment/i.test(stageName)) {
+    return `Hi ${name}, this is Montelli. I was trying to reach you about ${prop} to keep the deal moving. Give me a call when you get a chance.`;
+  }
+  return `Hi ${name}, this is Montelli. I was trying to reach you about ${prop}. I wanted to see if selling it is still something you're considering. Give me a call or text when you get a chance.`;
+}
+
 async function getPpcCallContext(profileId, contactId, opportunityId, auth) {
   const a = authorize(auth);
   if (!a.authorized) return blocked(a.reason);
@@ -427,9 +473,12 @@ async function getPpcCallContext(profileId, contactId, opportunityId, auth) {
     lastTask,
     callObjective: deriveCallObjective(stageName, notes, tasks),
     whyWeAreCalling: deriveWhy(stageName, notes, tasks),
-    opening: deriveOpening(stageName, contact?.firstName || contact?.name || '', cleanPropertyLabel(opportunity?.name || ''), knownFacts),
+    opening: deriveOpening(stageName, deriveFirstName(contact, contact?.name), cleanPropertyLabel(opportunity?.name || ''), knownFacts),
     keyQuestions: deriveKeyQuestions(stageName, knownFacts),
     watchFor: deriveWatchFor(stageName, knownFacts),
+    firstName: deriveFirstName(contact, contact?.name),
+    voicemailScript: deriveVoicemailScript(stageName, deriveFirstName(contact, contact?.name), cleanPropertyLabel(opportunity?.name || ''), openPromises),
+    smsText: deriveSmsText(stageName, deriveFirstName(contact, contact?.name), cleanPropertyLabel(opportunity?.name || ''), openPromises, (qualification?.callback && qualification.callback.value) || null, null),
     lastContactLabel: tasks.find((task) => /Outgoing call/i.test(task.title)) ? `${tasks.find((task) => /Outgoing call/i.test(task.title)).dueDate || ''}` : null,
     effects: { ...ZERO_EFFECTS },
   };

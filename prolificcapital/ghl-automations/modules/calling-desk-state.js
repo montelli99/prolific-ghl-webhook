@@ -23,6 +23,8 @@ const EMPTY_STATE = Object.freeze({
   lastMatchedCallAt: null,
   pendingDisposition: null,
   pendingTargetStageId: null,
+  pendingRecommendation: null,
+  awaitingNext: false,
   updatedAt: null,
 });
 
@@ -71,6 +73,8 @@ function clearActiveSeller() {
     lastMatchedCallAt: null,
     pendingDisposition: null,
     pendingTargetStageId: null,
+    pendingRecommendation: null,
+    awaitingNext: false,
     updatedAt: new Date().toISOString(),
   };
   saveCallingDeskState(cleared);
@@ -93,6 +97,8 @@ function setActiveSeller(seller) {
     lastMatchedCallAt: null,
     pendingDisposition: null,
     pendingTargetStageId: null,
+    pendingRecommendation: null,
+    awaitingNext: false,
     updatedAt: new Date().toISOString(),
   };
   saveCallingDeskState(updated);
@@ -123,6 +129,74 @@ function setPendingDisposition(disposition, targetStageId) {
   return updated;
 }
 
+function recordStageMove(stageId, stageName) {
+  const state = loadCallingDeskState();
+  const updated = {
+    ...state,
+    activeStageId: stageId || state.activeStageId,
+    activeStageName: stageName || state.activeStageName,
+    pendingDisposition: null,
+    pendingTargetStageId: null,
+    pendingRecommendation: null,
+    updatedAt: new Date().toISOString(),
+  };
+  saveCallingDeskState(updated);
+  return updated;
+}
+
+// Persist an explicit owner-approval state. `yes` may execute exactly one guarded
+// move only when a fresh pending recommendation exists and all fields are valid.
+function setPendingRecommendation(rec) {
+  const state = loadCallingDeskState();
+  const generatedAt = rec.generatedAt || new Date().toISOString();
+  const expiresAt = rec.expiresAt || new Date(Date.now() + 30 * 60 * 1000).toISOString();
+  const updated = {
+    ...state,
+    pendingRecommendation: {
+      contactId: rec.contactId || state.activeContactId || null,
+      opportunityId: rec.opportunityId || state.activeOpportunityId || null,
+      currentStageId: rec.currentStageId || state.activeStageId || null,
+      currentStageName: rec.currentStageName || state.activeStageName || null,
+      targetStageId: rec.targetStageId || null,
+      targetStageName: rec.targetStageName || null,
+      action: rec.action || null,
+      reason: rec.reason || null,
+      generatedAt,
+      expiresAt,
+    },
+    pendingDisposition: rec.pendingDisposition || null,
+    pendingTargetStageId: rec.pendingTargetStageId || null,
+    awaitingNext: false,
+    updatedAt: new Date().toISOString(),
+  };
+  saveCallingDeskState(updated);
+  return updated;
+}
+
+function clearPendingRecommendation() {
+  const state = loadCallingDeskState();
+  const updated = {
+    ...state,
+    pendingRecommendation: null,
+    pendingDisposition: null,
+    pendingTargetStageId: null,
+    updatedAt: new Date().toISOString(),
+  };
+  saveCallingDeskState(updated);
+  return updated;
+}
+
+function setAwaitingNext(value) {
+  const state = loadCallingDeskState();
+  const updated = {
+    ...state,
+    awaitingNext: Boolean(value),
+    updatedAt: new Date().toISOString(),
+  };
+  saveCallingDeskState(updated);
+  return updated;
+}
+
 module.exports = {
   loadCallingDeskState,
   saveCallingDeskState,
@@ -130,4 +204,8 @@ module.exports = {
   setActiveSeller,
   recordMatchedCall,
   setPendingDisposition,
+  recordStageMove,
+  setPendingRecommendation,
+  clearPendingRecommendation,
+  setAwaitingNext,
 };
