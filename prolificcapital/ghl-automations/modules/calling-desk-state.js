@@ -165,7 +165,7 @@ function setPendingRecommendation(rec) {
       expiresAt,
     },
     pendingDisposition: rec.pendingDisposition || null,
-    pendingTargetStageId: rec.pendingTargetStageId || null,
+    pendingTargetStageId: rec.targetStageId || rec.pendingTargetStageId || null,
     awaitingNext: false,
     updatedAt: new Date().toISOString(),
   };

@@ -42,12 +42,13 @@ const EXPECTED_METHODS = [
   'pipelineReadOpportunity', 'pipelineSearchOpportunities', 'pipelineListStages', 'pipelineMoveStage',
   'loadPpcStageAuthority', 'resolvePpcStage', 'getPpcCallQueue', 'getPpcCallCard', 'getPpcRecentCall',
   'getPpcCallContext', 'startPpcCallIntelligence', 'getPpcCallIntelligence', 'applyPpcDnc', 'applyPpcWrongNumber',
-  'getPpcCallingDeskStatus',
+  'getPpcCallingDeskStatus', 'sendPpcPin',
 ];
 
 const ALLOWED_EXPORTS = new Set([
   ...EXPECTED_METHODS, 'authorize', '_setDeps', '_setPostCallDelay',
   'PIPELINE_LIVE_MODE', 'OWNER_ID', 'CHAT_ID', 'TOPIC_ID', 'VALID_PROFILES', 'resolvePipelineContext', 'resolveProfileFromOpportunity',
+  'PPC_STAGE_1_NEW_LEAD_ID', 'PPC_STAGE_2_CALLED_ONCE_ID', 'PPC_STAGE_3_CALLED_ANOTHER_DAY_ID',
 ]);
 
 const ksPath = bridge.OWNER_ID && require(path.join(__dirname, '..', 'bot', 'kill-switch')).KILL_SWITCH_PATH;
@@ -115,7 +116,7 @@ async function withMockHttps(routeMap, fn) {
       res.statusCode = next.status;
       process.nextTick(() => {
         cb(res);
-        res.emit('data', JSON.stringify(next.body));
+        res.emit('data', Buffer.from(JSON.stringify(next.body)));
         res.emit('end');
       });
     };
@@ -395,6 +396,127 @@ function makePostCallRouteMap(options = {}) {
       assert.strictEqual(result.callLogged, false);
     });
     bridge._setPostCallDelay();
+  });
+
+  await test('17. sendPpcPin requires PPC profile and owner context', async () => {
+    const wrongProfile = await bridge.sendPpcPin('ATLAS_OUTBOUND', 'opp-1', AUTH);
+    assert.strictEqual(wrongProfile.status, 'BLOCKED');
+    assert.strictEqual(wrongProfile.reason, 'SEND_PIN_PPC_ONLY');
+    zeroEffects(wrongProfile);
+
+    const wrongAuth = await bridge.sendPpcPin('PPC_EWA_BEACH', 'opp-1', BAD_AUTH);
+    assert.strictEqual(wrongAuth.status, 'BLOCKED');
+  });
+
+  await test('18. sendPpcPin sends PIN, records ledger, never moves stage', async () => {
+    process.env.PPC_GHL_API_KEY = process.env.PPC_GHL_API_KEY || 'test-key';
+    process.env.JUSTCALL_API_KEY = process.env.JUSTCALL_API_KEY || 'jc-test-key';
+    process.env.JUSTCALL_API_SECRET = process.env.JUSTCALL_API_SECRET || 'jc-test-secret';
+    const ledger = require('../modules/ppc-pin-ledger');
+    const fs = require('fs');
+    const ledgerOnDiskBefore = fs.existsSync(ledger.LEDGER_PATH) ? fs.readFileSync(ledger.LEDGER_PATH, 'utf8') : null;
+    ledger._resetForTests();
+
+    const routes = new Map([
+      [`/opportunities/opp-1`, repeat(3, () => ({ status: 200, body: { opportunity: { id: 'opp-1', locationId: 'GDq92uruRngbi9mLGGrV', pipelineId: 'ril84XHGQleRgE0W0FKU', pipelineStageId: 'd31c50be-0148-4769-b3bd-cf32c2a16bff', name: '1234 Main St', contact: { name: 'Johnathon Test', phone: '+15718140891', tags: [] } } } }))],
+      [`/v2.1/texts/new`, repeat(2, () => ({ status: 200, body: { data: { id: 585342957 } } }))],
+    ]);
+    await withMockHttps(routes, async () => {
+      const result = await bridge.sendPpcPin('PPC_EWA_BEACH', 'opp-1', AUTH);
+      assert.strictEqual(result.status, 'OK');
+      assert.strictEqual(result.messageId, 585342957);
+      assert.strictEqual(result.deliveryStatus, 'SENT');
+      assert.strictEqual(result.effects.providerSends, 1);
+      assert.strictEqual(result.effects.stageMovements, 0, 'PIN send must never move the opportunity');
+      assert.strictEqual(result.effects.ghlWrites, 0, 'PIN send must not write GHL');
+      assert.ok(result.body.includes('Happy'), 'body should be the filled PIN');
+      assert.ok(result.body.includes('Johnathon'), 'body should be filled with contact first name');
+
+      const entry = ledger.getPinSend('opp-1');
+      assert.ok(entry, 'ledger should record the send');
+      assert.strictEqual(entry.messageId, 585342957);
+      assert.strictEqual(entry.deliveryStatus, 'SENT');
+
+      // Duplicate send must be idempotent: PIN_ALREADY_SENT, zero extra SMS.
+      const dup = await bridge.sendPpcPin('PPC_EWA_BEACH', 'opp-1', AUTH);
+      assert.strictEqual(dup.status, 'PIN_ALREADY_SENT');
+      assert.strictEqual(dup.messageId, 585342957);
+      zeroEffects(dup);
+      assert.strictEqual(ledger.getPinSend('opp-1').messageId, 585342957, 'ledger must not grow on duplicate');
+    });
+    // Isolate the harness from the real production ledger.
+    if (ledgerOnDiskBefore === null) { try { fs.unlinkSync(ledger.LEDGER_PATH); } catch (_) {} }
+    else { fs.writeFileSync(ledger.LEDGER_PATH, ledgerOnDiskBefore, 'utf8'); }
+    ledger._resetForTests();
+  });
+
+  await test('19. sendPpcPin refuses non-stage-1, DNC, and short phone', async () => {
+    process.env.PPC_GHL_API_KEY = process.env.PPC_GHL_API_KEY || 'test-key';
+    const ledger = require('../modules/ppc-pin-ledger');
+    ledger._resetForTests();
+    const routes = new Map([
+      [`/opportunities/opp-wrong-stage`, repeat(1, () => ({ status: 200, body: { opportunity: { id: 'opp-wrong-stage', locationId: 'GDq92uruRngbi9mLGGrV', pipelineId: 'ril84XHGQleRgE0W0FKU', pipelineStageId: '1a0d789b-c11d-47a2-9152-6a7ce07dc833', name: '456 Oak Ave', contact: { name: 'Jane Doe', phone: '+15718140891', tags: [] } } } }))],
+      [`/opportunities/opp-dnc`, repeat(1, () => ({ status: 200, body: { opportunity: { id: 'opp-dnc', locationId: 'GDq92uruRngbi9mLGGrV', pipelineId: 'ril84XHGQleRgE0W0FKU', pipelineStageId: 'd31c50be-0148-4769-b3bd-cf32c2a16bff', name: '789 Elm Ave', contact: { name: 'DNC Buyer', phone: '+15718140891', tags: ['DNC'] } } } }))],
+      [`/opportunities/opp-short-phone`, repeat(1, () => ({ status: 200, body: { opportunity: { id: 'opp-short-phone', locationId: 'GDq92uruRngbi9mLGGrV', pipelineId: 'ril84XHGQleRgE0W0FKU', pipelineStageId: 'd31c50be-0148-4769-b3bd-cf32c2a16bff', name: '101 Pine Ave', contact: { name: 'No Phone', phone: '123', tags: [] } } } }))],
+    ]);
+    await withMockHttps(routes, async () => {
+      const wrongStage = await bridge.sendPpcPin('PPC_EWA_BEACH', 'opp-wrong-stage', AUTH);
+      assert.strictEqual(wrongStage.status, 'BLOCKED');
+      assert.strictEqual(wrongStage.reason, 'PIN_STAGE_1_REQUIRED');
+      zeroEffects(wrongStage);
+
+      const dnc = await bridge.sendPpcPin('PPC_EWA_BEACH', 'opp-dnc', AUTH);
+      assert.strictEqual(dnc.status, 'BLOCKED');
+      assert.strictEqual(dnc.reason, 'DNC_PIN_SEND_BLOCKED');
+      zeroEffects(dnc);
+
+      const shortPhone = await bridge.sendPpcPin('PPC_EWA_BEACH', 'opp-short-phone', AUTH);
+      assert.strictEqual(shortPhone.status, 'BLOCKED');
+      assert.strictEqual(shortPhone.reason, 'NO_PHONE_PIN_SEND_BLOCKED');
+      zeroEffects(shortPhone);
+    });
+    ledger._resetForTests();
+  });
+
+  await test('20. getPpcCallQueue enriches items with workflowActionable/nextExpectedAction/queueReason', async () => {
+    process.env.PPC_GHL_API_KEY = process.env.PPC_GHL_API_KEY || 'test-key';
+    const ledger = require('../modules/ppc-pin-ledger');
+    ledger._resetForTests();
+    const routes = new Map([
+      [`/opportunities/search?location_id=${encodeURIComponent('GDq92uruRngbi9mLGGrV')}&pipeline_id=${encodeURIComponent('ril84XHGQleRgE0W0FKU')}&limit=50`, repeat(1, () => ({ status: 200, body: { opportunities: [
+        { id: 'opp-stage1', locationId: 'GDq92uruRngbi9mLGGrV', pipelineId: 'ril84XHGQleRgE0W0FKU', pipelineStageId: 'd31c50be-0148-4769-b3bd-cf32c2a16bff', name: '1234 Main St', contact: { name: 'Stage1 Lead', phone: '+15718140891', tags: [] } },
+        { id: 'opp-stage2', locationId: 'GDq92uruRngbi9mLGGrV', pipelineId: 'ril84XHGQleRgE0W0FKU', pipelineStageId: '1a0d789b-c11d-47a2-9152-6a7ce07dc833', name: '456 Oak Ave', contact: { name: 'Stage2 Lead', phone: '+15718140891', tags: [] } },
+        { id: 'opp-dnc', locationId: 'GDq92uruRngbi9mLGGrV', pipelineId: 'ril84XHGQleRgE0W0FKU', pipelineStageId: 'd31c50be-0148-4769-b3bd-cf32c2a16bff', name: '789 Elm Ave', contact: { name: 'DNC Buyer', phone: '+15718140891', tags: ['DNC'] } },
+      ] } }))],
+    ]);
+    await withMockHttps(routes, async () => {
+      const result = await bridge.getPpcCallQueue('PPC_EWA_BEACH', AUTH);
+      assert.strictEqual(result.status, 'OK');
+      const all = result.queues.flatMap((q) => q.items);
+      const stage1 = all.find((item) => item.opportunityId === 'opp-stage1');
+      assert.ok(stage1, 'stage-1 item should be in queue');
+      assert.strictEqual(stage1.callEligible, false, 'stage-1 pre-PIN must not be call-eligible');
+      assert.strictEqual(stage1.workflowActionable, true, 'stage-1 pre-PIN must be workflow-actionable');
+      assert.strictEqual(stage1.nextExpectedAction, 'SEND_PIN');
+      assert.ok(stage1.queueReason, 'queue item must carry a QUEUE REASON');
+      assert.strictEqual(stage1.queuePriority, 1);
+
+      const stage2 = all.find((item) => item.opportunityId === 'opp-stage2');
+      assert.ok(stage2, 'stage-2 item should be in queue');
+      assert.strictEqual(stage2.callEligible, true);
+      assert.strictEqual(stage2.workflowActionable, true);
+
+      const dnc = all.find((item) => item.opportunityId === 'opp-dnc');
+      assert.ok(dnc, 'DNC item still surfaces in queue for visibility (guards explain)');
+      assert.strictEqual(dnc.callEligible, false);
+      assert.strictEqual(dnc.workflowActionable, false);
+      assert.ok(dnc.eligibilityGuards.some((g) => g.guard === 'DNC'));
+
+      assert.ok(!Array.isArray(result.totalActionable), 'totalActionable must not be an array');
+      assert.strictEqual(typeof result.totalActionable, 'number');
+      assert.ok(result.totalActionable >= 2, 'at least stage1 + stage2 are actionable');
+    });
+    ledger._resetForTests();
   });
 
   const killSwitchAfter = realKillSwitch.readKillSwitch();

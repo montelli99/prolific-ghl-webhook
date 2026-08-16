@@ -725,6 +725,7 @@ function loadSecretsIntoEnv() {
 }
 loadSecretsIntoEnv();
 
+const path = require('path');
 const { processCompletedCall, reviewCall, loadQualification } = require('../modules/call-intelligence');
 
 function authorize(auth) {
@@ -762,8 +763,8 @@ function runbookCtx(auth) {
   };
 }
 
-function blocked(reason) {
-  return { status: 'BLOCKED', reason, effects: { ...ZERO_EFFECTS } };
+function blocked(reason, detail) {
+  return { status: 'BLOCKED', reason, effects: { ...ZERO_EFFECTS }, ...(detail || {}) };
 }
 
 function safetySnapshot(ks) {
@@ -1415,6 +1416,10 @@ async function pipelineMoveStage(profileId, opportunityId, targetStage, auth) {
 // ---- PPC Call Queue ----
 
 const PPC_CALL_QUEUE_PRIORITY = Object.freeze([
+  // Tier 0: due callbacks/appointments are a REAL override — matched by
+  // contact-level qualification, not stage. stageIds stays empty so normal
+  // stage mapping never matches; getPpcCallQueue assigns it explicitly.
+  { queue: 0, label: 'Due Callback / Appointment', stageIds: [], dueIntercept: true, reason: 'Scheduled callback — real override' },
   { queue: 1, label: 'New Leads', stageIds: ['d31c50be-0148-4769-b3bd-cf32c2a16bff'], reason: 'First contact — highest priority' },
   { queue: 2, label: 'First No-Answer', stageIds: ['1a0d789b-c11d-47a2-9152-6a7ce07dc833'], reason: 'One call attempted, no answer — retry' },
   { queue: 3, label: 'Second No-Answer', stageIds: ['f03f27b9-f3c1-4534-b07e-8cc3c9186f7a'], reason: 'Two calls attempted, no answer — final attempt' },
@@ -1450,6 +1455,18 @@ const PPC_CALL_GUARD_BLOCK_CALL = Object.freeze(['DNC', 'BAD_NUMBER', 'PENDING_R
 const PPC_CALL_GUARD_BLOCK_SMS_ONLY = Object.freeze(['LANDLINE', 'CONSENT']);
 const PPC_CALL_GUARD_BLOCK_FIRST_CONTACT = Object.freeze(['PRIOR_CONTACT']);
 
+const PPC_STAGE_1_NEW_LEAD_ID = 'd31c50be-0148-4769-b3bd-cf32c2a16bff';
+const PPC_STAGE_2_CALLED_ONCE_ID = '1a0d789b-c11d-47a2-9152-6a7ce07dc833';
+const PPC_STAGE_3_CALLED_ANOTHER_DAY_ID = 'f03f27b9-f3c1-4534-b07e-8cc3c9186f7a';
+
+function loadPpcPinLedger() {
+  try {
+    return require('../modules/ppc-pin-ledger');
+  } catch (_) {
+    return null;
+  }
+}
+
 function evaluatePpcCallEligibility(opp) {
   const tags = (opp.contact && opp.contact.tags) || [];
   const stageId = opp.pipelineStageId || opp.pipeline_stage_id || '';
@@ -1462,19 +1479,22 @@ function evaluatePpcCallEligibility(opp) {
   const guards = [];
   let callEligible = true;
   let smsEligible = true;
+  let workflowActionable = true;
+  let nextExpectedAction = null;
   let reason = null;
 
   if (tags.some((t) => PPC_CALL_QUEUE_EXCLUDED_TAGS.includes(t))) {
-    return { callEligible: false, smsEligible: false, reason: 'TEST_ARTIFACT', guards: [{ guard: 'TEST_ARTIFACT', action: 'BLOCK', channel: 'BOTH' }] };
+    return { callEligible: false, smsEligible: false, workflowActionable: false, nextExpectedAction: null, reason: 'TEST_ARTIFACT', guards: [{ guard: 'TEST_ARTIFACT', action: 'BLOCK', channel: 'BOTH' }] };
   }
 
   if (PPC_CALL_QUEUE_EXCLUDED_STAGE_IDS.includes(stageId)) {
-    return { callEligible: false, smsEligible: false, reason: 'TERMINAL_STAGE', guards: [{ guard: 'TERMINAL_STAGE', action: 'BLOCK', channel: 'BOTH' }] };
+    return { callEligible: false, smsEligible: false, workflowActionable: false, nextExpectedAction: null, reason: 'TERMINAL_STAGE', guards: [{ guard: 'TERMINAL_STAGE', action: 'BLOCK', channel: 'BOTH' }] };
   }
 
   if (contactDnd || tags.includes('DNC') || tags.includes('do_not_call')) {
     callEligible = false;
     smsEligible = false;
+    workflowActionable = false;
     guards.push({ guard: 'DNC', action: 'BLOCK', channel: 'BOTH' });
   }
 
@@ -1486,6 +1506,7 @@ function evaluatePpcCallEligibility(opp) {
   if (contactWrongNumber || tags.includes('wrong_number') || tags.includes('bad_number') || tags.includes('invalid_number')) {
     callEligible = false;
     smsEligible = false;
+    workflowActionable = false;
     guards.push({ guard: 'BAD_NUMBER', action: 'BLOCK', channel: 'BOTH' });
   }
 
@@ -1497,43 +1518,91 @@ function evaluatePpcCallEligibility(opp) {
   if (tags.includes('pending_reply') || tags.includes('awaiting_reply')) {
     callEligible = false;
     smsEligible = false;
+    workflowActionable = false;
     guards.push({ guard: 'PENDING_REPLY', action: 'BLOCK', channel: 'BOTH' });
   }
 
   if (tags.includes('active_human_work') || tags.includes('in_progress')) {
     callEligible = false;
     smsEligible = false;
+    workflowActionable = false;
     guards.push({ guard: 'ACTIVE_HUMAN_WORK', action: 'BLOCK', channel: 'BOTH' });
   }
 
   if (assignedTo && assignedTo !== 'PGfXxlXCRXs3hXN3Gq7R') {
     callEligible = false;
     smsEligible = false;
+    workflowActionable = false;
     guards.push({ guard: 'ACTIVE_HUMAN_WORK', action: 'BLOCK', channel: 'BOTH', detail: `Assigned to ${assignedTo}, not Montelli` });
   }
 
-  if (stageId === 'd31c50be-0148-4769-b3bd-cf32c2a16bff') {
-    callEligible = false;
-    smsEligible = false;
-    guards.push({ guard: 'FIRST_CONTACT_POLICY_BLOCKED', action: 'BLOCK', channel: 'BOTH', detail: 'PIN automation blocked pending consent verification. Owner must decide manual first-contact process.' });
+  // Stage-1 (New Lead / Call ASAP) reconciled against script-authority PIN:
+  //   - PIN not yet sent   -> workflowActionable (SEND_PIN), callEligible=false
+  //   - PIN sent/delivered -> callEligible=true (MANUAL_CALL), DELIVERED_REQUIRED
+  // The FIRST_CONTACT_POLICY_BLOCKED guard stays (do NOT delete); it is reconciled
+  // so the desk can present the PIN-first workflow instead of hard-blocking forever.
+  // Hard blocks (DNC, bad number, pending reply, active human work, no phone)
+  // always take precedence: they suppress workflowActionable regardless of stage.
+  if (stageId === PPC_STAGE_1_NEW_LEAD_ID && workflowActionable) {
+    let pinSend = null;
+    const ledger = loadPpcPinLedger();
+    if (ledger) {
+      try { pinSend = ledger.getPinSend(opp.id); } catch (_) { pinSend = null; }
+    }
+    if (pinSend && pinSend.messageId && pinSend.deliveryStatus === 'DELIVERED') {
+      callEligible = true;
+      smsEligible = true;
+      workflowActionable = true;
+      nextExpectedAction = 'MANUAL_CALL';
+      guards.push({ guard: 'FIRST_CONTACT_POLICY_BLOCKED', action: 'RECONCILED', channel: 'NONE', detail: 'PIN delivered; script-authority DELIVERED_REQUIRED met. Manual call permitted.' });
+    } else if (pinSend && pinSend.messageId) {
+      callEligible = false;
+      smsEligible = true;
+      workflowActionable = true;
+      nextExpectedAction = 'VERIFY_PIN_DELIVERY';
+      guards.push({ guard: 'FIRST_CONTACT_POLICY_BLOCKED', action: 'VERIFY', channel: 'SMS', detail: 'PIN sent but delivery not confirmed. Verify delivery before calling.' });
+    } else {
+      callEligible = false;
+      smsEligible = true;
+      workflowActionable = true;
+      nextExpectedAction = 'SEND_PIN';
+      guards.push({ guard: 'FIRST_CONTACT_POLICY_BLOCKED', action: 'BLOCK_CALL', channel: 'CALL', detail: 'PIN not yet sent. Send PIN first (owner-approved), then call after confirmed delivery.' });
+    }
   }
 
   if (!contactPhone || contactPhone.length < 10) {
     callEligible = false;
     smsEligible = false;
+    workflowActionable = false;
     guards.push({ guard: 'NO_PHONE', action: 'BLOCK', channel: 'BOTH' });
   }
 
   if (!callEligible && !reason) reason = guards.filter((g) => g.action === 'BLOCK' && g.channel === 'BOTH').map((g) => g.guard).join(', ');
   if (!reason) reason = 'CLEARED';
 
-  return { callEligible, smsEligible, reason, guards };
+  return { callEligible, smsEligible, workflowActionable, nextExpectedAction, reason, guards };
 }
 
 function getPpcCallQueuePriority(stageId) {
   for (const q of PPC_CALL_QUEUE_PRIORITY) {
     if (q.stageIds.includes(stageId)) return q;
   }
+  return null;
+}
+
+const PPC_QUALIFICATION_DIR = path.join(__dirname, '..', 'data', 'runtime', 'call-intelligence-qualification');
+
+function getPpcDueCallback(opp) {
+  try {
+    const fs = require('fs');
+    const file = path.join(PPC_QUALIFICATION_DIR, `${String(opp.id)}.json`);
+    if (!fs.existsSync(file)) return null;
+    const state = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const callback = state && state.qualification && state.qualification.callback;
+    if (callback && callback.status === 'KNOWN' && callback.value) {
+      return { status: callback.status, value: callback.value, confidence: callback.confidence || 'medium', lastConfirmedAt: callback.lastConfirmedAt || null };
+    }
+  } catch (_) { /* treat as no callback */ }
   return null;
 }
 
@@ -1562,7 +1631,7 @@ async function getPpcCallQueue(profileId, auth) {
   const authority = loadPpcStageAuthority();
   const queues = {};
   for (const q of PPC_CALL_QUEUE_PRIORITY) {
-    queues[q.queue] = { queue: q.queue, label: q.label, reason: q.reason, stageEligible: 0, contactEligible: 0, items: [] };
+    queues[q.queue] = { queue: q.queue, label: q.label, reason: q.reason, stageEligible: 0, contactEligible: 0, actionable: 0, items: [] };
   }
 
   const exclusionCounts = {
@@ -1570,6 +1639,7 @@ async function getPpcCallQueue(profileId, auth) {
     landline: 0, pendingReply: 0, activeHumanWork: 0, firstContactPolicyBlocked: 0,
     noPhone: 0, noStage: 0, other: 0,
   };
+  let dueCallbackCount = 0;
 
   for (const opp of allOpps) {
     if (!isExpectedPpcOpportunity(opp)) {
@@ -1578,10 +1648,16 @@ async function getPpcCallQueue(profileId, auth) {
     const stageId = opp.pipelineStageId || opp.pipeline_stage_id || '';
     if (!stageId) { exclusionCounts.noStage++; continue; }
     const eligibility = evaluatePpcCallEligibility(opp);
-    const priority = getPpcCallQueuePriority(stageId);
+    const dueCallback = getPpcDueCallback(opp);
+
+    // Due callbacks/appointments are a REAL override: route to queue 0 unless the
+    // contact is hard-blocked (DNC/bad number/terminal/test artifact) by policy.
+    const terminalBlock = eligibility.guards.some((g) => g.guard === 'TERMINAL_STAGE' || g.guard === 'TEST_ARTIFACT' || g.guard === 'BAD_NUMBER' || g.guard === 'NO_PHONE');
+    const priority = (dueCallback && !terminalBlock) ? queues[0] : getPpcCallQueuePriority(stageId);
     if (!priority) continue;
 
     const stage = (authority.stages || []).find((s) => s.stageId === stageId);
+    const stageDefaultNext = stage && stage.nextExpectedAction ? stage.nextExpectedAction : null;
     const item = {
       opportunityId: opp.id,
       contactId: opp.contactId || opp.contact_id || null,
@@ -1600,6 +1676,11 @@ async function getPpcCallQueue(profileId, auth) {
       lastStageChangeAt: opp.lastStageChangeAt || null,
       callEligible: eligibility.callEligible,
       smsEligible: eligibility.smsEligible,
+      workflowActionable: eligibility.workflowActionable,
+      nextExpectedAction: eligibility.nextExpectedAction || stageDefaultNext,
+      queueReason: dueCallback ? `DUE CALLBACK: ${dueCallback.value}` : priority.reason,
+      queuePriority: priority.queue,
+      dueCallback: dueCallback ? { status: dueCallback.status, value: dueCallback.value, confidence: dueCallback.confidence, lastConfirmedAt: dueCallback.lastConfirmedAt } : null,
       eligibilityReason: eligibility.reason,
       eligibilityGuards: eligibility.guards,
     };
@@ -1608,6 +1689,10 @@ async function getPpcCallQueue(profileId, auth) {
     if (eligibility.callEligible) {
       queues[priority.queue].contactEligible++;
     }
+    if (eligibility.workflowActionable) {
+      queues[priority.queue].actionable++;
+    }
+    if (dueCallback) dueCallbackCount++;
 
     for (const g of eligibility.guards) {
       switch (g.guard) {
@@ -1631,12 +1716,15 @@ async function getPpcCallQueue(profileId, auth) {
   const result = Object.values(queues).filter((q) => q.stageEligible > 0);
   const totalStageEligible = result.reduce((sum, q) => sum + q.stageEligible, 0);
   const totalContactEligible = result.reduce((sum, q) => sum + q.contactEligible, 0);
+  const totalActionable = result.reduce((sum, q) => sum + (q.actionable || 0), 0);
   return {
     status: 'OK',
     profileId: ctx.profileId,
     totalPipeline: allOpps.length,
     totalStageEligible,
     totalContactEligible,
+    totalActionable,
+    dueCallbackCount,
     exclusionCounts,
     queues: result,
     effects: { ...ZERO_EFFECTS },
@@ -1839,6 +1927,8 @@ async function getPpcCallingDeskStatus(auth) {
   }
 
   let safeCallable = null;
+  let totalActionable = null;
+  let dueCallbackCount = null;
   let queueError = null;
   try {
     const token = getGhlToken('PPC_EWA_BEACH');
@@ -1846,6 +1936,8 @@ async function getPpcCallingDeskStatus(auth) {
       const queueResult = await getPpcCallQueue('PPC_EWA_BEACH', auth);
       if (queueResult.status === 'OK') {
         safeCallable = queueResult.totalContactEligible != null ? queueResult.totalContactEligible : null;
+        totalActionable = queueResult.totalActionable != null ? queueResult.totalActionable : null;
+        dueCallbackCount = queueResult.dueCallbackCount != null ? queueResult.dueCallbackCount : null;
       } else {
         queueError = queueResult.reason || queueResult.status;
       }
@@ -1878,11 +1970,167 @@ async function getPpcCallingDeskStatus(auth) {
     activePhone: state ? (state.activePhone || null) : null,
     activeStageName: state ? (state.activeStageName || null) : null,
     safeCallable,
+    totalActionable,
+    dueCallbackCount,
     queueError,
     lastMatchedCallId: state ? (state.lastMatchedCallId || null) : null,
     lastReviewStatus,
     lastReviewError,
     qualificationAvailable: state ? Boolean(state.lastMatchedCallId) : false,
+  };
+}
+
+async function sendPpcPin(profileId, opportunityId, auth) {
+  const a = authorize(auth);
+  if (!a.authorized) return blocked(a.reason);
+  if (profileId !== 'PPC_EWA_BEACH') return blocked('SEND_PIN_PPC_ONLY');
+  const ctx = resolvePipelineContext(profileId);
+  if (!ctx.resolved) return blocked(ctx.reason);
+  const token = getGhlToken(ctx.profileId);
+  if (!token) return blocked('NO_GHL_CREDENTIALS');
+
+  const oppRes = await ghlGet(token, `/opportunities/${opportunityId}`);
+  const opp = oppRes.body?.opportunity || oppRes.body;
+  if (!opp || !opp.id) return blocked('OPPORTUNITY_NOT_FOUND');
+  if (opp.locationId !== ctx.locationId || opp.pipelineId !== ctx.pipelineId) {
+    return blocked('CROSS_PROFILE_OPPORTUNITY');
+  }
+  const stageId = opp.pipelineStageId || '';
+  if (stageId !== PPC_STAGE_1_NEW_LEAD_ID) {
+    return blocked('PIN_STAGE_1_REQUIRED', { currentStageId: stageId });
+  }
+
+  const tags = (opp.contact && opp.contact.tags) || [];
+  if (tags.some((t) => PPC_CALL_QUEUE_EXCLUDED_TAGS.includes(t))) {
+    return blocked('TEST_ARTIFACT_EXCLUDED_FROM_PIN_SEND');
+  }
+  const contactDnd = Boolean(opp.contact && opp.contact.dnd);
+  const contactWrongNumber = Boolean(opp.contact && opp.contact.wrongNumber);
+  if (contactDnd || tags.includes('DNC') || tags.includes('do_not_call')) {
+    return blocked('DNC_PIN_SEND_BLOCKED');
+  }
+  if (contactWrongNumber || tags.includes('wrong_number') || tags.includes('bad_number') || tags.includes('invalid_number')) {
+    return blocked('BAD_NUMBER_PIN_SEND_BLOCKED');
+  }
+
+  const contactPhone = (opp.contact && opp.contact.phone) || '';
+  const contactName = (opp.contact && opp.contact.name) || null;
+  if (!contactPhone || contactPhone.replace(/\D/g, '').length < 10) {
+    return blocked('NO_PHONE_PIN_SEND_BLOCKED');
+  }
+
+  // Idempotency: a duplicate "send it" must NOT send a second SMS.
+  const ledger = require('../modules/ppc-pin-ledger');
+  const existing = ledger.getPinSend(opp.id);
+  if (existing && existing.messageId) {
+    return {
+      status: 'PIN_ALREADY_SENT',
+      profileId: ctx.profileId,
+      opportunityId: opp.id,
+      contactId: opp.contactId || opp.contact_id || null,
+      contactName,
+      contactPhone,
+      messageId: existing.messageId,
+      sentAt: existing.sentAt || null,
+      deliveryStatus: existing.deliveryStatus || 'SENT',
+      note: 'Opportunity already has a recorded PIN send; no second SMS sent.',
+      effects: { ...ZERO_EFFECTS },
+    };
+  }
+
+  // Build the PIN body from the script-authority canonical template (never invent).
+  let scriptAuthority;
+  try {
+    const fs = require('fs');
+    scriptAuthority = JSON.parse(fs.readFileSync('C:/Users/mscott/AI_Workspace/prolificcapital/ghl-automations/profiles/ppc-ewa-beach/script-authority.json', 'utf8'));
+  } catch (_) {
+    scriptAuthority = null;
+  }
+  const pinDef = scriptAuthority && scriptAuthority.scripts && scriptAuthority.scripts.PIN;
+  if (!pinDef || !pinDef.body) {
+    return blocked('PIN_SCRIPT_AUTHORITY_MISSING');
+  }
+
+  let body = pinDef.body;
+  try {
+    const { fillTemplate: fill } = require('../modules/template-merge');
+    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const firstName = (contactName || '').split(' ')[0] || '';
+    const address = cleanPropertyLabel(opp.name || '').trim() || '';
+    body = fill(pinDef.body, {
+      day: weekdays[new Date().getDay()],
+      Name: firstName,
+      name: firstName,
+      Address: address,
+      address,
+      'Name]': firstName,
+      'Address]': address,
+    });
+  } catch (_) {
+    /* keep canonical body if merge is unavailable; still token replacement below */
+  }
+
+  // Canonical PIN template tokens are [day], [Name], [Address]. Fill them
+  // explicitly so no raw placeholder ever reaches a live SMS.
+  const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const firstName = (contactName || '').split(' ')[0] || '';
+  const address = cleanPropertyLabel(opp.name || '').trim() || '';
+  body = body
+    .replace(/\[day\]/gi, weekdays[new Date().getDay()])
+    .replace(/\[Name\]/gi, firstName)
+    .replace(/\[Address\]/gi, address)
+    .replace(/\[address\]/gi, address)
+    .trim();
+  if (/\[(day|name|address)\]|\[[A-Za-z ]+\]/i.test(body)) {
+    return blocked('PIN_TEMPLATE_UNRESOLVED_PLACEHOLDERS', { body });
+  }
+
+  // Send via JustCall (POST /v2.1/texts/new) using the PPC Montelli sender.
+  if (!process.env.JUSTCALL_API_KEY || !process.env.JUSTCALL_API_SECRET) {
+    return blocked('NO_JUSTCALL_CREDENTIALS');
+  }
+  const { JustCallIntegration } = require('../modules/justcall-integration');
+  const justcall = new JustCallIntegration({
+    apiKey: process.env.JUSTCALL_API_KEY,
+    apiSecret: process.env.JUSTCALL_API_SECRET,
+    fromNumber: process.env.JUSTCALL_FROM_NUMBER || '+15716012619',
+  });
+  let sent;
+  try {
+    sent = await justcall.sendSMS(contactPhone, body, { from: justcall.fromNumber });
+  } catch (err) {
+    return { status: 'ERROR', reason: 'SMS_SEND_FAILED', detail: err.message || String(err), effects: { ...ZERO_EFFECTS } };
+  }
+  if (!sent || !sent.messageId) {
+    return { status: 'ERROR', reason: 'SMS_SEND_NO_MESSAGE_ID', sent, effects: { ...ZERO_EFFECTS } };
+  }
+
+  // Persist durably so eligibility flips to VERIFY_PIN_DELIVERY and re-sends are blocked.
+  const entry = ledger.recordPinSend(opp.id, {
+    contactId: opp.contactId || opp.contact_id || null,
+    sentAt: new Date().toISOString(),
+    messageId: sent.messageId,
+    deliveryStatus: 'SENT',
+    to: contactPhone,
+    from: justcall.fromNumber,
+    providerStatus: 'ACCEPTED',
+  });
+
+  return {
+    status: 'OK',
+    profileId: ctx.profileId,
+    opportunityId: opp.id,
+    contactId: opp.contactId || opp.contact_id || null,
+    contactName,
+    contactPhone,
+    messageId: sent.messageId,
+    deliveryStatus: 'SENT',
+    providerStatus: 'ACCEPTED',
+    body,
+    from: justcall.fromNumber,
+    ledgerEntry: entry,
+    // PIN send must NOT move the opportunity. Zero stage movements by design.
+    effects: { providerSends: 1, ghlWrites: 0, stageMovements: 0 },
   };
 }
 
@@ -2029,6 +2277,9 @@ module.exports = {
   pipelineMoveStage,
   loadPpcStageAuthority,
   resolvePpcStage,
+  PPC_STAGE_1_NEW_LEAD_ID,
+  PPC_STAGE_2_CALLED_ONCE_ID,
+  PPC_STAGE_3_CALLED_ANOTHER_DAY_ID,
   getPpcCallQueue,
   getPpcCallCard,
   getPpcCallContext,
@@ -2039,4 +2290,5 @@ module.exports = {
   getPpcCallIntelligence,
   applyPpcDnc,
   applyPpcWrongNumber,
+  sendPpcPin,
 };
