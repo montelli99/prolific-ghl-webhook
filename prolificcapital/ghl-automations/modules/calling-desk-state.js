@@ -24,6 +24,7 @@ const EMPTY_STATE = Object.freeze({
   pendingDisposition: null,
   pendingTargetStageId: null,
   pendingRecommendation: null,
+  pendingAction: null,
   awaitingNext: false,
   updatedAt: null,
 });
@@ -74,6 +75,7 @@ function clearActiveSeller() {
     pendingDisposition: null,
     pendingTargetStageId: null,
     pendingRecommendation: null,
+    pendingAction: null,
     awaitingNext: false,
     updatedAt: new Date().toISOString(),
   };
@@ -98,7 +100,22 @@ function setActiveSeller(seller) {
     pendingDisposition: null,
     pendingTargetStageId: null,
     pendingRecommendation: null,
+    pendingAction: seller.pendingAction || null,
     awaitingNext: false,
+    updatedAt: new Date().toISOString(),
+  };
+  saveCallingDeskState(updated);
+  return updated;
+}
+
+// Record the exact owner-approved action that is currently armed for the active
+// seller. Only the router's presentation of an actionable card may arm it; the
+// guarded execution path refuses to act unless it matches this value.
+function setPendingAction(action) {
+  const state = loadCallingDeskState();
+  const updated = {
+    ...state,
+    pendingAction: action || null,
     updatedAt: new Date().toISOString(),
   };
   saveCallingDeskState(updated);
@@ -138,6 +155,7 @@ function recordStageMove(stageId, stageName) {
     pendingDisposition: null,
     pendingTargetStageId: null,
     pendingRecommendation: null,
+    pendingAction: null,
     updatedAt: new Date().toISOString(),
   };
   saveCallingDeskState(updated);
@@ -208,4 +226,5 @@ module.exports = {
   setPendingRecommendation,
   clearPendingRecommendation,
   setAwaitingNext,
+  setPendingAction,
 };
