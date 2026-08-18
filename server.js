@@ -5,6 +5,43 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const jwt = require('jsonwebtoken');
+
+// ============================================================================
+// PPC PHOTO AUTOMATION V3 - SHADOW OBSERVER ONLY
+// Feature-specific configuration (FAIL-CLOSED at every level)
+// ============================================================================
+let ppcPhotoAutomation = null;
+let ppcModuleAvailable = false;
+
+// Try to load the module - if it doesn't exist, feature is disabled (no crash)
+try {
+  const { PPCPhotoAutomationV3 } = require('./modules/ppc-photo-automation-v3.cjs');
+  ppcModuleAvailable = true;
+  
+  // MUST have both: enabled=true AND mode=shadow (or mode=live for future production)
+  if (process.env.PPC_PHOTO_AUTOMATION_ENABLED === 'true' && 
+      ['shadow', 'live'].includes(process.env.PPC_PHOTO_AUTOMATION_MODE)) {
+    
+    const ppcDbUrl = process.env.PPC_AUTOMATION_DATABASE_URL;
+    if (ppcDbUrl) {
+      ppcPhotoAutomation = new PPCPhotoAutomationV3();
+      ppcPhotoAutomation.initialize(ppcDbUrl)
+        .then(() => console.log(`[PPC Photo Auto v3] Initialized in ${process.env.PPC_PHOTO_AUTOMATION_MODE} mode`))
+        .catch(err => {
+          console.error('[PPC Photo Auto v3] Initialization failed:', err.message);
+          ppcPhotoAutomation = null; // Disable on init failure
+        });
+    } else {
+      console.error('[PPC Photo Auto v3] DISABLED: PPC_AUTOMATION_DATABASE_URL not configured');
+    }
+  } else {
+    console.log('[PPC Photo Auto v3] Disabled (feature flag or mode not set)');
+  }
+} catch (err) {
+  // Module not available - feature disabled, service continues normally
+  console.log('[PPC Photo Auto v3] Module not available - feature disabled (service continues)');
+  ppcModuleAvailable = false;
+}
 const {
   initDb, getUser, getUserByEmail, getUserByTelegramId, listUsers,
   createUserWithPassword, verifyPassword,
@@ -599,6 +636,41 @@ app.post('/webhook/justcall', async (req, res) => {
         console.error(`[Atlas JustCall] Failed to log AI report: ${e.message}`);
       }
     }
+    
+    // ================================================================
+    // PPC PHOTO AUTOMATION V3 - SHADOW OBSERVER (ISOLATED FAILURE)
+    // Failure here must NOT affect existing JustCall webhook processing
+    // ================================================================
+    if (ppcPhotoAutomation && (type === 'sms.received' || type === 'text.received')) {
+      // Fire-and-forget shadow observation with timeout and error isolation
+      const shadowPromise = Promise.race([
+        ppcPhotoAutomation.handleJustCallWebhook({
+          action: type,
+          data: payload.data || {}
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Shadow timeout (5s)'), 5000), 5000)
+        )
+      ]);
+      
+      shadowPromise
+        .then(result => {
+          if (result && result.shadow_mode) {
+            console.log('[PPC Shadow]', JSON.stringify({
+              event_id: payload.data?.id,
+              action: result.action,
+              would: result.would,
+              mms: !!result.photo_count
+            }, null, 2));
+          }
+        })
+        .catch(err => {
+          // SWALLOW errors - shadow failure must not break existing webhook
+          console.error('[PPC Photo Auto v3] Shadow observer error (isolated):', err.message);
+        });
+    }
+    // ================================================================
+    
   } catch (err) {
     console.error('JustCall webhook error:', err.message);
   }
