@@ -23,6 +23,8 @@ const {
   FIELD_MAP: ATLAS_FIELD_MAP,
   fieldMapChecksum,
 } = require('./atlas-ghl-webhook-safety');
+// Delivery state processor for JustCall sms.status_updated
+const { initialize: initDeliveryProcessor, handleSmsStatusUpdated } = require('./modules/delivery-state-processor.cjs');
 
 const app = express();
 app.use(express.json());
@@ -954,6 +956,19 @@ app.get('/health/atlas', (req, res) => {
   });
 });
 
+
+// Initialize delivery state processor on startup
+const PPC_DB_URL = process.env.PPC_AUTOMATION_DATABASE_URL || process.env.DATABASE_URL;
+if (PPC_DB_URL) {
+  initDeliveryProcessor(PPC_DB_URL).then(() => {
+    console.log('[Startup] Delivery state processor initialized');
+  }).catch(err => {
+    console.error('[Startup] Delivery processor init failed:', err.message);
+  });
+} else {
+  console.warn('[Startup] PPC_AUTOMATION_DATABASE_URL not set - delivery processor disabled');
+}
+
 app.listen(PORT, () => {
   console.log(`AI REI Pipeline Engine v1.0 on port ${PORT}`);
   console.log(`GHL webhook: POST /webhook/ghl`);
@@ -963,3 +978,4 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
