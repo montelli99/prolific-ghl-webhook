@@ -23,7 +23,7 @@ const {
   FIELD_MAP: ATLAS_FIELD_MAP,
   fieldMapChecksum,
 } = require('./atlas-ghl-webhook-safety');
-const { initialize: initDeliveryProcessor, handleSmsStatusUpdated } = require('../ghl-automations/modules/delivery-state-processor.cjs');
+const { initialize: initDeliveryProcessor, handleSmsStatusUpdated } = require('./modules/delivery-state-processor.cjs');
 
 const app = express();
 app.use(express.json());
