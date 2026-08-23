@@ -1,5 +1,5 @@
-// index.js — Production webhook receiver + API for GHL pipeline sync
-// Receives real GHL webhook payloads → updates pipeline → posts to Telegram
+﻿// index.js â€” Production webhook receiver + API for GHL pipeline sync
+// Receives real GHL webhook payloads â†’ updates pipeline â†’ posts to Telegram
 // Real schemas: OpportunityStageUpdate, OpportunityCreate, ContactCreate, etc.
 
 const express = require('express');
@@ -28,7 +28,7 @@ const { initialize: initDeliveryProcessor, handleSmsStatusUpdated } = require('.
 const app = express();
 app.use(express.json());
 
-// Contact-card media route — serves approved vCard for JustCall MMS
+// Contact-card media route â€” serves approved vCard for JustCall MMS
 app.use(require('./routes/contact-card-media').router);
 
 const PORT = process.env.PORT || 3000;
@@ -36,7 +36,7 @@ const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || null;
 const DEFAULT_GHL_API_KEY = process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '';
 const DEPLOY_REVISION = process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || 'local';
 
-// ── GHL PipelineStageId → Our Stage mapping (configurable per pipeline) ──
+// â”€â”€ GHL PipelineStageId â†’ Our Stage mapping (configurable per pipeline) â”€â”€
 // Each GHL pipeline has stage UUIDs. Map them to our internal stages.
 const DEFAULT_STAGE_MAP = {}; // populated from GHL API on first connect
 
@@ -95,7 +95,7 @@ async function syncPipelineStages(userId) {
   return stageMap;
 }
 
-// Stage name → internal stage mapping (Montelli Atlas pipeline, 21 stages)
+// Stage name â†’ internal stage mapping (Montelli Atlas pipeline, 21 stages)
 function autoMapStageName(name) {
   const n = name.toLowerCase().trim();
   // Montelli Atlas-Managed pipeline stages (exact matches first)
@@ -128,16 +128,16 @@ function autoMapStageName(name) {
   return null;
 }
 
-// ── PPC Forwarding (transport-only — no business logic here) ──────────────────────────
-// Render receives GHL event → recognizes PPC location → forwards to local PPC runtime
+// â”€â”€ PPC Forwarding (transport-only â€” no business logic here) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Render receives GHL event â†’ recognizes PPC location â†’ forwards to local PPC runtime
 // Local runtime at port 3000 is authoritative for: ownership, DND, idempotency, JustCall send
 const PPC_FORWARD_TIMEOUT_MS = 8000;
 
 /**
  * Forward a PPC pipeline event to the local canonical PPC runtime via Cloudflare Tunnel.
- * @param {string} forwardUrl — the public Cloudflare Tunnel URL for the PPC runtime
- * @param {object} payload — original GHL webhook payload
- * @param {string} webhookType — OpportunityCreate | OpportunityStageUpdate
+ * @param {string} forwardUrl â€” the public Cloudflare Tunnel URL for the PPC runtime
+ * @param {object} payload â€” original GHL webhook payload
+ * @param {string} webhookType â€” OpportunityCreate | OpportunityStageUpdate
  */
 async function forwardToPpcRuntime(forwardUrl, payload, webhookType) {
   const secret = process.env.PPC_FORWARD_WEBHOOK_SECRET || '';
@@ -175,7 +175,7 @@ async function forwardToPpcRuntime(forwardUrl, payload, webhookType) {
         res.on('data', c => d += c);
         res.on('end', () => {
           if (res.statusCode >= 200 && res.statusCode < 300) {
-            console.log(`[PPC forward] → ${forwardUrl} OK ${res.statusCode}`);
+            console.log(`[PPC forward] â†’ ${forwardUrl} OK ${res.statusCode}`);
             resolve({ ok: true, status: res.statusCode, body: d.slice(0, 200) });
           } else {
             reject(new Error(`PPC forward HTTP ${res.statusCode}: ${d.slice(0, 100)}`));
@@ -192,7 +192,7 @@ async function forwardToPpcRuntime(forwardUrl, payload, webhookType) {
   });
 }
 
-// ── Webhook: OpportunityStageUpdate (main hook — stages change in GHL) ──
+// â”€â”€ Webhook: OpportunityStageUpdate (main hook â€” stages change in GHL) â”€â”€
 app.post('/webhook/ghl', async (req, res) => {
   const t0 = Date.now();
   try {
@@ -211,7 +211,7 @@ app.post('/webhook/ghl', async (req, res) => {
       return;
     }
 
-    // Always acknowledge immediately — GHL expects 200 within seconds
+    // Always acknowledge immediately â€” GHL expects 200 within seconds
     res.status(200).json({ received: true, type: webhookType });
 
     switch (webhookType) {
@@ -221,9 +221,9 @@ app.post('/webhook/ghl', async (req, res) => {
         const locationId = payload.locationId;
         const userId = findUserByGhlLocation(locationId);
 
-        // ── Divinity Align PPC forwarding ──────────────────────────────────
+        // â”€â”€ Divinity Align PPC forwarding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // If not Atlas but is the PPC location AND we have a forward URL, route to local PPC runtime.
-        // Render is TRANSPORT ONLY — no PPC business logic lives here.
+        // Render is TRANSPORT ONLY â€” no PPC business logic lives here.
         if (!userId && isPPCLocation(locationId)) {
           const forwardUrl = process.env.PPC_FORWARD_WEBHOOK_URL;
           if (forwardUrl) {
@@ -232,11 +232,11 @@ app.post('/webhook/ghl', async (req, res) => {
             });
             console.log(`[PPC forward] routed opp ${payload.id} (${payload.name}) type=${webhookType} pipeline=${payload.pipelineId}`);
           } else {
-            console.warn(`[PPC forward] skipped — PPC_FORWARD_WEBHOOK_URL not set. Opp ${payload.id} dropped.`);
+            console.warn(`[PPC forward] skipped â€” PPC_FORWARD_WEBHOOK_URL not set. Opp ${payload.id} dropped.`);
           }
           return;
         }
-        // ───────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         if (!userId) {
           console.error(`Unknown GHL locationId: ${locationId}`);
@@ -347,7 +347,7 @@ app.post('/webhook/ghl', async (req, res) => {
   }
 });
 
-// ── GHL workflow-only hooks (Montelli Atlas pipeline) ──
+// â”€â”€ GHL workflow-only hooks (Montelli Atlas pipeline) â”€â”€
 const GHL_TOKEN = process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '';
 const GHL_PIPELINE_ID = process.env.GHL_PIPELINE_ID || 'nSf3NXYVkt8X4PgW9aZ3';
 const MONTELLI_USER = process.env.GHL_MONTELLI_USER_ID || 'PGfXxlXCRXs3hXN3Gq7R';
@@ -523,7 +523,7 @@ app.post('/webhook/ghl/offer-ready', async (req, res) => {
       return 'Cash';
     })();
     const offerSummary = {
-      cash: { offer: Math.round(aru * 0.7 - (sqft || 1500) * 30 - 20000), structure: '0.70×ARV − repairs − fee' },
+      cash: { offer: Math.round(aru * 0.7 - (sqft || 1500) * 30 - 20000), structure: '0.70Ã—ARV âˆ’ repairs âˆ’ fee' },
       f50: { offer: Math.round(aru * 0.65), structure: '50% down + 50% carryback' },
       f10: { offer: Math.round(aru * 0.65), structure: '10% down + 90% in 24mo' },
       subTo: { offer: Math.round(aru * 0.9), structure: 'Take over existing loan' },
@@ -564,7 +564,7 @@ app.post('/webhook/ghl/offer-ready', async (req, res) => {
   }
 });
 
-// ── Background: enrich lead with GHL contact data ──
+// â”€â”€ Background: enrich lead with GHL contact data â”€â”€
 async function fetchGhlContactAndEnrich(user, opportunityPayload) {
   try {
     const creds = getGhlCredentials(user);
@@ -588,12 +588,12 @@ async function fetchGhlContactAndEnrich(user, opportunityPayload) {
       }
     }
   } catch (err) {
-    // Silent fail — contact enrichment is best-effort
+    // Silent fail â€” contact enrichment is best-effort
     console.error(`Contact enrich failed: ${err.message}`);
   }
 }
 
-// ── API: Get GHL pipeline stage map ──
+// â”€â”€ API: Get GHL pipeline stage map â”€â”€
 app.get('/api/ghl/pipelines/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -627,7 +627,7 @@ app.get('/api/ghl/pipelines/:userId', async (req, res) => {
   }
 });
 
-// ── API: Sync stages from GHL ──
+// â”€â”€ API: Sync stages from GHL â”€â”€
 app.post('/api/ghl/sync-stages/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -638,7 +638,7 @@ app.post('/api/ghl/sync-stages/:userId', async (req, res) => {
   }
 });
 
-// ── API: Get GHL opportunities ──
+// â”€â”€ API: Get GHL opportunities â”€â”€
 app.get('/api/ghl/opportunities/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -668,7 +668,7 @@ app.get('/api/ghl/opportunities/:userId', async (req, res) => {
   }
 });
 
-// ── API: Import GHL opportunities into our pipeline ──
+// â”€â”€ API: Import GHL opportunities into our pipeline â”€â”€
 app.post('/api/ghl/import/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -737,7 +737,7 @@ setImmediate(() => {
   bootstrapStageMaps();
 });
 
-// ── Pipeline API (same as before, now production-backed) ──
+// â”€â”€ Pipeline API (same as before, now production-backed) â”€â”€
 app.post('/api/pipeline', (req, res) => {
   try {
     const { action, userId, ...data } = req.body;
@@ -779,11 +779,12 @@ app.post('/api/pipeline', (req, res) => {
   }
 });
 
-// ── JustCall Webhook ──
+// â”€â”€ JustCall Webhook â”€â”€
 const GHL_JC_TOKEN = process.env.GHL_API_TOKEN || process.env.GHL_API_KEY || '';
 const GHL_JC_LOCATION_ID = process.env.GHL_LOCATION_ID || '61XPzSqRy7UKMwW9DeB8';
 const MONTELLI_USER_ID = process.env.GHL_MONTELLI_USER_ID || 'PGfXxlXCRXs3hXN3Gq7R';
-const PPC_PIPELINE_ID = 'o4hvfO7adOQlLdtqPNIn';
+// Atlas pipeline — used only in the JustCall webhook handler below
+const ATLAS_PIPELINE_ID = 'o4hvfO7adOQlLdtqPNIn';
 const JC_DEDUPE_MAX = 5000;
 
 // GHL HTTP helper (native https, no SDK dependency)
@@ -826,7 +827,7 @@ async function autoAssignPpcLead(phoneNumber) {
     if (contacts.length === 0) return { action: 'skipped', reason: 'no contact found for phone', phone: normalized };
     for (const contact of contacts) {
       const contactId = contact.id;
-      const oppRes = await ghlJcRequest('GET', `/opportunities/search?location_id=${GHL_JC_LOCATION_ID}&pipeline_id=${PPC_PIPELINE_ID}&contact_id=${contactId}&limit=10`);
+      const oppRes = await ghlJcRequest('GET', `/opportunities/search?location_id=${GHL_JC_LOCATION_ID}&pipeline_id=${ATLAS_PIPELINE_ID}&contact_id=${contactId}&limit=10`);
       const opportunities = oppRes?.opportunities || [];
       for (const opp of opportunities) {
         if (opp.assignedTo !== MONTELLI_USER_ID) {
@@ -965,7 +966,7 @@ app.post('/webhook/justcall', async (req, res) => {
           const time = m.start_time || '';
           const title = m.title || 'Moment';
           const desc = m.description || '';
-          return `• [${time}] ${title}: ${desc}`;
+          return `â€¢ [${time}] ${title}: ${desc}`;
         }).join('\n');
       }
 
@@ -982,7 +983,7 @@ app.post('/webhook/justcall', async (req, res) => {
   }
 });
 
-// ── Webhook: JustCall sms.status_updated (delivery status updates) ──
+// â”€â”€ Webhook: JustCall sms.status_updated (delivery status updates) â”€â”€
 app.post('/webhook/justcall', async (req, res) => {
   res.status(200).json({ received: true });
   try {
