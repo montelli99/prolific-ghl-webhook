@@ -39,6 +39,23 @@ try {
 const app = express();
 app.use(express.json());
 
+// ── PPC Realtime Forward Telemetry (bounded, no secrets/PII) ──
+// Records whether GHL actually hit Render and whether PPC forwarding succeeded.
+const ppcTelemetry = { recent: [], maxEvents: 50 };
+function recordPpcTelemetry(entry) {
+  ppcTelemetry.recent.unshift({ ...entry, ts: new Date().toISOString() });
+  if (ppcTelemetry.recent.length > ppcTelemetry.maxEvents) ppcTelemetry.recent.length = ppcTelemetry.maxEvents;
+}
+app.get('/api/ppc/telemetry', (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 20, 50);
+  res.json({
+    forwardUrlConfigured: !!process.env.PPC_FORWARD_WEBHOOK_URL,
+    forwardUrl: process.env.PPC_FORWARD_WEBHOOK_URL ? process.env.PPC_FORWARD_WEBHOOK_URL.replace('https://', 'https://') : null,
+    recentCount: ppcTelemetry.recent.length,
+    recent: ppcTelemetry.recent.slice(0, limit)
+  });
+});
+
 // Contact-card media route â€” serves approved vCard for JustCall MMS
 app.use(require('./routes/contact-card-media').router);
 
@@ -237,13 +254,21 @@ app.post('/webhook/ghl', async (req, res) => {
         // Render is TRANSPORT ONLY â€” no PPC business logic lives here.
         if (!userId && isPPCLocation(locationId)) {
           const forwardUrl = process.env.PPC_FORWARD_WEBHOOK_URL;
+          recordPpcTelemetry({ receivedAt: t0, eventType: webhookType, locationId, pipelineId: payload.pipelineId, opportunityId: payload.id, forwardAttempted: !!forwardUrl });
           if (forwardUrl) {
-            forwardToPpcRuntime(forwardUrl, payload, webhookType).catch(err => {
-              console.error(`[PPC forward] failed: ${err.message}`);
-            });
-            console.log(`[PPC forward] routed opp ${payload.id} (${payload.name}) type=${webhookType} pipeline=${payload.pipelineId}`);
+            const fStart = Date.now();
+            forwardToPpcRuntime(forwardUrl, payload, webhookType)
+              .then(r => {
+                recordPpcTelemetry({ receivedAt: t0, eventType: webhookType, locationId, pipelineId: payload.pipelineId, opportunityId: payload.id, forwardStatus: 'ok', forwardLatencyMs: Date.now() - fStart });
+                console.log(`[PPC forward] → ${forwardUrl} OK opp=${payload.id}`);
+              })
+              .catch(err => {
+                recordPpcTelemetry({ receivedAt: t0, eventType: webhookType, locationId, pipelineId: payload.pipelineId, opportunityId: payload.id, forwardStatus: 'error', forwardError: err.message, forwardLatencyMs: Date.now() - fStart });
+                console.error(`[PPC forward] failed opp=${payload.id}: ${err.message}`);
+              });
           } else {
-            console.warn(`[PPC forward] skipped â€” PPC_FORWARD_WEBHOOK_URL not set. Opp ${payload.id} dropped.`);
+            recordPpcTelemetry({ receivedAt: t0, eventType: webhookType, locationId, pipelineId: payload.pipelineId, opportunityId: payload.id, forwardStatus: 'no_url' });
+            console.warn(`[PPC forward] skipped — PPC_FORWARD_WEBHOOK_URL not set. Opp ${payload.id} dropped.`);
           }
           return;
         }
