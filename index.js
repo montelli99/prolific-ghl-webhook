@@ -23,7 +23,18 @@ const {
   FIELD_MAP: ATLAS_FIELD_MAP,
   fieldMapChecksum,
 } = require('./atlas-ghl-webhook-safety');
-const { initialize: initDeliveryProcessor, handleSmsStatusUpdated } = require('./modules/delivery-state-processor.cjs');
+// Delivery state processor — LEGACY, quarantined. Requires 'pg' which is not
+// a dependency. Import is made safe so it does not break Render startup.
+// (Canonical PCC runtime uses ppc-delivery-handler.cjs instead.)
+let initDeliveryProcessor = null;
+let handleSmsStatusUpdated = null;
+try {
+  const delivery = require('./modules/delivery-state-processor.cjs');
+  initDeliveryProcessor = delivery.initialize;
+  handleSmsStatusUpdated = delivery.handleSmsStatusUpdated;
+} catch (err) {
+  console.warn('[Startup] delivery-state-processor unavailable (requires pg):', err.message);
+}
 
 const app = express();
 app.use(express.json());
@@ -992,6 +1003,10 @@ app.post('/webhook/justcall', async (req, res) => {
     
     if (type === 'sms.status_updated') {
       console.log(`[Delivery State] sms.status_updated received: ${JSON.stringify(payload.data || {}).slice(0, 150)}`);
+      if (!handleSmsStatusUpdated) {
+        console.warn('[Delivery State] handler unavailable (requires pg) — skipped');
+        return res.status(200).json({ received: true, note: 'delivery-handler-unavailable' });
+      }
       const result = await handleSmsStatusUpdated(payload);
       if (result.success) {
         console.log(`[Delivery State] Processed: ${result.action} for message ${payload.data?.id}`);
@@ -1063,12 +1078,14 @@ app.get('/health/atlas', (req, res) => {
 
 // Initialize delivery state processor on startup
 const PPC_DB_URL = process.env.PPC_AUTOMATION_DATABASE_URL || process.env.DATABASE_URL;
-if (PPC_DB_URL) {
+if (PPC_DB_URL && initDeliveryProcessor) {
   initDeliveryProcessor(PPC_DB_URL).then(() => {
     console.log('[Startup] Delivery state processor initialized');
   }).catch(err => {
     console.error('[Startup] Delivery processor init failed:', err.message);
   });
+} else if (PPC_DB_URL) {
+  console.warn('[Startup] Delivery state processor not available (requires pg) — continuing');
 } else {
   console.warn('[Startup] PPC_AUTOMATION_DATABASE_URL not set - delivery processor disabled');
 }
