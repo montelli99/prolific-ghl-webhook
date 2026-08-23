@@ -6,7 +6,7 @@ const express = require('express');
 const { createLead, advanceStage, updateLead, findLead, getPipelineStatus } = require('./engine');
 const { processGhlCall, processJustCallTranscript, draftLoiEmail } = require('./transcriptor');
 const { startScheduler } = require('./scheduler');
-const { USERS, addUser, loadLeads, saveLeads, logEvent, findUserByGhlLocation } = require('./users');
+const { USERS, addUser, loadLeads, saveLeads, logEvent, findUserByGhlLocation, isPPCLocation, PPC_LOCATION_ID, PPC_PIPELINE_ID } = require('./users');
 const { GhlClient } = require('./ghl-client');
 const { PIPELINE_STAGES, TEXT_SHORTCUTS, FOLLOWUP_TEMPLATES, KEY_CONTACTS } = require('./config');
 const { MONTELLI_STAGE_MAP, normalizeMontelliStageValue } = require('./montelli-stage-map');
@@ -23,6 +23,7 @@ const {
   FIELD_MAP: ATLAS_FIELD_MAP,
   fieldMapChecksum,
 } = require('./atlas-ghl-webhook-safety');
+const { initialize: initDeliveryProcessor, handleSmsStatusUpdated } = require('../ghl-automations/modules/delivery-state-processor.cjs');
 
 const app = express();
 app.use(express.json());
@@ -127,6 +128,70 @@ function autoMapStageName(name) {
   return null;
 }
 
+// ── PPC Forwarding (transport-only — no business logic here) ──────────────────────────
+// Render receives GHL event → recognizes PPC location → forwards to local PPC runtime
+// Local runtime at port 3000 is authoritative for: ownership, DND, idempotency, JustCall send
+const PPC_FORWARD_TIMEOUT_MS = 8000;
+
+/**
+ * Forward a PPC pipeline event to the local canonical PPC runtime via Cloudflare Tunnel.
+ * @param {string} forwardUrl — the public Cloudflare Tunnel URL for the PPC runtime
+ * @param {object} payload — original GHL webhook payload
+ * @param {string} webhookType — OpportunityCreate | OpportunityStageUpdate
+ */
+async function forwardToPpcRuntime(forwardUrl, payload, webhookType) {
+  const secret = process.env.PPC_FORWARD_WEBHOOK_SECRET || '';
+  const body = JSON.stringify({
+    source: 'render_ppc_forward',
+    forwardOf: webhookType,
+    receivedAt: new Date().toISOString(),
+    locationId: payload.locationId,
+    pipelineId: payload.pipelineId,
+    opportunityId: payload.opportunityId || payload.id,
+    pipelineStageId: payload.pipelineStageId,
+    name: payload.name,
+    monetaryValue: payload.monetaryValue,
+    assignedTo: payload.assignedTo,
+    type: webhookType,
+  });
+
+  return new Promise((resolve, reject) => {
+    try {
+      const url = new URL(forwardUrl);
+      const https = require('https');
+      const req = https.request({
+        hostname: url.hostname,
+        path: url.pathname + url.search,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+          'X-PPC-Webhook-Secret': secret,
+          'User-Agent': 'prolific-ghl-webhook/1.0 PPC-forwarder',
+        },
+        timeout: PPC_FORWARD_TIMEOUT_MS,
+      }, (res) => {
+        let d = '';
+        res.on('data', c => d += c);
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            console.log(`[PPC forward] → ${forwardUrl} OK ${res.statusCode}`);
+            resolve({ ok: true, status: res.statusCode, body: d.slice(0, 200) });
+          } else {
+            reject(new Error(`PPC forward HTTP ${res.statusCode}: ${d.slice(0, 100)}`));
+          }
+        });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('PPC forward timeout')); });
+      req.write(body);
+      req.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 // ── Webhook: OpportunityStageUpdate (main hook — stages change in GHL) ──
 app.post('/webhook/ghl', async (req, res) => {
   const t0 = Date.now();
@@ -155,6 +220,23 @@ app.post('/webhook/ghl', async (req, res) => {
       case 'OpportunityCreate': {
         const locationId = payload.locationId;
         const userId = findUserByGhlLocation(locationId);
+
+        // ── Divinity Align PPC forwarding ──────────────────────────────────
+        // If not Atlas but is the PPC location AND we have a forward URL, route to local PPC runtime.
+        // Render is TRANSPORT ONLY — no PPC business logic lives here.
+        if (!userId && isPPCLocation(locationId)) {
+          const forwardUrl = process.env.PPC_FORWARD_WEBHOOK_URL;
+          if (forwardUrl) {
+            forwardToPpcRuntime(forwardUrl, payload, webhookType).catch(err => {
+              console.error(`[PPC forward] failed: ${err.message}`);
+            });
+            console.log(`[PPC forward] routed opp ${payload.id} (${payload.name}) type=${webhookType} pipeline=${payload.pipelineId}`);
+          } else {
+            console.warn(`[PPC forward] skipped — PPC_FORWARD_WEBHOOK_URL not set. Opp ${payload.id} dropped.`);
+          }
+          return;
+        }
+        // ───────────────────────────────────────────────────────────────────
 
         if (!userId) {
           console.error(`Unknown GHL locationId: ${locationId}`);
@@ -900,6 +982,30 @@ app.post('/webhook/justcall', async (req, res) => {
   }
 });
 
+// ── Webhook: JustCall sms.status_updated (delivery status updates) ──
+app.post('/webhook/justcall', async (req, res) => {
+  res.status(200).json({ received: true });
+  try {
+    const payload = req.body || {};
+    const type = payload.action || payload.type;
+    
+    if (type === 'sms.status_updated') {
+      console.log(`[Delivery State] sms.status_updated received: ${JSON.stringify(payload.data || {}).slice(0, 150)}`);
+      const result = await handleSmsStatusUpdated(payload);
+      if (result.success) {
+        console.log(`[Delivery State] Processed: ${result.action} for message ${payload.data?.id}`);
+      } else {
+        console.warn(`[Delivery State] Processing failed: ${result.error}`);
+      }
+      return;
+    }
+    
+    // Fall through to existing JustCall handler for other event types
+  } catch (err) {
+    console.error('JustCall sms.status_updated error:', err.message);
+  }
+});
+
 // Health check
 app.get('/', (req, res) => res.json({
   service: 'AI REI Pipeline Engine',
@@ -954,10 +1060,22 @@ app.get('/health/atlas', (req, res) => {
   });
 });
 
+// Initialize delivery state processor on startup
+const PPC_DB_URL = process.env.PPC_AUTOMATION_DATABASE_URL || process.env.DATABASE_URL;
+if (PPC_DB_URL) {
+  initDeliveryProcessor(PPC_DB_URL).then(() => {
+    console.log('[Startup] Delivery state processor initialized');
+  }).catch(err => {
+    console.error('[Startup] Delivery processor init failed:', err.message);
+  });
+} else {
+  console.warn('[Startup] PPC_AUTOMATION_DATABASE_URL not set - delivery processor disabled');
+}
+
 app.listen(PORT, () => {
   console.log(`AI REI Pipeline Engine v1.0 on port ${PORT}`);
   console.log(`GHL webhook: POST /webhook/ghl`);
-  console.log(`JustCall webhook: POST /webhook/justcall`);
+  console.log(`JustCall webhook: POST /webhook/justcall (handles sms.status_updated)`);
   console.log(`GHL stages: POST /api/ghl/sync-stages/:userId`);
   console.log(`GHL import: POST /api/ghl/import/:userId`);
 });

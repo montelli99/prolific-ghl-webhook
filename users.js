@@ -10,12 +10,19 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
+// ── Location Identity Constants ──────────────────────────────────────────────────
+// Atlas (Montelli) location
+const ATLAS_LOCATION_ID = process.env.GHL_LOCATION_ID || '61XPzSqRy7UKMwW9DeB8';
+// Divinity Align PPC location — forwarded to local PPC runtime
+const PPC_LOCATION_ID = 'GDq92uruRngbi9mLGGrV';
+const PPC_PIPELINE_ID = 'ril84XHGQleRgE0W0FKU';
+
 // Default users — add Kayla's mentees here
 const USERS = {
   montelli: {
     id: 'montelli',
     name: 'Montelli Scott',
-    ghlLocationId: process.env.GHL_LOCATION_ID || null,
+    ghlLocationId: ATLAS_LOCATION_ID,
     justcallAccountId: null,
     active: true
   }
@@ -71,9 +78,14 @@ function addUser(userId, config) {
   return USERS[userId];
 }
 
-// Get user by GHL location ID
+// Get user by GHL location ID (Atlas only — PPC is routed separately)
 function findUserByGhlLocation(locationId) {
   return Object.values(USERS).find(u => u.ghlLocationId === locationId);
+}
+
+// Check if a locationId is the Divinity Align PPC location
+function isPPCLocation(locationId) {
+  return locationId === PPC_LOCATION_ID;
 }
 
 // Get user by JustCall account
@@ -83,6 +95,7 @@ function findUserByJustcall(accountId) {
 
 module.exports = {
   USERS, loadLeads, saveLeads, logEvent,
-  addUser, findUserByGhlLocation, findUserByJustcall,
+  addUser, findUserByGhlLocation, isPPCLocation,
+  findUserByJustcall, PPC_LOCATION_ID, PPC_PIPELINE_ID,
   getLeadsPath, getPipelineLog, ensureUserDir
 };
