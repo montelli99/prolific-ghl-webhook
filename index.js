@@ -910,6 +910,30 @@ app.post('/webhook/justcall', async (req, res) => {
     }
     console.log(`[Atlas JustCall] ${type}: ${JSON.stringify(payload.data || {}).slice(0, 100)}`);
 
+    // ── Sales Dialer transcript → GHL note (live path) ──────────────────────
+    // sd.call_completed / sd.call_updated / sd.call_ai_generated. The AI-report
+    // event is the strongest signal that transcript data is ready; completed/
+    // updated record the call and attempt an early transcript fetch (may be
+    // PENDING until AI finishes). Idempotent via the note-ingestion ledger.
+    // TRANSCRIPT → NOTE → CONTEXT REFRESH only. Never moves stage/assignment.
+    if (type === 'sd.call_completed' || type === 'sd.call_updated' || type === 'sd.call_ai_generated') {
+      const sdData = payload.data || {};
+      const sdCallId = sdData.call_id || sdData.id;
+      const sdAgentId = sdData.agent_id;
+      if (sdCallId) {
+        if (sdAgentId != null && String(sdAgentId) !== '508588') {
+          console.log(`[Sales Dialer] Skipping non-Montelli agent ${sdAgentId} for call ${sdCallId}`);
+        } else {
+          console.log(`[Sales Dialer] ${type} call ${sdCallId}`);
+          const { ingestCallById } = require('./ppc-sales-dialer-transcript.cjs');
+          ingestCallById(sdCallId)
+            .then((r) => console.log(`[Sales Dialer] ingest result: ${JSON.stringify(r)}`))
+            .catch((e) => console.error(`[Sales Dialer] ingest error: ${e.message}`));
+        }
+      }
+      return;
+    }
+
     if (type === 'call.completed' || type === 'call.ended') {
       const callData = payload.data || {};
       const contactId = callData.contact_id || callData.ghl_contact_id;
