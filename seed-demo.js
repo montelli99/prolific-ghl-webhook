@@ -1,6 +1,6 @@
-require('dotenv').config({path:'C:/Users/mscott/AI_Workspace/prolificcapital/pipeline/.env'});
+require('dotenv').config();
 const {neon} = require('@neondatabase/serverless');
-const {initDb,createLead,advanceLeadStage,updateLead} = require('C:/Users/mscott/AI_Workspace/prolificcapital/pipeline/db');
+const {initDb,createLead,advanceLeadStage,updateLead} = require('./db');
 initDb();
 
 async function main() {

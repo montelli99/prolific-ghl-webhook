@@ -10,6 +10,7 @@ const { USERS, addUser, loadLeads, saveLeads, logEvent, findUserByGhlLocation, i
 const { GhlClient } = require('./ghl-client');
 const { PIPELINE_STAGES, TEXT_SHORTCUTS, FOLLOWUP_TEMPLATES, KEY_CONTACTS } = require('./config');
 const { MONTELLI_STAGE_MAP, normalizeMontelliStageValue } = require('./montelli-stage-map');
+const { createMontelliTranscriptIngestion } = require('./ppc-montelli-transcript-ingestion.cjs');
 const {
   normalizeWebhookPayload,
   extractImportMarkers,
@@ -38,6 +39,7 @@ try {
 
 const app = express();
 app.use(express.json());
+const montelliTranscriptIngestion = createMontelliTranscriptIngestion();
 
 // ── PPC Realtime Forward Telemetry (bounded, no secrets/PII) ──
 // Records whether GHL actually hit Render and whether PPC forwarding succeeded.
@@ -910,27 +912,10 @@ app.post('/webhook/justcall', async (req, res) => {
     }
     console.log(`[Atlas JustCall] ${type}: ${JSON.stringify(payload.data || {}).slice(0, 100)}`);
 
-    // ── Sales Dialer transcript → GHL note (live path) ──────────────────────
-    // sd.call_completed / sd.call_updated / sd.call_ai_generated. The AI-report
-    // event is the strongest signal that transcript data is ready; completed/
-    // updated record the call and attempt an early transcript fetch (may be
-    // PENDING until AI finishes). Idempotent via the note-ingestion ledger.
-    // TRANSCRIPT → NOTE → CONTEXT REFRESH only. Never moves stage/assignment.
-    if (type === 'sd.call_completed' || type === 'sd.call_updated' || type === 'sd.call_ai_generated') {
-      const sdData = payload.data || {};
-      const sdCallId = sdData.call_id || sdData.id;
-      const sdAgentId = sdData.agent_id;
-      if (sdCallId) {
-        if (sdAgentId != null && String(sdAgentId) !== '508588') {
-          console.log(`[Sales Dialer] Skipping non-Montelli agent ${sdAgentId} for call ${sdCallId}`);
-        } else {
-          console.log(`[Sales Dialer] ${type} call ${sdCallId}`);
-          const { ingestCallById } = require('./ppc-sales-dialer-transcript.cjs');
-          ingestCallById(sdCallId)
-            .then((r) => console.log(`[Sales Dialer] ingest result: ${JSON.stringify(r)}`))
-            .catch((e) => console.error(`[Sales Dialer] ingest error: ${e.message}`));
-        }
-      }
+    if (type === 'jc.call_ai_generated' || type === 'sd.call_ai_generated') {
+      montelliTranscriptIngestion.ingestAiWebhook(payload)
+        .then((result) => console.log(`[Montelli AI webhook] ${JSON.stringify(result)}`))
+        .catch((error) => console.error(`[Montelli AI webhook] ${error.message}`));
       return;
     }
 
@@ -1084,6 +1069,12 @@ app.get('/', (req, res) => res.json({
     ghlSync: 'POST /api/ghl/sync-stages/:userId',
     ghlOpportunities: 'GET /api/ghl/opportunities/:userId',
     ghlImport: 'POST /api/ghl/import/:userId'
+  },
+  capabilities: {
+    jcCallAiGenerated: true,
+    sdCallAiGenerated: true,
+    sharedTranscriptIngestion: true,
+    normalTranscriptFlowCallsAiFetches: 0
   }
 }));
 
