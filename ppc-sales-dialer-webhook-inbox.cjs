@@ -2,6 +2,7 @@
 
 const crypto = require("node:crypto");
 const LOCATION_ID = "GDq92uruRngbi9mLGGrV";
+const NOTE_WORKFLOW_ID = "2027fc35-4aed-4854-83f3-a75b134b81bb";
 const EVENTS = new Set([
   "NoteCreate",
   "NoteUpdate",
@@ -16,7 +17,9 @@ const EVENTS = new Set([
 ]);
 
 function normalizeEvent(payload = {}) {
-  const type = String(payload.type || "");
+  const workflowNote = payload.workflow?.id === NOTE_WORKFLOW_ID &&
+    payload.customData?.ppc_event === "team_note_changed";
+  const type = workflowNote ? "NoteUpdate" : String(payload.type || "");
   const location = payload.locationId || payload.location_id || payload.location?.id;
   if (location !== LOCATION_ID || !EVENTS.has(type)) return null;
   const contactId =
@@ -29,12 +32,17 @@ function normalizeEvent(payload = {}) {
     payload.opportunity_id ||
     (type.startsWith("Opportunity") ? payload.id : null);
   if (!contactId && !opportunityId) return null;
+  if (workflowNote && (typeof contactId !== "string" || !contactId)) return null;
   return {
     event_type: type,
     contact_id: contactId || null,
     opportunity_id: opportunityId || null,
     source_version: String(payload.dateUpdated || payload.updatedAt || payload.requestId || ""),
-    payload_hash: crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex"),
+    // Standard workflow deliveries do not guarantee a unique note/version ID.
+    // Never permanently deduplicate them by body: A -> B -> A is a real change.
+    // Repeated deliveries safely coalesce through the contact job and readback.
+    payload_hash: workflowNote ? crypto.randomUUID() :
+      crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex"),
   };
 }
 
@@ -105,4 +113,4 @@ function createProductionWebhookInbox() {
   return createWebhookInbox(require("@neondatabase/serverless").neon(url));
 }
 
-module.exports = { LOCATION_ID, normalizeEvent, createWebhookInbox, createProductionWebhookInbox };
+module.exports = { LOCATION_ID, NOTE_WORKFLOW_ID, normalizeEvent, createWebhookInbox, createProductionWebhookInbox };

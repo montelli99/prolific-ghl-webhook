@@ -40,3 +40,29 @@ test('other locations do not enter the PPC event store', async () => {
   assert.equal(f.events.includes('saved'),false);
   assert.equal(f.events[0],200);
 });
+
+test('approved note workflow is durable and repeated identical deliveries are not lost', async () => {
+  const payload = { location:{id:inbox.LOCATION_ID}, contact_id:'contact-1',
+    workflow:{id:inbox.NOTE_WORKFLOW_ID}, customData:{ppc_event:'team_note_changed'},
+    note:{body:'Original team note'} };
+  const before = JSON.stringify(payload);
+  const first = inbox.normalizeEvent(payload);
+  const second = inbox.normalizeEvent(payload);
+  assert.equal(first.event_type,'NoteUpdate');
+  assert.equal(first.contact_id,'contact-1');
+  assert.notEqual(first.payload_hash,second.payload_hash);
+  assert.equal(JSON.stringify(first).includes('Original team note'),false);
+  const f = fixture();
+  await f.handler({body:payload},f.res);
+  assert.deepEqual(f.events.slice(0,2),['saved',200]);
+  assert.equal(JSON.stringify(payload),before);
+  const failed = fixture(true);
+  await failed.handler({body:payload},failed.res);
+  assert.deepEqual(failed.events.slice(0,2),['saved',503]);
+  for (const invalid of [
+    {...payload,workflow:{id:'unrelated'}},
+    {...payload,location:{id:'other-location'}},
+    {...payload,customData:{}},
+    {...payload,contact_id:null,id:'opportunity-only'},
+  ]) assert.equal(inbox.normalizeEvent(invalid),null);
+});
