@@ -42,6 +42,20 @@ app.use(express.json());
 const montelliTranscriptIngestion = createMontelliTranscriptIngestion();
 const dialerInboxModule = require('./ppc-sales-dialer-webhook-inbox.cjs');
 let dialerWebhookInbox;
+let teamNoteService;
+function getTeamNoteService() {
+  if (!teamNoteService && process.env.PPC_NOTE_SERVICE_ENABLED === 'true') {
+    const db = require('@neondatabase/serverless').neon(process.env.PPC_AUTOMATION_DATABASE_URL);
+    teamNoteService = require('./ppc-team-note-service.cjs').createService({ db });
+  }
+  return teamNoteService;
+}
+app.get('/api/ppc/notes/health', async (_req,res) => {
+  const service = getTeamNoteService();
+  if (!service) return res.json({enabled:false,runtime:'render'});
+  try { res.json(await service.health()); }
+  catch { res.status(503).json({enabled:true,healthy:false}); }
+});
 function getDialerWebhookInbox() {
   if (!dialerWebhookInbox) {
     dialerWebhookInbox = dialerInboxModule.createProductionWebhookInbox();
@@ -255,6 +269,8 @@ app.post('/webhook/ghl', async (req, res) => {
     if (dialerInboxModule.normalizeEvent(payload)) {
       try {
         await getDialerWebhookInbox().enqueue(payload);
+        // Durable receipt precedes the independent, bounded service wake-up.
+        getTeamNoteService()?.wake();
       } catch (error) {
         console.error('[PPC dialer event] durable receipt failed:', error.message);
         return res.status(503).json({ received: false, retryable: true });
@@ -1149,6 +1165,7 @@ if (PPC_DB_URL && initDeliveryProcessor) {
 }
 
 app.listen(PORT, () => {
+  getTeamNoteService()?.start();
   console.log(`AI REI Pipeline Engine v1.0 on port ${PORT}`);
   console.log(`GHL webhook: POST /webhook/ghl`);
   console.log(`JustCall webhook: POST /webhook/justcall (handles sms.status_updated)`);

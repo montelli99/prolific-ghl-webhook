@@ -14,6 +14,7 @@ function fixture(fail = false) {
     normalizeWebhookPayload: (req) => req.body,
     extractTelegramOutreachMarkers: () => ({}),
     dialerInboxModule: inbox,
+    getTeamNoteService: () => null,
     getDialerWebhookInbox: () => ({ enqueue: async () => { events.push('saved'); if(fail) throw new Error('storage unavailable'); } }),
     console: { error() {} },
   });
