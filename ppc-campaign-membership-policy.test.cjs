@@ -1,6 +1,12 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {evaluateMembership:check,CAMPAIGNS,LOCATION,PIPELINE}=require('./ppc-campaign-membership-policy.cjs');
 const fixture=()=>({campaignId:CAMPAIGNS.NOA2,contact:{locationId:LOCATION},opportunities:[{pipelineId:PIPELINE,status:'open'}],stageName:'Called Another Day in PM, No Answer',notes:[],historyReviewed:true});
+test('Fresh excludes recorded outreach even when stage and reviewed history look clear',()=>{
+ const fresh={...fixture(),campaignId:CAMPAIGNS.FRESH,stageName:'New Lead / Call ASAP'};
+ for(const body of ['<p>noa 8/10</p>','left vm requesting pics','Incoming SMS\nMessage: Yes','Call ID: 123','Spoke with seller'])assert.ok(check({...fresh,notes:[{body}]}).reasons.includes('PRIOR_OUTREACH'));
+ assert.equal(check({...fresh,notes:[{body:'Property has 3 bedrooms and 2 bathrooms'}]}).keep,true);
+ assert.equal(check({...fixture(),notes:[{body:'noa 8/10'}]}).reasons.includes('PRIOR_OUTREACH'),false);
+});
 test('NOA2 accepts the actual in-PM stage while rejecting fresh stage',()=>{const x=fixture();assert.equal(check(x).keep,true);assert.ok(check({...x,stageName:'New Lead / Call ASAP'}).reasons.includes('STAGE_MISMATCH'));});
 
 test('seller STOP with punctuation or emoji remains a stop request',()=>{

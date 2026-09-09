@@ -32,6 +32,12 @@ function evaluateMembership({campaignId,contact,opportunities,stageName,notes,ac
   if(activeClaim)reasons.push('ACTIVE_CLAIM');
   if(openCallback)reasons.push('CALLBACK_REVIEW');
   if(generic&&!stages[campaignId].test(stageName||''))reasons.push('STAGE_MISMATCH');
+  // A reset/new-lead stage does not erase recorded outreach by a teammate.
+  if(campaignId===CAMPAIGNS.FRESH&&notes.some(n=>{
+    const body=String(n.bodyText||n.body||'').replace(/<[^>]+>/g,' ').trim();
+    return /^(?:(?:Incoming SMS|Outgoing Call|SMS conversation)\b|Call ID:)/i.test(body)||
+      /\b(?:noa|no answer|left (?:a )?(?:vm|voicemail)|called (?:and|but)|spoke (?:to|with)|sent (?:a )?(?:text|sms))\b/i.test(body);
+  }))reasons.push('PRIOR_OUTREACH');
   if(!historyReviewed)reasons.push('HISTORY_REVIEW_REQUIRED');
   return {keep:reasons.length===0,reasons};
 }
