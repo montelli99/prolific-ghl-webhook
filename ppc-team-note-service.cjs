@@ -49,7 +49,11 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
     if (provider === 'ghl' && method !== 'GET') throw new Error('SOURCE_WRITE_PROHIBITED');
     if (provider === 'justcall' && (method !== 'GET' && method !== 'PUT')) throw new Error('DESTINATION_WRITE_PROHIBITED');
     if (provider === 'justcall' && (!/^\/sales_dialer\/contacts\/\d+$/.test(path) ||
-      (method === 'PUT' && (body?.custom_fields?.length !== 1 || body.custom_fields[0].id !== 1252710))))
+      (method === 'PUT' && (!Array.isArray(body?.custom_fields) ||
+        ![1,2].includes(body.custom_fields.length) || body.custom_fields[0].id !== 1252710 ||
+        Object.keys(body).some(k => k !== 'custom_fields') ||
+        (body.custom_fields.length === 2 && (body.custom_fields[1].id !== 1252708 ||
+          !['Review team notes before calling','DO NOT CONTACT. Review team notes.'].includes(body.custom_fields[1].value)))))))
       throw new Error('DESTINATION_SCOPE_PROHIBITED');
     await lease();
     const floor = provider === 'justcall' ? 3000 : 500;

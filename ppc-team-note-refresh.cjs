@@ -1,6 +1,6 @@
 "use strict";
 function normalizePhone(value) { const d=String(value||'').replace(/\D/g,''); return d.length===10?'1'+d:d.length===11&&d.startsWith('1')?d:null; }
-const SD_FIELDS = { SELLER_CALL_BRIEF: 1252710, LATEST_SELLER_RESPONSE: 1252711 };
+const SD_FIELDS = { NEXT_OBJECTIVE: 1252708, SELLER_CALL_BRIEF: 1252710, LATEST_SELLER_RESPONSE: 1252711 };
 const { LOCATION_ID } = require("./ppc-sales-dialer-webhook-inbox.cjs");
 
 function comparable(value) {
@@ -155,7 +155,10 @@ function createRefresher({
         return { status: "error", error: "DIALER_BRIEF_READBACK_MISMATCH" };
       for (const field of state.fields) {
         const id = Number(field.key ?? field.id);
-        if (id !== SD_FIELDS.SELLER_CALL_BRIEF && verified.get(id) !== field.value)
+        const expected = state.updates?.find(f => f.id === id);
+        if (id !== SD_FIELDS.SELLER_CALL_BRIEF && (expected
+          ? comparable(verified.get(id)) !== comparable(expected.value)
+          : verified.get(id) !== field.value))
           return { status: "error", error: "DIALER_OTHER_FIELD_CHANGED_DURING_REFRESH" };
       }
       await progress.clear(contactId);
@@ -232,7 +235,15 @@ function createRefresher({
         processed_event_id: saved.eventId,
       };
     }
-    if (comparable(existing.value) === comparable(brief)) {
+    const objective = fields.find(f => Number(f.key ?? f.id) === SD_FIELDS.NEXT_OBJECTIVE);
+    const updates = [{ id: SD_FIELDS.SELLER_CALL_BRIEF, value: brief }];
+    // Notes establish prior context, not a successful conversation or a new stage.
+    // Replace only known generic generated instructions; preserve specific plans.
+    if (briefFromNotes(notes, false, users) &&
+        /^(?:Fresh Lead\s*[—–-]\s*Call ASAP|Call\s*[—–-]\s*Fresh Lead)$/i.test(String(objective?.value || '').trim()))
+      updates.push({ id: SD_FIELDS.NEXT_OBJECTIVE, value: suppressed
+        ? 'DO NOT CONTACT. Review team notes.' : 'Review team notes before calling' });
+    if (comparable(existing.value) === comparable(brief) && updates.length === 1) {
       if (!dryRun) await progress.clear(contactId);
       return {
         status: "ok",
@@ -246,6 +257,7 @@ function createRefresher({
         status: "ok",
         result: "PREVIEW",
         brief,
+        updates,
         source_note_count: notes.length,
       };
     await progress.recordReplacement?.(contactId, {
@@ -253,14 +265,16 @@ function createRefresher({
       fieldId: SD_FIELDS.SELLER_CALL_BRIEF,
       previousValue: existing.value,
       proposedValue: brief,
+      updates,
+      previousObjective: objective?.value,
       sourceNoteIds: notes.map((note) => note.id).filter(Boolean),
       eventId: saved.eventId,
     });
     const write = await justcall(endpoint, "PUT", {
-      custom_fields: [{ id: SD_FIELDS.SELLER_CALL_BRIEF, value: brief }],
+      custom_fields: updates,
     });
     if (!write.ok) return failed("DIALER_BRIEF_WRITE_FAILED", write);
-    saved = { ...saved, phase: "VERIFY", at: Date.now(), brief, fields };
+    saved = { ...saved, phase: "VERIFY", at: Date.now(), brief, fields, updates };
     await progress.set(contactId, saved);
     return verify(saved);
   }

@@ -4,7 +4,7 @@ Production belongs to the existing `prolific-ghl-webhook` Render service and exi
 
 ## Scope
 
-The service reads contact and note data from PPC location `GDq92uruRngbi9mLGGrV`. It updates only the existing Sales Dialer contact field `1252710` (Seller Call Brief), after exact normalized phone verification. It never creates, edits, or deletes source notes, places calls, sends messages, or changes campaigns, stages, or ownership.
+The service reads contact and note data from PPC location `GDq92uruRngbi9mLGGrV`. It updates the existing Sales Dialer contact field `1252710` (Seller Call Brief), after exact normalized phone verification. When readable notes exist, it also replaces only a recognized generic Fresh Lead instruction in `1252708` with a reminder to review team notes (or DO NOT CONTACT when suppressed). Specific objectives remain unchanged. Both fields are audited and verified by readback. It never creates, edits, or deletes source notes, places calls, sends messages, or changes campaigns, stages, or ownership.
 
 The current rendering is two dated, attributed excerpts, capped at 450 characters. This is not full note history. Other existing dialer fields and campaign labels are not refreshed by this service. Native JustCall Notes and the in-call display are distinct from the contact custom-field screen.
 

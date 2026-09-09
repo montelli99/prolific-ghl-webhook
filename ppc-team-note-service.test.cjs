@@ -74,3 +74,20 @@ test('provider feedback is durably saved before returning a rate-limit response'
   const result=await service.request('justcall','/sales_dialer/contacts/123');
   assert.equal(updates.length,1);assert.ok(updates[0][1]>=121000);assert.equal(result.status,429);
 });
+
+test('generic fresh objective is corrected with readback; specific plans and stages stay intact', async()=>{
+  for (const [objective,expected] of [['Fresh Lead — Call ASAP','Review team notes before calling'],['Call Friday at 2 pm','Call Friday at 2 pm']]) {
+    let fields=[{id:1252710,value:'old brief'},{id:1252708,value:objective},{id:1252715,value:'New Lead / Call ASAP'}];
+    const original=JSON.stringify(fields); let writes=0;
+    const result=await createRefresher({
+      ghl:async(path)=>({ok:true,data:path.endsWith('/notes')?{notes:[{id:'a',body:'Roof needs repairs',userName:'Kayla'}]}:{contact:{locationId:LOCATION_ID,phone:'5715550123'}}}),
+      justcall:async(path,method='GET',body)=>{
+        if(method==='PUT'){writes++;fields=fields.map(f=>body.custom_fields.find(u=>u.id===f.id)||f);return {ok:true};}
+        return {ok:true,data:{phone_number:'15715550123',custom_fields:fields}};
+      }
+    }).refresh({contactId:'one',salesDialerContactId:123,dryRun:false});
+    assert.equal(result.verified,true);assert.equal(writes,1);
+    assert.equal(fields.find(f=>f.id===1252708).value,expected);
+    assert.equal(fields.find(f=>f.id===1252715).value,JSON.parse(original).find(f=>f.id===1252715).value);
+  }
+});
