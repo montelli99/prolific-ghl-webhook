@@ -41,6 +41,17 @@ test('other locations do not enter the PPC event store', async () => {
   assert.equal(f.events[0],200);
 });
 
+test('contact tag protection changes and opportunity owner changes enter the durable inbox',async()=>{
+  for(const payload of [
+    {type:'ContactTagUpdate',locationId:inbox.LOCATION_ID,id:'contact-1',tags:['do-not-call']},
+    {type:'OpportunityAssignedToUpdate',locationId:inbox.LOCATION_ID,id:'opportunity-1',contactId:'contact-1',assignedTo:'team-member'},
+  ]){
+    assert.equal(inbox.normalizeEvent(payload).contact_id,'contact-1');
+    const f=fixture();await f.handler({body:payload},f.res);
+    assert.deepEqual(f.events.slice(0,2),['saved',200]);
+  }
+});
+
 test('approved note workflow is durable and repeated identical deliveries are not lost', async () => {
   const payload = { location:{id:inbox.LOCATION_ID}, contact_id:'contact-1',
     workflow:{id:inbox.NOTE_WORKFLOW_ID}, customData:{ppc_event:'team_note_changed'},

@@ -2,6 +2,7 @@
 const crypto = require('node:crypto');
 const { feedback } = require('./ppc-api-budget.cjs');
 const { createRefresher } = require('./ppc-team-note-refresh.cjs');
+const { createGuardRunner } = require('./ppc-campaign-guard-runner.cjs');
 const AUTHORS = {
   PGfXxlXCRXs3hXN3Gq7R: 'Montelli Scott', SvdGukwgAhqzbVBO6Xl4: 'Kayla R Mauser',
   nxm2vJmHXBeGBXT2tbxu: 'Seth PPC', '2pTsqC5vrzCvtR2v9oYG': 'Roberta PPC',
@@ -42,6 +43,7 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
         LIKE ppc_team_note_brief_jobs INCLUDING DEFAULTS,
         progress_key TEXT NOT NULL,
         PRIMARY KEY(contact_id,dialer_contact_id))`);
+      if(env.PPC_CAMPAIGN_GUARD_ENABLED==='true')await guardRunner.ensure();
     })().catch(e => { ready = null; throw e; });
     return ready;
   }
@@ -61,6 +63,20 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
         (body.custom_fields.length === 2 && (body.custom_fields[1].id !== 1252708 ||
           !['Review team notes before calling','DO NOT CONTACT. Review team notes.'].includes(body.custom_fields[1].value)))))))
       throw new Error('DESTINATION_SCOPE_PROHIBITED');
+    return performRequest(provider,path,method,body);
+  }
+  async function campaignRequest(method,campaignId,contactId,page=0) {
+    if(env.PPC_CAMPAIGN_GUARD_ENABLED!=='true')throw Error('CAMPAIGN_GUARD_DISABLED');
+    // Completed SMS72H is deliberately excluded. No campaign creation, bulk
+    // deletion, contact deletion, calling, or contact-field mutation is exposed.
+    if(![3379399,3379400,3379401,3379538,3379643,3379660].includes(campaignId))throw Error('CAMPAIGN_SCOPE_PROHIBITED');
+    if(method==='GET'&&Number.isInteger(page)&&page>=0&&page<100)
+      return performRequest('justcall',`/sales_dialer/campaigns/contacts?campaign_id=${campaignId}&per_page=50&page=${page}`,'GET');
+    if(method==='DELETE'&&Number.isSafeInteger(contactId)&&contactId>0)
+      return performRequest('justcall',`/sales_dialer/campaigns/contact?campaign_id=${campaignId}&contact_id=${contactId}&remove_all=false`,'DELETE');
+    throw Error('CAMPAIGN_SCOPE_PROHIBITED');
+  }
+  async function performRequest(provider,path,method='GET',body) {
     await lease();
     const floor = provider === 'justcall' ? 3000 : 500;
     await db.query(`INSERT INTO ppc_note_provider_budget(provider,gap) VALUES($1,$2) ON CONFLICT DO NOTHING`, [provider, floor]);
@@ -105,10 +121,13 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
       await db.query('INSERT INTO ppc_note_replacements(contact_id,state) VALUES($1,$2::jsonb)', [id, JSON.stringify(state)]);
     },
   };
+  const guardRunner=createGuardRunner({db,lease,sourceRequest:request,campaignRequest,now});
   const refresher = createRefresher({ ghl: (p,m,b) => request('ghl',p,m,b),
-    justcall: (p,m,b) => request('justcall',p,m,b), loadUsers: async () => AUTHORS, progress });
+    justcall: (p,m,b) => request('justcall',p,m,b), loadUsers: async () => AUTHORS, progress,
+    onSource:async(id,c,n)=>{if(env.PPC_CAMPAIGN_GUARD_ENABLED==='true')await guardRunner.enqueue(id,c,n);} });
   async function step() {
     await lease();
+    const guardResult=env.PPC_CAMPAIGN_GUARD_ENABLED==='true'?await guardRunner.step():false;
     if (now()-seededAt>300000) {
       await db.query(`INSERT INTO ppc_team_note_targets
         (contact_id,dialer_contact_id,status,attempts,retry_at,last_error,last_synced_at,
@@ -136,7 +155,7 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
     ) UPDATE ppc_team_note_targets j SET status='PROCESSING',attempts=attempts+1,
       claimed_event_id=c.event_id,worker_owner=$1,updated_at=NOW() FROM candidate c
       WHERE j.contact_id=c.contact_id AND j.dialer_contact_id=c.dialer_contact_id RETURNING j.*`, [owner]);
-    if (!job) return false;
+    if (!job) return guardResult===true;
     let result;
     try { result = await refresher.refresh({ contactId: job.contact_id,
       salesDialerContactId: job.dialer_contact_id, progressKey: job.progress_key,
@@ -178,8 +197,15 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
     const [control] = await db.query('SELECT halted,last_error,updated_at FROM ppc_note_service_control WHERE id=1');
     const counts = await db.query('SELECT status,verified,count(*)::int AS count FROM ppc_team_note_targets GROUP BY status,verified');
     const [events] = await db.query('SELECT MAX(created_at) AS last_event_at FROM ppc_sales_dialer_webhook_inbox');
-    return { enabled:enabled(),runtime:'render',...control,counts,last_event_at:events.last_event_at };
+    let campaign_guard={enabled:false};
+    if(env.PPC_CAMPAIGN_GUARD_ENABLED==='true'){
+      const [guardControl]=await db.query('SELECT halted,last_error,updated_at FROM ppc_campaign_guard_control WHERE id=1');
+      const membershipCounts=await db.query('SELECT state,count(*)::int AS count FROM ppc_campaign_guard_memberships GROUP BY state');
+      const [queue]=await db.query('SELECT count(*)::int AS pending FROM ppc_campaign_guard_jobs WHERE processed_revision<revision');
+      campaign_guard={enabled:true,...guardControl,counts:membershipCounts,pending:queue.pending};
+    }
+    return { enabled:enabled(),runtime:'render',...control,counts,last_event_at:events.last_event_at,campaign_guard };
   }
-  return { start, stop, wake, ensure, step, request, progress, health };
+  return { start, stop, wake, ensure, step, request, campaignRequest, progress, health };
 }
 module.exports = { createService, AUTHORS };

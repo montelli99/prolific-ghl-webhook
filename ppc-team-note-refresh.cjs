@@ -128,6 +128,7 @@ function createRefresher({
   ghl,
   justcall,
   loadUsers = async () => ({}),
+  onSource = async () => {},
   progress = { get: () => null, set: () => {}, clear: () => {} },
 }) {
   async function refresh({ contactId, salesDialerContactId, dryRun = true, eventId = 0, progressKey = contactId }) {
@@ -203,6 +204,7 @@ function createRefresher({
       if (!dryRun) await progress.set(progressKey, saved);
     }
     const { contact, notes, users } = saved;
+    if(!dryRun)await onSource(contactId,contact,notes);
     // No source text means no destination change; do not consume a dialer call.
     if (!notes.length) {
       if (!dryRun) await progress.clear(progressKey);

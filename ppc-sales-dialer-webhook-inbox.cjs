@@ -9,6 +9,7 @@ const EVENTS = new Set([
   "NoteDelete",
   "ContactUpdate",
   "ContactDndUpdate",
+  "ContactTagUpdate",
   "OpportunityCreate",
   "OpportunityUpdate",
   "OpportunityStageUpdate",

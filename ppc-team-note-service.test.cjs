@@ -4,6 +4,22 @@ const { createService } = require('./ppc-team-note-service.cjs');
 const { createRefresher, briefFromNotes, comparable } = require('./ppc-team-note-refresh.cjs');
 const { LOCATION_ID } = require('./ppc-sales-dialer-webhook-inbox.cjs');
 
+test('campaign adapter is disabled by default and excludes completed campaigns and broad mutations',async()=>{
+  const db={query:async()=>{throw Error('Unexpected DB');}};
+  await assert.rejects(createService({db,env:{}}).campaignRequest('DELETE',3379399,123),/DISABLED/);
+  const s=createService({db,env:{PPC_CAMPAIGN_GUARD_ENABLED:'true'}});
+  await assert.rejects(s.campaignRequest('DELETE',3379537,123),/SCOPE/);
+  await assert.rejects(s.campaignRequest('DELETE',3379399),/SCOPE/);
+  await assert.rejects(s.campaignRequest('POST',3379399,123),/SCOPE/);
+  await assert.rejects(s.campaignRequest('GET',3379399,null,-1),/SCOPE/);
+});
+test('single-membership removal uses the existing shared lease and rate budget',async()=>{
+  const queries=[];let called=false;
+  const s=createService({env:{PPC_CAMPAIGN_GUARD_ENABLED:'true',JUSTCALL_API_KEY:'test',JUSTCALL_API_SECRET:'test'},db:{query:async q=>{queries.push(q);if(q.includes('RETURNING id'))return [{id:1}];if(q.includes('RETURNING provider'))return [{provider:'justcall'}];return [];}},fetcher:async(url,opt)=>{called=true;assert.equal(new URL(url).searchParams.get('remove_all'),'false');assert.equal(new URL(url).searchParams.get('contact_id'),'123');assert.equal(opt.method,'DELETE');assert.equal(opt.body,undefined);return {ok:true,status:200,headers:new Headers(),json:async()=>({status:'success'})};}});
+  assert.equal((await s.campaignRequest('DELETE',3379399,123)).ok,true);assert.equal(called,true);
+  assert.ok(queries.some(q=>q.includes('ppc_note_service_control')));assert.ok(queries.some(q=>q.includes('UPDATE ppc_note_provider_budget')));
+});
+
 test('imported undated calls distinguish recorded date from a callback date',()=>{
   const body='[UNDERWRITING NOTE v3 call=99]\nCaller: Montelli\nCall Date: Unknown\nFollow-up: Call tomorrow at 1 PM';
   const brief=briefFromNotes([{body,dateAdded:'2026-09-06'}],false);
@@ -49,6 +65,24 @@ test('another instance cannot proceed while a lease is held', async () => {
   const service=createService({db:{query:async()=>[]},env:{PPC_NOTE_SERVICE_ENABLED:'true'}});
   await assert.rejects(service.step(),/LEASE_UNAVAILABLE/);
 });
+test('source hook is durable before completion, retries failed enqueue, and is skipped in dry runs',async()=>{
+  let state=null,enqueues=0,fail=true;
+  const deps={
+    progress:{get:async()=>state,set:async(_,s)=>{state=s;},clear:async()=>{state=null;}},
+    ghl:async path=>({ok:true,data:path.endsWith('/notes')?{notes:[]}:{contact:{id:'one',locationId:LOCATION_ID}}}),
+    justcall:async()=>{throw Error('No dialer request expected for empty notes');},
+    onSource:async(id,c,n)=>{enqueues++;assert.equal(state.phase,'SOURCE');assert.equal(c.id,id);assert.deepEqual(n,[]);if(fail)throw Error('queue unavailable');},
+  };
+  const refresh=createRefresher(deps).refresh;
+  await refresh({contactId:'one',salesDialerContactId:123,dryRun:true});
+  assert.equal(enqueues,0);
+  await assert.rejects(refresh({contactId:'one',salesDialerContactId:123,dryRun:false}),/queue unavailable/);
+  assert.equal(state.phase,'SOURCE');
+  fail=false;
+  const result=await refresh({contactId:'one',salesDialerContactId:123,dryRun:false});
+  assert.equal(result.status,'ok');assert.equal(enqueues,2);assert.equal(state,null);
+});
+
 test('cloud progress is awaited and successful write resumes readback only after a restart', async () => {
   let state=null, brief='Previous brief', failReadback=true, writes=0;
   const source=[{id:'note',body:"Seller said do not call today; call Friday.",dateAdded:'2026-09-08',userName:'Kayla'}];
