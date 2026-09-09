@@ -4,6 +4,26 @@ const { createService } = require('./ppc-team-note-service.cjs');
 const { createRefresher, briefFromNotes, comparable } = require('./ppc-team-note-refresh.cjs');
 const { LOCATION_ID } = require('./ppc-sales-dialer-webhook-inbox.cjs');
 
+test('duplicate dialer targets keep independent restart verification checkpoints', async () => {
+  const states=new Map(), writes=[]; const briefs=new Map();
+  const deps={
+    progress:{get:async k=>states.get(k),set:async(k,s)=>states.set(k,s),clear:async k=>states.delete(k)},
+    ghl:async p=>({ok:true,data:p.endsWith('/notes')?{notes:[{body:'Kayla spoke with seller about roof repairs.',dateAdded:'2026-09-09'}]}:{contact:{locationId:LOCATION_ID,phone:'+15715550123'}}}),
+    justcall:async(p,m='GET',b)=>{
+      if(m==='PUT'){writes.push(p);briefs.set(p,b.custom_fields[0].value);return {ok:true};}
+      if(briefs.has(p))return {ok:false,status:429};
+      return {ok:true,data:{phone_number:'+15715550123',custom_fields:[{id:1252710,value:'Old'}]}};
+    },
+  };
+  for(const id of [101,102])await createRefresher(deps).refresh({contactId:'same-source',salesDialerContactId:id,progressKey:'same-source:'+id,dryRun:false});
+  assert.equal(states.get('same-source:101').phase,'VERIFY');
+  assert.equal(states.get('same-source:102').phase,'VERIFY');
+  assert.equal(states.size,2);
+  const retry=await createRefresher({...deps,justcall:async p=>({ok:true,data:{phone_number:'+15715550123',custom_fields:[{id:1252710,value:briefs.get(p)}]}})}).refresh({contactId:'same-source',salesDialerContactId:101,progressKey:'same-source:101',dryRun:false});
+  assert.equal(retry.verified,true);assert.equal(states.has('same-source:101'),false);
+  assert.equal(states.get('same-source:102').phase,'VERIFY');assert.equal(writes.length,2);
+});
+
 test('service cannot mutate source notes or any destination except its brief', async () => {
   const service = createService({ db: { query() { throw Error('Unexpected DB access'); } } });
   await assert.rejects(service.request('ghl','/contacts/one/notes','POST',{}),/SOURCE_WRITE/);

@@ -36,6 +36,12 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
         claimed_event_id BIGINT NOT NULL DEFAULT 0, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
       await db.query(`ALTER TABLE ppc_team_note_brief_jobs ADD COLUMN IF NOT EXISTS verified BOOLEAN,
         ADD COLUMN IF NOT EXISTS result TEXT, ADD COLUMN IF NOT EXISTS worker_owner TEXT`);
+      // Keep the legacy table intact for rollback. Each destination now owns its
+      // event cursor and restart checkpoint, including duplicate dialer records.
+      await db.query(`CREATE TABLE IF NOT EXISTS ppc_team_note_targets (
+        LIKE ppc_team_note_brief_jobs INCLUDING DEFAULTS,
+        progress_key TEXT NOT NULL,
+        PRIMARY KEY(contact_id,dialer_contact_id))`);
     })().catch(e => { ready = null; throw e; });
     return ready;
   }
@@ -104,16 +110,22 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
   async function step() {
     await lease();
     if (now()-seededAt>300000) {
-      await db.query(`INSERT INTO ppc_team_note_brief_jobs(contact_id,dialer_contact_id)
-        SELECT contact_id,MIN(provider_contact->>'id') FROM ppc_sales_dialer_sync_jobs
+      await db.query(`INSERT INTO ppc_team_note_targets
+        (contact_id,dialer_contact_id,status,attempts,retry_at,last_error,last_synced_at,
+         done_event_id,claimed_event_id,updated_at,verified,result,worker_owner,progress_key)
+        SELECT contact_id,dialer_contact_id,status,attempts,retry_at,last_error,last_synced_at,
+         done_event_id,claimed_event_id,updated_at,verified,result,worker_owner,contact_id
+        FROM ppc_team_note_brief_jobs ON CONFLICT(contact_id,dialer_contact_id) DO NOTHING`);
+      await db.query(`INSERT INTO ppc_team_note_targets(contact_id,dialer_contact_id,progress_key)
+        SELECT DISTINCT contact_id,provider_contact->>'id',contact_id||':'||(provider_contact->>'id')
+        FROM ppc_sales_dialer_sync_jobs
         WHERE contact_id IS NOT NULL AND provider_contact->>'id' IS NOT NULL
-        GROUP BY contact_id HAVING COUNT(DISTINCT provider_contact->>'id')=1
-        ON CONFLICT(contact_id) DO NOTHING`);
+        ON CONFLICT(contact_id,dialer_contact_id) DO NOTHING`);
       seededAt=now();
     }
     const [job] = await db.query(`WITH candidate AS (
-      SELECT j.contact_id,COALESCE((SELECT MAX(i.id) FROM ppc_sales_dialer_webhook_inbox i
-        WHERE i.contact_id=j.contact_id),0) AS event_id FROM ppc_team_note_brief_jobs j
+      SELECT j.contact_id,j.dialer_contact_id,COALESCE((SELECT MAX(i.id) FROM ppc_sales_dialer_webhook_inbox i
+        WHERE i.contact_id=j.contact_id),0) AS event_id FROM ppc_team_note_targets j
       WHERE j.status<>'FAILED' AND (j.status<>'PROCESSING' OR j.updated_at<NOW()-INTERVAL '3 minutes')
         AND (j.retry_at IS NULL OR j.retry_at<=NOW())
         AND (j.status IN ('PENDING','RETRY_PENDING','PROCESSING') OR
@@ -121,25 +133,26 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
           WHERE i.contact_id=j.contact_id AND i.id>j.done_event_id))
       ORDER BY (COALESCE((SELECT MAX(i.id) FROM ppc_sales_dialer_webhook_inbox i WHERE i.contact_id=j.contact_id),0)>j.done_event_id) DESC,
         j.last_synced_at NULLS FIRST,j.attempts,j.contact_id LIMIT 1 FOR UPDATE OF j SKIP LOCKED
-    ) UPDATE ppc_team_note_brief_jobs j SET status='PROCESSING',attempts=attempts+1,
+    ) UPDATE ppc_team_note_targets j SET status='PROCESSING',attempts=attempts+1,
       claimed_event_id=c.event_id,worker_owner=$1,updated_at=NOW() FROM candidate c
-      WHERE j.contact_id=c.contact_id RETURNING j.*`, [owner]);
+      WHERE j.contact_id=c.contact_id AND j.dialer_contact_id=c.dialer_contact_id RETURNING j.*`, [owner]);
     if (!job) return false;
     let result;
     try { result = await refresher.refresh({ contactId: job.contact_id,
-      salesDialerContactId: job.dialer_contact_id, eventId: job.claimed_event_id, dryRun: false }); }
+      salesDialerContactId: job.dialer_contact_id, progressKey: job.progress_key,
+      eventId: job.claimed_event_id, dryRun: false }); }
     catch (e) { result = { status:'error',error: /LEASE/.test(e.message) ? 'NOTE_SERVICE_LEASE_UNAVAILABLE' : 'NOTE_SERVICE_REQUEST_FAILED' }; }
     await lease();
     if (result.status === 'ok') {
-      await db.query(`UPDATE ppc_team_note_brief_jobs SET status='COMPLETED',retry_at=NULL,last_error=NULL,
+      await db.query(`UPDATE ppc_team_note_targets SET status='COMPLETED',retry_at=NULL,last_error=NULL,
         last_synced_at=NOW(),done_event_id=$3,verified=$4,result=$5,updated_at=NOW()
-        WHERE contact_id=$1 AND worker_owner=$2`, [job.contact_id,owner,result.processed_event_id ?? job.claimed_event_id,
-        result.verified || false,result.result]);
+        WHERE contact_id=$1 AND worker_owner=$2 AND dialer_contact_id=$6`, [job.contact_id,owner,result.processed_event_id ?? job.claimed_event_id,
+        result.verified || false,result.result,job.dialer_contact_id]);
     } else {
       const terminal = /MISMATCH|FIELD_MISSING|RESPONSE_INVALID|OTHER_FIELD_CHANGED|HTTP 401|HTTP 403/.test(result.error || '');
       const retry = new Date(Math.max(now()+5000, Date.parse(result.retry_at||'')||now()+60000)).toISOString();
-      await db.query(`UPDATE ppc_team_note_brief_jobs SET status=$3,retry_at=$4,last_error=$5,updated_at=NOW()
-        WHERE contact_id=$1 AND worker_owner=$2`, [job.contact_id,owner,terminal?'FAILED':'RETRY_PENDING',terminal?null:retry,result.error]);
+      await db.query(`UPDATE ppc_team_note_targets SET status=$3,retry_at=$4,last_error=$5,updated_at=NOW()
+        WHERE contact_id=$1 AND worker_owner=$2 AND dialer_contact_id=$6`, [job.contact_id,owner,terminal?'FAILED':'RETRY_PENDING',terminal?null:retry,result.error,job.dialer_contact_id]);
       if (terminal) {
         await db.query(`UPDATE ppc_note_service_control SET halted=TRUE,last_error=$2,updated_at=NOW() WHERE id=1 AND owner=$1`, [owner,result.error]);
         console.error('[PPC notes] verification failed; writes halted');
@@ -163,7 +176,7 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
   async function health() {
     await ensure();
     const [control] = await db.query('SELECT halted,last_error,updated_at FROM ppc_note_service_control WHERE id=1');
-    const counts = await db.query('SELECT status,verified,count(*)::int AS count FROM ppc_team_note_brief_jobs GROUP BY status,verified');
+    const counts = await db.query('SELECT status,verified,count(*)::int AS count FROM ppc_team_note_targets GROUP BY status,verified');
     const [events] = await db.query('SELECT MAX(created_at) AS last_event_at FROM ppc_sales_dialer_webhook_inbox');
     return { enabled:enabled(),runtime:'render',...control,counts,last_event_at:events.last_event_at };
   }

@@ -124,7 +124,7 @@ function createRefresher({
   loadUsers = async () => ({}),
   progress = { get: () => null, set: () => {}, clear: () => {} },
 }) {
-  async function refresh({ contactId, salesDialerContactId, dryRun = true, eventId = 0 }) {
+  async function refresh({ contactId, salesDialerContactId, dryRun = true, eventId = 0, progressKey = contactId }) {
     if (!contactId || !salesDialerContactId)
       return { status: "error", error: "EXISTING_CONTACT_MAPPING_REQUIRED" };
     const failed = (name, response) => ({
@@ -133,13 +133,13 @@ function createRefresher({
       retry_at: response.retry_at || null,
     });
     const endpoint = `/sales_dialer/contacts/${encodeURIComponent(salesDialerContactId)}`;
-    let saved = dryRun ? null : await progress.get(contactId);
+    let saved = dryRun ? null : await progress.get(progressKey);
     if (
       saved &&
       (saved.dialerId !== String(salesDialerContactId) ||
         (saved.phase !== "VERIFY" && Date.now() - saved.at > 15 * 60_000))
     ) {
-      await progress.clear(contactId);
+      await progress.clear(progressKey);
       saved = null;
     }
     async function verify(state) {
@@ -161,7 +161,7 @@ function createRefresher({
           : verified.get(id) !== field.value))
           return { status: "error", error: "DIALER_OTHER_FIELD_CHANGED_DURING_REFRESH" };
       }
-      await progress.clear(contactId);
+      await progress.clear(progressKey);
       return {
         status: "ok",
         result: "UPDATED",
@@ -194,12 +194,12 @@ function createRefresher({
         users: await loadUsers(),
         eventId: String(eventId),
       };
-      if (!dryRun) await progress.set(contactId, saved);
+      if (!dryRun) await progress.set(progressKey, saved);
     }
     const { contact, notes, users } = saved;
     // No source text means no destination change; do not consume a dialer call.
     if (!notes.length) {
-      if (!dryRun) await progress.clear(contactId);
+      if (!dryRun) await progress.clear(progressKey);
       return {
         status: "ok",
         result: "NO_NOTES_PRESERVED_EXISTING_BRIEF",
@@ -228,7 +228,7 @@ function createRefresher({
     if (!brief && /^(?:DO NOT CONTACT\. )?GHL notes:/.test(existing.value || ""))
       brief = (suppressed ? "DO NOT CONTACT. " : "") + "No readable conversation-note text found in GHL. Review call history for call outcomes.";
     if (!brief) {
-      if (!dryRun) await progress.clear(contactId);
+      if (!dryRun) await progress.clear(progressKey);
       return {
         status: "ok",
         result: "NO_NOTES_PRESERVED_EXISTING_BRIEF",
@@ -244,7 +244,7 @@ function createRefresher({
       updates.push({ id: SD_FIELDS.NEXT_OBJECTIVE, value: suppressed
         ? 'DO NOT CONTACT. Review team notes.' : 'Review team notes before calling' });
     if (comparable(existing.value) === comparable(brief) && updates.length === 1) {
-      if (!dryRun) await progress.clear(contactId);
+      if (!dryRun) await progress.clear(progressKey);
       return {
         status: "ok",
         result: "ALREADY_CURRENT",
@@ -260,7 +260,7 @@ function createRefresher({
         updates,
         source_note_count: notes.length,
       };
-    await progress.recordReplacement?.(contactId, {
+    await progress.recordReplacement?.(progressKey, {
       dialerId: String(salesDialerContactId),
       fieldId: SD_FIELDS.SELLER_CALL_BRIEF,
       previousValue: existing.value,
@@ -275,7 +275,7 @@ function createRefresher({
     });
     if (!write.ok) return failed("DIALER_BRIEF_WRITE_FAILED", write);
     saved = { ...saved, phase: "VERIFY", at: Date.now(), brief, fields, updates };
-    await progress.set(contactId, saved);
+    await progress.set(progressKey, saved);
     return verify(saved);
   }
   return { refresh };
