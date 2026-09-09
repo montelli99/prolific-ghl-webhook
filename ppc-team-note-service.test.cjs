@@ -50,3 +50,25 @@ test('brief keeps corrected conversation and teammate attribution instead of rec
   assert.equal(comparable("said 'I'm not selling'"),comparable('said ‘I‘m not selling'));
   assert.notEqual(comparable("I'm not selling"),comparable("I'm selling"));
 });
+
+test('persisted provider cooldown prevents network calls after restart',async()=>{
+  let calls=0;
+  const service=createService({now:()=>1000,env:{JUSTCALL_API_KEY:'fixture',JUSTCALL_API_SECRET:'fixture'},
+    db:{query:async(q)=>{
+      if(q.includes('UPDATE ppc_note_service_control'))return [{id:1}];
+      if(q.includes('SELECT next_at'))return [{next_at:90000,blocked_until:120000}];
+      return [];
+    }},fetcher:async()=>{calls++;throw Error('must not send');}});
+  const result=await service.request('justcall','/sales_dialer/contacts/123');
+  assert.equal(result.status,429);assert.equal(result.retry_at,new Date(120000).toISOString());assert.equal(calls,0);
+});
+test('provider feedback is durably saved before returning a rate-limit response',async()=>{
+  const updates=[];
+  const service=createService({now:()=>1000,env:{JUSTCALL_API_KEY:'fixture',JUSTCALL_API_SECRET:'fixture'},
+    db:{query:async(q,p)=>{if(q.includes('UPDATE ppc_note_service_control'))return [{id:1}];
+      if(q.includes('RETURNING provider'))return [{provider:'justcall'}];
+      if(q.includes('SET blocked_until'))updates.push(p);return [];}},
+    fetcher:async()=>({ok:false,status:429,headers:new Map([['retry-after','120']]),json:async()=>({})})});
+  const result=await service.request('justcall','/sales_dialer/contacts/123');
+  assert.equal(updates.length,1);assert.ok(updates[0][1]>=121000);assert.equal(result.status,429);
+});
