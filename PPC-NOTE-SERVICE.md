@@ -26,9 +26,19 @@ Run `node --test ppc-team-note-service.test.cjs ppc-inbox-route.test.cjs tests/p
 
 For a live release, verify the exact deployed revision, credentials against the PPC location/contact, independent cloud-owned job completion, destination readback, source-note preservation, and a representative teammate note in the actual user view. A replay can test transport, but is not evidence that GHL's native trigger is configured.
 
+## Source workflow (September 9, 2026)
+
+Published PPC workflow `2027fc35-4aed-4854-83f3-a75b134b81bb`, **PPC — Team Note Updates to Sales Dialer**, has Note Added and Note Changed triggers, re-entry enabled, and one POST Webhook action to the existing `/webhook/ghl` endpoint. Custom data `ppc_event=team_note_changed` identifies the workflow. The receiver requires the exact workflow ID, PPC location, and contact ID. It stores identity only, not the incoming full contact or note body.
+
+Workflow payloads do not guarantee a unique note revision. Each receipt gets a new identity so repeated changes back to an earlier value are not lost. Contact jobs coalesce events, fetch current source notes, and avoid rewriting an already-current brief. Native API events retain payload-hash deduplication.
+
+Release `d8529a7` passed 64 checks. A manual workflow test at 11:14:35 UTC produced inbox event 2; Render completed verified readback at 11:15:24 UTC, `ALREADY_CURRENT`. This interval included the previous deployment's lease expiring and is not a steady-state latency measurement. No original note was altered to test the trigger. Natural team activity and sleeping-service delivery still need observation.
+
+The correct GHL contact URL is on `app.divinityaligned.net`; selecting Notes appends `?view=notes`. William's original full property note was visually verified there. JustCall's existing HighLevel button used the wrong `www` host. Support ticket `215475857278063` is investigating the supported base-URL setting and reuse of one browser tab.
+
 ## Outstanding release acceptance
 
-- Confirm/configure native GHL Note Added and Note Changed delivery.
+- Observe a natural Note Added/Changed event end to end; published triggers and manual delivery are verified.
 - Verify actual in-call readability, not only the contact detail screen.
 - Resolve misleading existing next-action text without inferring ownership or changing campaign membership from notes alone.
 - Render currently uses the free plan and can sleep. No upgrade is authorized. Verify cold-start delivery and recovery; do not promise continuous background polling on this plan.
