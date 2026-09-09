@@ -136,7 +136,8 @@ function createRefresher({
     let saved = dryRun ? null : await progress.get(contactId);
     if (
       saved &&
-      (saved.dialerId !== String(salesDialerContactId) || Date.now() - saved.at > 15 * 60_000)
+      (saved.dialerId !== String(salesDialerContactId) ||
+        (saved.phase !== "VERIFY" && Date.now() - saved.at > 15 * 60_000))
     ) {
       await progress.clear(contactId);
       saved = null;

@@ -34,6 +34,8 @@ test('cloud progress is awaited and successful write resumes readback only after
   };
   const first=await createRefresher(dependencies).refresh({contactId:'one',salesDialerContactId:123,dryRun:false,eventId:'1'});
   assert.equal(first.status,'error');assert.equal(state.phase,'VERIFY');
+  // An hourly provider cooldown must not discard proof of the successful PUT.
+  state.at=Date.now()-2*60*60*1000;
   const count=requests.length;
   const second=await createRefresher(dependencies).refresh({contactId:'one',salesDialerContactId:123,dryRun:false,eventId:'2'});
   assert.equal(second.verified,true);assert.equal(second.processed_event_id,'1');assert.equal(writes,1);
