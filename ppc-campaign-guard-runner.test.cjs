@@ -2,7 +2,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {createGuardRunner}=require('./ppc-campaign-guard-runner.cjs');
-function fixture(source,reply){
+function fixture(source,reply,extra={}){
   const writes=[],requests=[];
   const runner=createGuardRunner({now:()=>600001,lease:async()=>{},
     db:{query:async(q,p)=>{
@@ -12,9 +12,19 @@ function fixture(source,reply){
       if(q.startsWith('SELECT * FROM ppc_campaign_guard_memberships'))return [];
       writes.push({q,p});return [];
     }},sourceRequest:async(provider,path)=>{requests.push(path);return reply(path);},
-    campaignRequest:async()=>{throw Error('Unexpected campaign mutation');}});
+    campaignRequest:async()=>{throw Error('Unexpected campaign mutation');},...extra});
   return {runner,writes,requests};
 }
+test('temporary active-contact deferral keeps work pending and expires without an agent',async()=>{
+ const f=fixture({},()=>{throw Error('No provider request while deferred');},{deferredContacts:{c1:new Date(900000).toISOString()}});
+ assert.equal(await f.runner.step(),true);
+ assert.equal(f.requests.length,0);
+ assert.ok(f.writes.some(x=>x.q.includes('SET retry_at=$2')&&x.p[2]===3));
+ assert.equal(f.writes.some(x=>x.q.includes('SET processed_revision')),false);
+ const expired=fixture({at:600000,contact:{id:'c1'},notes:[]},()=>{throw Error('No refresh required');},{deferredContacts:{c1:new Date(500000).toISOString()}});
+ assert.equal(await expired.runner.step(),true);
+ assert.ok(expired.writes.some(x=>x.q.includes('SET processed_revision')));
+});
 test('stale-source authorization failure halts guard without requesting notes or mutating campaigns',async()=>{
   const f=fixture({at:0},()=>({ok:false,status:401}));
   assert.deepEqual(await f.runner.step(),{error:'GUARD_SOURCE_HTTP_401'});

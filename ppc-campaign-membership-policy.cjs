@@ -11,7 +11,7 @@ const stages={
 };
 // This decides whether an EXISTING membership is protected or needs review.
 // It never grants ownership, adds a contact, or infers consent from an empty note.
-function evaluateMembership({campaignId,contact,opportunities,stageName,notes,activeClaim=false,openCallback=false,historyReviewed=false}={}){
+function evaluateMembership({campaignId,contact,opportunities,stageName,notes,activeClaim=false,openCallback=false,historyReviewed=false,photoFollowupVerified=false,photosReceived=false}={}){
   const reasons=[];const generic=Object.hasOwn(stages,campaignId);
   if(!supported.has(campaignId))return {keep:false,reasons:['CAMPAIGN_UNVERIFIED']};
   if(!contact||contact.locationId!==LOCATION||!Array.isArray(opportunities)||!Array.isArray(notes))return {keep:false,reasons:['SOURCE_UNVERIFIED']};
@@ -23,7 +23,7 @@ function evaluateMembership({campaignId,contact,opportunities,stageName,notes,ac
   if(contact.dnd||Object.entries(contact.dndSettings||{}).some(([k,v])=>/call/i.test(k)&&v?.status==='active')||contact.tags?.some(t=>/^(stop|dnc|do not call|opt.out)$/i.test(t)))reasons.push('DND');
   const owners=[contact.assignedTo,o.assignedTo].filter(Boolean);
   if(generic&&owners.length)reasons.push('ASSIGNED');
-  else if(campaignId!==CAMPAIGNS.AWAITING&&owners.some(x=>x!==MONTELLI))reasons.push('TEAM_ASSIGNED');
+  else if(campaignId!==CAMPAIGNS.AWAITING&&owners.length)reasons.push('TEAM_ASSIGNED');
   if(notes.some(n=>{
     const body=String(n.bodyText||n.body||'').replace(/<[^>]+>/g,' ');
     const message=/^Incoming SMS[\s\S]*Message:\s*([\s\S]*)$/i.exec(body)?.[1];
@@ -31,6 +31,10 @@ function evaluateMembership({campaignId,contact,opportunities,stageName,notes,ac
   }))reasons.push('EXPLICIT_STOP');
   if(activeClaim)reasons.push('ACTIVE_CLAIM');
   if(openCallback)reasons.push('CALLBACK_REVIEW');
+  if(campaignId===CAMPAIGNS.AWAITING){
+    if(!photoFollowupVerified)reasons.push('PHOTO_FOLLOWUP_UNVERIFIED');
+    if(photosReceived)reasons.push('PHOTOS_ALREADY_RECEIVED');
+  }
   if(generic&&!stages[campaignId].test(stageName||''))reasons.push('STAGE_MISMATCH');
   // A reset/new-lead stage does not erase recorded outreach by a teammate.
   if(campaignId===CAMPAIGNS.FRESH&&notes.some(n=>{

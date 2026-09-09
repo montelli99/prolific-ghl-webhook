@@ -122,7 +122,7 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
       await db.query('INSERT INTO ppc_note_replacements(contact_id,state) VALUES($1,$2::jsonb)', [id, JSON.stringify(state)]);
     },
   };
-  const guardRunner=createGuardRunner({db,lease,sourceRequest:request,campaignRequest,now,auditOnly:env.PPC_CAMPAIGN_GUARD_MODE!=='enforce'});
+  const guardRunner=createGuardRunner({db,lease,sourceRequest:request,campaignRequest,now,auditOnly:env.PPC_CAMPAIGN_GUARD_MODE!=='enforce',deferredContacts:JSON.parse(env.PPC_CAMPAIGN_GUARD_DEFER_UNTIL||'{}')});
   const refresher = createRefresher({ ghl: (p,m,b) => request('ghl',p,m,b),
     justcall: (p,m,b) => request('justcall',p,m,b), loadUsers: async () => AUTHORS, progress,
     onSource:async(id,c,n)=>{if(env.PPC_CAMPAIGN_GUARD_ENABLED==='true')await guardRunner.enqueue(id,c,n);} });

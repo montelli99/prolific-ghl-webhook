@@ -3,7 +3,7 @@ const {createGuardStore}=require('./ppc-campaign-guard-store.cjs');
 const {createCampaignGuard}=require('./ppc-campaign-guard.cjs');
 const {createCampaignScanner}=require('./ppc-campaign-scanner.cjs');
 const {LOCATION,PIPELINE}=require('./ppc-campaign-membership-policy.cjs');
-function createGuardRunner({db,lease,sourceRequest,campaignRequest,now=Date.now,auditOnly=false}){
+function createGuardRunner({db,lease,sourceRequest,campaignRequest,now=Date.now,auditOnly=false,deferredContacts={}}){
   const store=createGuardStore({db,lease});
   const guard=createCampaignGuard({store,auditOnly,dialer:{remove:(campaign,id)=>campaignRequest('DELETE',campaign,id)}});
   const scanner=createCampaignScanner({store:store.scans,request:campaignRequest});
@@ -20,7 +20,17 @@ function createGuardRunner({db,lease,sourceRequest,campaignRequest,now=Date.now,
     const [protection]=await db.query(`SELECT
       EXISTS(SELECT 1 FROM ppc_lead_claims WHERE contact_id=$1 AND claim_status='ACTIVE') AS active_claim,
       EXISTS(SELECT 1 FROM ppc_callback_commitments WHERE contact_id=$1 AND commitment_status='OPEN') AS open_callback`,[contactId]);
-    for(const row of rows){const result=await guard.evaluate(row,{contact,notes,opportunities,stageName:os.length===1?stageMap.get(os[0].pipelineStageId):null,activeClaim:protection.active_claim,openCallback:protection.open_callback});if(result.status==='error')throw Error(result.error);}
+    const stageName=os.length===1?stageMap.get(os[0].pipelineStageId):null;
+    let photoFollowupVerified=false,photosReceived=false;
+    if(rows.some(r=>Number(r.campaign_id)===3379538)){
+      const [photo]=await db.query(`SELECT
+        EXISTS(SELECT 1 FROM ppc_photo_automation_state WHERE contact_id=$1 AND photo_request_sent_at IS NOT NULL AND NOT COALESCE(photos_received,FALSE)) AS requested,
+        EXISTS(SELECT 1 FROM ppc_photo_automation_state WHERE contact_id=$1 AND photos_received=TRUE) AS received`,[contactId]);
+      const text=notes.map(n=>String(n.bodyText||n.body||'').replace(/<[^>]+>/g,' ')).join('\n');
+      photoFollowupVerified=photo.requested||/^Awaiting Photos$/i.test(stageName||'')||/\b(?:send|text|need|provide|request|waiting|awaiting)\b.{0,60}\b(?:photos|pictures|pics)\b/i.test(text);
+      photosReceived=photo.received||/\bI sent (?:you )?(?:pictures|photos)\b/i.test(text);
+    }
+    for(const row of rows){const result=await guard.evaluate(row,{contact,notes,opportunities,stageName,activeClaim:protection.active_claim,openCallback:protection.open_callback,photoFollowupVerified,photosReceived});if(result.status==='error')throw Error(result.error);}
   }
   async function verifyStep(){
     const [pending]=await db.query("SELECT campaign_id,MIN(updated_at) AS oldest FROM ppc_campaign_guard_memberships WHERE state='VERIFY_REQUIRED' GROUP BY campaign_id ORDER BY MIN(updated_at) LIMIT 1");
@@ -57,6 +67,12 @@ function createGuardRunner({db,lease,sourceRequest,campaignRequest,now=Date.now,
       ON CONFLICT(contact_id) DO UPDATE SET source=EXCLUDED.source,revision=ppc_campaign_guard_jobs.revision+1,retry_at=NULL,updated_at=NOW()`);
     const [job]=await db.query('SELECT * FROM ppc_campaign_guard_jobs WHERE processed_revision<revision AND (retry_at IS NULL OR retry_at<=NOW()) ORDER BY updated_at LIMIT 1');
     if(!job)return false;
+    const deferUntil=Date.parse(deferredContacts[job.contact_id]||'');
+    if(Number.isFinite(deferUntil)&&deferUntil>now()){
+      await lease();
+      await db.query('UPDATE ppc_campaign_guard_jobs SET retry_at=$2 WHERE contact_id=$1 AND revision=$3',[job.contact_id,new Date(deferUntil).toISOString(),job.revision]);
+      return true;
+    }
     try{
       let {contact,notes,at}=job.source||{};
       if(!Number.isFinite(at)||now()-at>300000){
