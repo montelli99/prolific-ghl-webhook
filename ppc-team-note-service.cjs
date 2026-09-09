@@ -67,6 +67,7 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
   }
   async function campaignRequest(method,campaignId,contactId,page=0) {
     if(env.PPC_CAMPAIGN_GUARD_ENABLED!=='true')throw Error('CAMPAIGN_GUARD_DISABLED');
+    if(method==='DELETE'&&env.PPC_CAMPAIGN_GUARD_MODE!=='enforce')throw Error('CAMPAIGN_GUARD_AUDIT_ONLY');
     // Completed SMS72H is deliberately excluded. No campaign creation, bulk
     // deletion, contact deletion, calling, or contact-field mutation is exposed.
     if(![3379399,3379400,3379401,3379538,3379643,3379660].includes(campaignId))throw Error('CAMPAIGN_SCOPE_PROHIBITED');
@@ -121,7 +122,7 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
       await db.query('INSERT INTO ppc_note_replacements(contact_id,state) VALUES($1,$2::jsonb)', [id, JSON.stringify(state)]);
     },
   };
-  const guardRunner=createGuardRunner({db,lease,sourceRequest:request,campaignRequest,now});
+  const guardRunner=createGuardRunner({db,lease,sourceRequest:request,campaignRequest,now,auditOnly:env.PPC_CAMPAIGN_GUARD_MODE!=='enforce'});
   const refresher = createRefresher({ ghl: (p,m,b) => request('ghl',p,m,b),
     justcall: (p,m,b) => request('justcall',p,m,b), loadUsers: async () => AUTHORS, progress,
     onSource:async(id,c,n)=>{if(env.PPC_CAMPAIGN_GUARD_ENABLED==='true')await guardRunner.enqueue(id,c,n);} });
@@ -202,7 +203,7 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
       const [guardControl]=await db.query('SELECT halted,last_error,updated_at FROM ppc_campaign_guard_control WHERE id=1');
       const membershipCounts=await db.query('SELECT state,count(*)::int AS count FROM ppc_campaign_guard_memberships GROUP BY state');
       const [queue]=await db.query('SELECT count(*)::int AS pending FROM ppc_campaign_guard_jobs WHERE processed_revision<revision');
-      campaign_guard={enabled:true,...guardControl,counts:membershipCounts,pending:queue.pending};
+      campaign_guard={enabled:true,mode:env.PPC_CAMPAIGN_GUARD_MODE==='enforce'?'enforce':'audit',...guardControl,counts:membershipCounts,pending:queue.pending};
     }
     return { enabled:enabled(),runtime:'render',...control,counts,last_event_at:events.last_event_at,campaign_guard };
   }

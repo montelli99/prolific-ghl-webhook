@@ -4,10 +4,15 @@ const { createService } = require('./ppc-team-note-service.cjs');
 const { createRefresher, briefFromNotes, comparable } = require('./ppc-team-note-refresh.cjs');
 const { LOCATION_ID } = require('./ppc-sales-dialer-webhook-inbox.cjs');
 
+test('enabled guard still prohibits removal unless enforcement mode is explicit',async()=>{
+  const s=createService({env:{PPC_CAMPAIGN_GUARD_ENABLED:'true'},db:{query:async()=>{throw Error('No DB expected');}}});
+  await assert.rejects(s.campaignRequest('DELETE',3379399,123),/AUDIT_ONLY/);
+});
+
 test('campaign adapter is disabled by default and excludes completed campaigns and broad mutations',async()=>{
   const db={query:async()=>{throw Error('Unexpected DB');}};
   await assert.rejects(createService({db,env:{}}).campaignRequest('DELETE',3379399,123),/DISABLED/);
-  const s=createService({db,env:{PPC_CAMPAIGN_GUARD_ENABLED:'true'}});
+  const s=createService({db,env:{PPC_CAMPAIGN_GUARD_ENABLED:'true',PPC_CAMPAIGN_GUARD_MODE:'enforce'}});
   await assert.rejects(s.campaignRequest('DELETE',3379537,123),/SCOPE/);
   await assert.rejects(s.campaignRequest('DELETE',3379399),/SCOPE/);
   await assert.rejects(s.campaignRequest('POST',3379399,123),/SCOPE/);
@@ -15,7 +20,7 @@ test('campaign adapter is disabled by default and excludes completed campaigns a
 });
 test('single-membership removal uses the existing shared lease and rate budget',async()=>{
   const queries=[];let called=false;
-  const s=createService({env:{PPC_CAMPAIGN_GUARD_ENABLED:'true',JUSTCALL_API_KEY:'test',JUSTCALL_API_SECRET:'test'},db:{query:async q=>{queries.push(q);if(q.includes('RETURNING id'))return [{id:1}];if(q.includes('RETURNING provider'))return [{provider:'justcall'}];return [];}},fetcher:async(url,opt)=>{called=true;assert.equal(new URL(url).searchParams.get('remove_all'),'false');assert.equal(new URL(url).searchParams.get('contact_id'),'123');assert.equal(opt.method,'DELETE');assert.equal(opt.body,undefined);return {ok:true,status:200,headers:new Headers(),json:async()=>({status:'success'})};}});
+  const s=createService({env:{PPC_CAMPAIGN_GUARD_ENABLED:'true',PPC_CAMPAIGN_GUARD_MODE:'enforce',JUSTCALL_API_KEY:'test',JUSTCALL_API_SECRET:'test'},db:{query:async q=>{queries.push(q);if(q.includes('RETURNING id'))return [{id:1}];if(q.includes('RETURNING provider'))return [{provider:'justcall'}];return [];}},fetcher:async(url,opt)=>{called=true;assert.equal(new URL(url).searchParams.get('remove_all'),'false');assert.equal(new URL(url).searchParams.get('contact_id'),'123');assert.equal(opt.method,'DELETE');assert.equal(opt.body,undefined);return {ok:true,status:200,headers:new Headers(),json:async()=>({status:'success'})};}});
   assert.equal((await s.campaignRequest('DELETE',3379399,123)).ok,true);assert.equal(called,true);
   assert.ok(queries.some(q=>q.includes('ppc_note_service_control')));assert.ok(queries.some(q=>q.includes('UPDATE ppc_note_provider_budget')));
 });

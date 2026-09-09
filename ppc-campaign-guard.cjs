@@ -11,11 +11,12 @@ const phone=p=>{const s=String(p||'').replace(/\D/g,'');return s.length===10?'1'
 // Dependencies must enforce the shared provider budget and worker lease.
 // Store changes are durable before a removal; ambiguous outcomes are verified
 // before another removal attempt. This component cannot add contacts or notes.
-function createCampaignGuard({store,dialer}){
+function createCampaignGuard({store,dialer,auditOnly=false}){
   async function evaluate(row,truth){
     if(row.state!=='ACTIVE'&&row.state!=='RECHECK_REQUIRED')return {status:'deferred',state:row.state};
     if(truth.contact?.id!==row.contact_id||!phone(row.phone)||phone(truth.contact.phone)!==phone(row.phone))return {status:'error',error:'MEMBERSHIP_IDENTITY_UNVERIFIED'};
     const decision=evaluateMembership({...truth,campaignId:Number(row.campaign_id),historyReviewed:notesFingerprint(truth.notes)===row.reviewed_notes_hash});
+    if(auditOnly){await store.observe(row,{...decision,source:truth});return {status:decision.keep?'audit_kept':'audit_review_required'};}
     if(decision.keep){await store.checked(row);return {status:'kept'};}
     await store.transition(row,'VERIFY_REQUIRED',{reasons:decision.reasons,source:truth});
     // VERIFY_REQUIRED deliberately precedes the request: a crash or lost

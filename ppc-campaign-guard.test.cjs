@@ -11,6 +11,13 @@ test('changed notes require review while unchanged approved notes stay',async()=
 test('identity mismatch never removes membership',async()=>{const {truth,row}=fixture();truth.contact.phone='+15715559999';const guard=createCampaignGuard({store:{},dialer:{remove:async()=>{throw Error('must not call');}}});assert.equal((await guard.evaluate(row,truth)).error,'MEMBERSHIP_IDENTITY_UNVERIFIED');});
 test('note order does not invalidate review, edited content does',()=>{const a={id:'a',body:'No answer'},b={id:'b',body:'No answer again'};assert.equal(notesFingerprint([a,b]),notesFingerprint([b,a]));assert.notEqual(notesFingerprint([a]),notesFingerprint([{...a,body:'Spoke with seller'}]));});
 
+test('audit mode records source decisions without changing membership or calling provider',async()=>{
+  const {truth,row}=fixture();truth.contact.assignedTo='teammate';const observed=[];
+  const guard=createCampaignGuard({auditOnly:true,store:{observe:async(r,d)=>observed.push(d)},dialer:{remove:async()=>{throw Error('No writes allowed');}}});
+  assert.equal((await guard.evaluate(row,truth)).status,'audit_review_required');
+  assert.equal(row.state,'ACTIVE');assert.equal(observed[0].keep,false);assert.ok(observed[0].reasons.includes('ASSIGNED'));
+});
+
 test('authorization and invalid removal responses surface an error while preserving verification checkpoint',async()=>{
   for(const status of [400,401,403]){
     const {truth,row}=fixture();truth.contact.assignedTo='teammate';let audited=false;

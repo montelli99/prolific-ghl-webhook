@@ -48,6 +48,8 @@ function createGuardStore({db,lease}){
     async set(id,state){await lease();const rows=await db.query(`UPDATE ppc_campaign_guard_scans SET state=$2::jsonb,revision=revision+1,updated_at=NOW()
       WHERE campaign_id=$1 AND revision=$3 RETURNING revision`,[id,JSON.stringify(state),state.revision]);if(rows.length!==1)throw Error('SCAN_REVISION_CHANGED');},
   };
-  return {ensure,transition,checked,removalResponse,scans};
+  async function observe(row,detail){await lease();await db.query(`INSERT INTO ppc_campaign_guard_audit(campaign_id,dialer_contact_id,event,detail)
+    VALUES($1,$2,'SOURCE_AUDIT',$3::jsonb)`,[row.campaign_id,row.dialer_contact_id,JSON.stringify(detail)]);}
+  return {ensure,transition,checked,removalResponse,scans,observe};
 }
 module.exports={createGuardStore};

@@ -3,9 +3,9 @@ const {createGuardStore}=require('./ppc-campaign-guard-store.cjs');
 const {createCampaignGuard}=require('./ppc-campaign-guard.cjs');
 const {createCampaignScanner}=require('./ppc-campaign-scanner.cjs');
 const {LOCATION,PIPELINE}=require('./ppc-campaign-membership-policy.cjs');
-function createGuardRunner({db,lease,sourceRequest,campaignRequest,now=Date.now}){
+function createGuardRunner({db,lease,sourceRequest,campaignRequest,now=Date.now,auditOnly=false}){
   const store=createGuardStore({db,lease});
-  const guard=createCampaignGuard({store,dialer:{remove:(campaign,id)=>campaignRequest('DELETE',campaign,id)}});
+  const guard=createCampaignGuard({store,auditOnly,dialer:{remove:(campaign,id)=>campaignRequest('DELETE',campaign,id)}});
   const scanner=createCampaignScanner({store:store.scans,request:campaignRequest});
   let stageMap=null,stagesAt=0;
   async function inspect(contactId,contact,notes){
@@ -46,7 +46,7 @@ function createGuardRunner({db,lease,sourceRequest,campaignRequest,now=Date.now}
       await lease();await db.query('UPDATE ppc_campaign_guard_control SET halted=$1,last_error=$2,updated_at=NOW() WHERE id=1',[halt,message]);
       return {error:message};
     }
-    try{if(await verifyStep())return true;}catch(e){return failure(e);}
+    try{if(!auditOnly&&await verifyStep())return true;}catch(e){return failure(e);}
     // A verified failed removal remains eligible for a fresh source check even
     // when the original note job was already acknowledged before the scan.
     await lease();
