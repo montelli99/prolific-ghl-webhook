@@ -10,6 +10,7 @@ const EVENTS = new Set([
   "ContactUpdate",
   "ContactDndUpdate",
   "ContactTagUpdate",
+  "ContactContextChanged",
   "OpportunityCreate",
   "OpportunityUpdate",
   "OpportunityStageUpdate",
@@ -20,14 +21,16 @@ const EVENTS = new Set([
 function normalizeEvent(payload = {}) {
   const workflowNote = payload.workflow?.id === NOTE_WORKFLOW_ID &&
     payload.customData?.ppc_event === "team_note_changed";
-  const type = workflowNote ? "NoteUpdate" : String(payload.type || "");
+  // This workflow also watches ownership, DND and stage changes. Its shared
+  // legacy marker cannot prove that a note changed; retain honest event labels.
+  const type = workflowNote ? "ContactContextChanged" : String(payload.type || "");
   const location = payload.locationId || payload.location_id || payload.location?.id;
   if (location !== LOCATION_ID || !EVENTS.has(type)) return null;
   const contactId =
     payload.contactId ||
     payload.contact_id ||
     payload.contact?.id ||
-    (type.startsWith("Contact") ? payload.id : null);
+    (!workflowNote && type.startsWith("Contact") ? payload.id : null);
   const opportunityId =
     payload.opportunityId ||
     payload.opportunity_id ||

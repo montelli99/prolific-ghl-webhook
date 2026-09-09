@@ -59,7 +59,7 @@ test('approved note workflow is durable and repeated identical deliveries are no
   const before = JSON.stringify(payload);
   const first = inbox.normalizeEvent(payload);
   const second = inbox.normalizeEvent(payload);
-  assert.equal(first.event_type,'NoteUpdate');
+  assert.equal(first.event_type,'ContactContextChanged');
   assert.equal(first.contact_id,'contact-1');
   assert.notEqual(first.payload_hash,second.payload_hash);
   assert.equal(JSON.stringify(first).includes('Original team note'),false);
