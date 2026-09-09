@@ -35,8 +35,8 @@ function evaluateMembership({campaignId,contact,opportunities,stageName,notes,ac
   // A reset/new-lead stage does not erase recorded outreach by a teammate.
   if(campaignId===CAMPAIGNS.FRESH&&notes.some(n=>{
     const body=String(n.bodyText||n.body||'').replace(/<[^>]+>/g,' ').trim();
-    return /^(?:(?:Incoming SMS|Outgoing Call|SMS conversation)\b|Call ID:)/i.test(body)||
-      /\b(?:noa|no answer|left (?:a )?(?:vm|voicemail)|called (?:and|but)|spoke (?:to|with)|sent (?:a )?(?:text|sms))\b/i.test(body);
+    return /^contacted\b/i.test(body)||/^(?:(?:Incoming SMS|Outgoing Call|SMS conversation)\b|Call ID:)/i.test(body)||
+      /\b(?:noa|no answer|left (?:a )?(?:vm|voicemail)|called (?:and|but)|spoke (?:to|with)|sent (?:a )?(?:text|sms)|answered and hung up|google screening|call (?:her|him|them|me) back)\b/i.test(body);
   }))reasons.push('PRIOR_OUTREACH');
   if(!historyReviewed)reasons.push('HISTORY_REVIEW_REQUIRED');
   return {keep:reasons.length===0,reasons};
