@@ -73,7 +73,13 @@ function briefFromNotes(notes, suppressed, users = {}) {
     const author = note.userName || note.author?.name || users[note.userId] || (caller ? `Call with ${caller}` : "team member");
     const date = note.dateUpdated || note.dateAdded || "date unavailable";
     const text = note.text.length > 150 ? note.text.slice(0, 147) + "..." : note.text;
-    return `${String(date).slice(0, 10)} / ${author}: ${text}`;
+    const unverifiedCallDate = /^\[UNDERWRITING NOTE/.test(note.body || "") &&
+      /^Call Date:\s*Unknown\s*$/mi.test(note.body || "");
+    // Imported call notes may be recorded days after the call. Never present
+    // their creation date or a relative callback phrase as a current appointment.
+    return unverifiedCallDate
+      ? `${String(date).slice(0, 10)} recorded / ${author} (call date unverified): ${text}`
+      : `${String(date).slice(0, 10)} / ${author}: ${text}`;
   });
   return (header + lines.join(" | ")).slice(0, 450);
 }

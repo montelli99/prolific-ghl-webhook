@@ -4,6 +4,17 @@ const { createService } = require('./ppc-team-note-service.cjs');
 const { createRefresher, briefFromNotes, comparable } = require('./ppc-team-note-refresh.cjs');
 const { LOCATION_ID } = require('./ppc-sales-dialer-webhook-inbox.cjs');
 
+test('imported undated calls distinguish recorded date from a callback date',()=>{
+  const body='[UNDERWRITING NOTE v3 call=99]\nCaller: Montelli\nCall Date: Unknown\nFollow-up: Call tomorrow at 1 PM';
+  const brief=briefFromNotes([{body,dateAdded:'2026-09-06'}],false);
+  assert.match(brief,/2026-09-06 recorded/);
+  assert.match(brief,/call date unverified/);
+  assert.match(brief,/Call tomorrow at 1 PM/);
+  const ordinary=briefFromNotes([{body:'Seller wants to talk tomorrow',dateAdded:'2026-09-09',userName:'Kayla'}],false);
+  assert.match(ordinary,/2026-09-09 \/ Kayla:/);
+  assert.doesNotMatch(ordinary,/call date unverified/);
+});
+
 test('duplicate dialer targets keep independent restart verification checkpoints', async () => {
   const states=new Map(), writes=[]; const briefs=new Map();
   const deps={
