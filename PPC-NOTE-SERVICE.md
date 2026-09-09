@@ -10,7 +10,9 @@ The current rendering is two dated, attributed excerpts, capped at 450 character
 
 ## Operation
 
-`PPC_NOTE_SERVICE_ENABLED=true` enables startup and webhook-driven processing. The existing `/webhook/ghl` receiver saves supported PPC events before acknowledgement. A single leased processor claims mapped contact jobs from `ppc_team_note_brief_jobs`. Latest events take priority; known contacts have six-hour fallback checks while the service is awake.
+`PPC_NOTE_SERVICE_ENABLED=true` enables startup and webhook-driven processing. The existing `/webhook/ghl` receiver saves supported PPC events before acknowledgement. A single leased processor claims destination jobs from `ppc_team_note_targets`, keyed by `(contact_id, dialer_contact_id)`. Latest events take priority; known contacts have six-hour fallback checks while the service is awake.
+
+Release `fb64eec` preserves `ppc_team_note_brief_jobs` as a legacy migration source, not the live queue. Legacy jobs retain their existing progress key so a pending readback survives deployment. Additional destinations use separate `contact:destination` progress keys and independent event cursors. Registered destinations must pass exact live PPC location and normalized-phone checks. Current sync-job data does not discover every duplicate automatically; four verified destinations were explicitly registered on September 9. Never assume an unregistered destination is covered.
 
 Neon stores the worker lease, rate-limit reservations and cooldowns, resumable source/readback checkpoints, and replacement audit. A restarted service can verify a completed PUT without repeating the write. The audit contains private note context and must not be exposed in public logs or endpoints.
 
@@ -32,14 +34,14 @@ Published PPC workflow `2027fc35-4aed-4854-83f3-a75b134b81bb`, **PPC — Team No
 
 Workflow payloads do not guarantee a unique note revision. Each receipt gets a new identity so repeated changes back to an earlier value are not lost. Contact jobs coalesce events, fetch current source notes, and avoid rewriting an already-current brief. Native API events retain payload-hash deduplication.
 
-Release `d8529a7` passed 64 checks. A manual workflow test at 11:14:35 UTC produced inbox event 2; Render completed verified readback at 11:15:24 UTC, `ALREADY_CURRENT`. This interval included the previous deployment's lease expiring and is not a steady-state latency measurement. No original note was altered to test the trigger. Natural team activity and sleeping-service delivery still need observation.
+Release `fb64eec` passed 65 checks, plus an actual PostgreSQL migration and independent-target claim test using transaction-local temporary tables. Natural team-note events 7–14 completed approximately 9.3–10.2 seconds after receipt; four destination briefs were independently compared with current GHL notes. These observed intervals are not a guaranteed latency. All four explicitly registered duplicate destinations also completed and matched direct source comparisons. No original note was altered to test the trigger.
 
-The correct GHL contact URL is on `app.divinityaligned.net`; selecting Notes appends `?view=notes`. William's original full property note was visually verified there. JustCall's existing HighLevel button used the wrong `www` host. Support ticket `215475857278063` is investigating the supported base-URL setting and reuse of one browser tab.
+The correct GHL contact URL is on `app.divinityaligned.net`; selecting Notes appends `?view=notes`. PPC integration 7831 was reconnected to the correct domain with the user's authorization; its previous settings were preserved and the native button now opens William's correct PPC contact, where the full original note was visually verified. Support confirmed no configurable automatic contact-open refresh, browser-tab reuse, or expanded custom-field text.
 
 ## Outstanding release acceptance
 
-- Observe a natural Note Added/Changed event end to end; published triggers and manual delivery are verified.
 - Verify actual in-call readability, not only the contact detail screen.
 - Resolve misleading existing next-action text without inferring ownership or changing campaign membership from notes alone.
+- Finish durable campaign membership maintenance and remaining campaign eligibility. The notes service does not enforce campaign membership; manual cleanup does not establish permanent enforcement.
 - Render currently uses the free plan and can sleep. No upgrade is authorized. Verify cold-start delivery and recovery; do not promise continuous background polling on this plan.
 - Pause the temporary Codex repair follow-up only after the full requested behavior is verified. Local fallback remains disabled.
