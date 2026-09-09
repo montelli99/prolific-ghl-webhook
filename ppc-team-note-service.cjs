@@ -132,7 +132,7 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
         WHERE contact_id=$1 AND worker_owner=$2`, [job.contact_id,owner,result.processed_event_id ?? job.claimed_event_id,
         result.verified || false,result.result]);
     } else {
-      const terminal = /MISMATCH|FIELD_MISSING|RESPONSE_INVALID|OTHER_FIELD_CHANGED/.test(result.error || '');
+      const terminal = /MISMATCH|FIELD_MISSING|RESPONSE_INVALID|OTHER_FIELD_CHANGED|HTTP 401|HTTP 403/.test(result.error || '');
       const retry = new Date(Math.max(now()+5000, Date.parse(result.retry_at||'')||now()+60000)).toISOString();
       await db.query(`UPDATE ppc_team_note_brief_jobs SET status=$3,retry_at=$4,last_error=$5,updated_at=NOW()
         WHERE contact_id=$1 AND worker_owner=$2`, [job.contact_id,owner,terminal?'FAILED':'RETRY_PENDING',terminal?null:retry,result.error]);
