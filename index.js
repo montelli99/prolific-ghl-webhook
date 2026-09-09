@@ -1,4 +1,4 @@
-﻿// index.js â€” Production webhook receiver + API for GHL pipeline sync
+// index.js â€” Production webhook receiver + API for GHL pipeline sync
 // Receives real GHL webhook payloads â†’ updates pipeline â†’ posts to Telegram
 // Real schemas: OpportunityStageUpdate, OpportunityCreate, ContactCreate, etc.
 
@@ -40,6 +40,14 @@ try {
 const app = express();
 app.use(express.json());
 const montelliTranscriptIngestion = createMontelliTranscriptIngestion();
+const dialerInboxModule = require('./ppc-sales-dialer-webhook-inbox.cjs');
+let dialerWebhookInbox;
+function getDialerWebhookInbox() {
+  if (!dialerWebhookInbox) {
+    dialerWebhookInbox = dialerInboxModule.createProductionWebhookInbox();
+  }
+  return dialerWebhookInbox;
+}
 
 // ── PPC Realtime Forward Telemetry (bounded, no secrets/PII) ──
 // Records whether GHL actually hit Render and whether PPC forwarding succeeded.
@@ -242,6 +250,16 @@ app.post('/webhook/ghl', async (req, res) => {
     }
 
     // Always acknowledge immediately â€” GHL expects 200 within seconds
+    // Save only event identity/hash; never modify or copy a GHL note body.
+    // A failed durable receipt must be retried, not acknowledged and lost.
+    if (dialerInboxModule.normalizeEvent(payload)) {
+      try {
+        await getDialerWebhookInbox().enqueue(payload);
+      } catch (error) {
+        console.error('[PPC dialer event] durable receipt failed:', error.message);
+        return res.status(503).json({ received: false, retryable: true });
+      }
+    }
     res.status(200).json({ received: true, type: webhookType });
 
     switch (webhookType) {
@@ -1139,4 +1157,3 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
-
