@@ -24,7 +24,11 @@ function evaluateMembership({campaignId,contact,opportunities,stageName,notes,ac
   const owners=[contact.assignedTo,o.assignedTo].filter(Boolean);
   if(generic&&owners.length)reasons.push('ASSIGNED');
   else if(campaignId!==CAMPAIGNS.AWAITING&&owners.some(x=>x!==MONTELLI))reasons.push('TEAM_ASSIGNED');
-  if(notes.some(n=>/^Incoming SMS[\s\S]*Message:\s*(STOP|UNSUBSCRIBE|DO NOT CALL)\s*$/i.test(n.bodyText||n.body||'')))reasons.push('EXPLICIT_STOP');
+  if(notes.some(n=>{
+    const body=String(n.bodyText||n.body||'').replace(/<[^>]+>/g,' ');
+    const message=/^Incoming SMS[\s\S]*Message:\s*([\s\S]*)$/i.exec(body)?.[1];
+    return message!==undefined&&/^(stop|unsubscribe|do not call)$/i.test(message.replace(/[^\p{L}\p{N}\s]/gu,'').trim());
+  }))reasons.push('EXPLICIT_STOP');
   if(activeClaim)reasons.push('ACTIVE_CLAIM');
   if(openCallback)reasons.push('CALLBACK_REVIEW');
   if(generic&&!stages[campaignId].test(stageName||''))reasons.push('STAGE_MISMATCH');

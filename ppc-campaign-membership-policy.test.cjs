@@ -2,6 +2,11 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const {evaluateMembership:check,CAMPAIGNS,LOCATION,PIPELINE}=require('./ppc-campaign-membership-policy.cjs');
 const fixture=()=>({campaignId:CAMPAIGNS.NOA2,contact:{locationId:LOCATION},opportunities:[{pipelineId:PIPELINE,status:'open'}],stageName:'Called Another Day in PM, No Answer',notes:[],historyReviewed:true});
 test('NOA2 accepts the actual in-PM stage while rejecting fresh stage',()=>{const x=fixture();assert.equal(check(x).keep,true);assert.ok(check({...x,stageName:'New Lead / Call ASAP'}).reasons.includes('STAGE_MISMATCH'));});
+
+test('seller STOP with punctuation or emoji remains a stop request',()=>{
+  for(const body of ['Incoming SMS\nMessage: Stop 🛑','Incoming SMS\nMessage: STOP!!!'])assert.ok(check({...fixture(),notes:[{body}]}).reasons.includes('EXPLICIT_STOP'));
+  assert.equal(check({...fixture(),notes:[{body:'Incoming SMS\nMessage: Stop by tomorrow'}]}).reasons.includes('EXPLICIT_STOP'),false);
+});
 test('either assignment surface excludes generic lists, including Montelli ownership',()=>{for(const owner of ['teammate','PGfXxlXCRXs3hXN3Gq7R']){const x=fixture();x.contact.assignedTo=owner;assert.equal(check(x).keep,false);delete x.contact.assignedTo;x.opportunities[0].assignedTo=owner;assert.equal(check(x).keep,false);}});
 test('Awaiting Photos exception never bypasses stop, DND, or callback protection',()=>{const x=fixture();x.campaignId=CAMPAIGNS.AWAITING;x.opportunities[0].assignedTo='teammate';assert.equal(check(x).keep,true);assert.equal(check({...x,openCallback:true}).keep,false);x.notes=[{body:'Incoming SMS\nMessage: STOP'}];assert.ok(check(x).reasons.includes('EXPLICIT_STOP'));x.notes=[];x.contact.dnd=true;assert.equal(check(x).keep,false);});
 test('assignment exception is exclusive to Awaiting Photos',()=>{const x=fixture();x.campaignId=3379643;x.opportunities[0].assignedTo='teammate';assert.ok(check(x).reasons.includes('TEAM_ASSIGNED'));});
