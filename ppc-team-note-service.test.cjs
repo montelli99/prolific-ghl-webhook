@@ -12,6 +12,13 @@ test('explicit pending and retry jobs outrank routine fallback refreshes',()=>{
   assert.match(serviceSource,/\[owner,guardResult!==true\]/);
 });
 
+test('durable inbox events get explicit terminal receipts and health coverage',()=>{
+  assert.match(serviceSource,/SET status='COMPLETED'.*t\.done_event_id>=i\.id/s);
+  assert.match(serviceSource,/SET status='NOT_APPLICABLE'.*NO_REGISTERED_DIALER_DESTINATION/s);
+  assert.match(serviceSource,/created_at<NOW\(\)-INTERVAL '10 minutes'/);
+  assert.match(serviceSource,/inbox:\{backlog:inbox_backlog,counts:inbox_counts\}/);
+});
+
 test('enabled guard still prohibits removal unless enforcement mode is explicit',async()=>{
   const s=createService({env:{PPC_CAMPAIGN_GUARD_ENABLED:'true'},db:{query:async()=>{throw Error('No DB expected');}}});
   await assert.rejects(s.campaignRequest('DELETE',3379399,123),/AUDIT_ONLY/);

@@ -139,6 +139,13 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
     onSource:async(id,c,n)=>{await underwriting.process(c,n);if(env.PPC_CAMPAIGN_GUARD_ENABLED==='true')await guardRunner.enqueue(id,c,n);} });
   async function step() {
     await lease();
+    await db.query(`UPDATE ppc_sales_dialer_webhook_inbox i SET status='COMPLETED',last_error=NULL,retry_at=NULL,updated_at=NOW()
+      WHERE status IN ('PENDING','RETRY_PENDING','PROCESSING') AND EXISTS(
+        SELECT 1 FROM ppc_team_note_targets t WHERE t.contact_id=i.contact_id AND t.done_event_id>=i.id)`);
+    await db.query(`UPDATE ppc_sales_dialer_webhook_inbox i SET status='NOT_APPLICABLE',
+      last_error='NO_REGISTERED_DIALER_DESTINATION',retry_at=NULL,updated_at=NOW()
+      WHERE status IN ('PENDING','RETRY_PENDING') AND created_at<NOW()-INTERVAL '10 minutes'
+        AND NOT EXISTS(SELECT 1 FROM ppc_team_note_targets t WHERE t.contact_id=i.contact_id)`);
     const [urgent]=await db.query(`SELECT EXISTS(SELECT 1 FROM ppc_team_note_targets
       WHERE status IN ('PENDING','RETRY_PENDING') AND (retry_at IS NULL OR retry_at<=NOW())) AS pending`);
     // Explicit ingestion/retry work must not sit behind a long campaign scan.
@@ -228,6 +235,10 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
       COUNT(*) FILTER (WHERE status IN ('PENDING','RETRY_PENDING','PROCESSING'))::int AS pending,
       COUNT(*) FILTER (WHERE status='FAILED')::int AS failed FROM ppc_team_note_targets`);
     const [events] = await db.query('SELECT MAX(created_at) AS last_event_at FROM ppc_sales_dialer_webhook_inbox');
+    const inbox_counts=await db.query('SELECT status,count(*)::int AS count FROM ppc_sales_dialer_webhook_inbox GROUP BY status');
+    const [inbox_backlog]=await db.query(`SELECT MIN(created_at) FILTER (WHERE status IN ('PENDING','RETRY_PENDING','PROCESSING')) AS oldest_pending_at,
+      COUNT(*) FILTER (WHERE status IN ('PENDING','RETRY_PENDING','PROCESSING'))::int AS pending,
+      COUNT(*) FILTER (WHERE status='FAILED')::int AS failed FROM ppc_sales_dialer_webhook_inbox`);
     let campaign_guard={enabled:false};
     if(env.PPC_CAMPAIGN_GUARD_ENABLED==='true'){
       const [guardControl]=await db.query('SELECT halted,last_error,updated_at FROM ppc_campaign_guard_control WHERE id=1');
@@ -240,7 +251,8 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
       instance_id:env.RENDER_INSTANCE_ID||null,last_cycle_at:lastCycleAt,
       last_successful_cycle_at:lastSuccessfulCycleAt,lease_active:control.owner===owner,
       lease_until:control.lease_until,halted:control.halted,last_error:control.last_error,
-      updated_at:control.updated_at,backlog,counts,last_event_at:events.last_event_at,campaign_guard };
+      updated_at:control.updated_at,backlog,counts,last_event_at:events.last_event_at,
+      inbox:{backlog:inbox_backlog,counts:inbox_counts},campaign_guard };
   }
   return { start, stop, wake, ensure, step, request, campaignRequest, progress, health };
 }
