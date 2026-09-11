@@ -139,7 +139,10 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
     onSource:async(id,c,n)=>{await underwriting.process(c,n);if(env.PPC_CAMPAIGN_GUARD_ENABLED==='true')await guardRunner.enqueue(id,c,n);} });
   async function step() {
     await lease();
-    const guardResult=env.PPC_CAMPAIGN_GUARD_ENABLED==='true'?await guardRunner.step():false;
+    const [urgent]=await db.query(`SELECT EXISTS(SELECT 1 FROM ppc_team_note_targets
+      WHERE status IN ('PENDING','RETRY_PENDING') AND (retry_at IS NULL OR retry_at<=NOW())) AS pending`);
+    // Explicit ingestion/retry work must not sit behind a long campaign scan.
+    const guardResult=env.PPC_CAMPAIGN_GUARD_ENABLED==='true'&&!urgent.pending?await guardRunner.step():false;
     if (now()-seededAt>300000) {
       await db.query(`INSERT INTO ppc_team_note_targets
         (contact_id,dialer_contact_id,status,attempts,retry_at,last_error,last_synced_at,

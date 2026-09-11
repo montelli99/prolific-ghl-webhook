@@ -7,6 +7,7 @@ const serviceSource = require('node:fs').readFileSync(require.resolve('./ppc-tea
 
 test('explicit pending and retry jobs outrank routine fallback refreshes',()=>{
   assert.match(serviceSource,/ORDER BY \(j\.status IN \('PENDING','RETRY_PENDING','PROCESSING'\)\) DESC/);
+  assert.match(serviceSource,/PPC_CAMPAIGN_GUARD_ENABLED==='true'&&!urgent\.pending\?await guardRunner\.step\(\):false/);
 });
 
 test('enabled guard still prohibits removal unless enforcement mode is explicit',async()=>{
