@@ -15,8 +15,10 @@ const AUTHORS = {
 
 function createService({ db, env = process.env, fetcher = fetch, now = Date.now }) {
   const owner = crypto.randomUUID();
-  let ready, running = false, timer, seededAt = 0;
+  let ready, running = false, stopping = false, timer, seededAt = 0;
+  let activeCycle = Promise.resolve(), lastCycleAt = null, lastSuccessfulCycleAt = null;
   const enabled = () => env.PPC_NOTE_SERVICE_ENABLED === 'true';
+  const workerEnabled = () => enabled() && env.PPC_NOTE_WORKER_ENABLED !== 'false';
   async function ensure() {
     if (!ready) ready = (async () => {
       await db.query(`CREATE TABLE IF NOT EXISTS ppc_note_service_control (
@@ -191,21 +193,36 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
     return true;
   }
   async function wake() {
-    if (!enabled() || running) return;
+    if (!workerEnabled() || stopping || running) return;
     running = true;
-    try {
+    lastCycleAt = new Date(now()).toISOString();
+    activeCycle = (async () => { try {
       await ensure();
       const deadline = now()+45000;
-      while (now()<deadline && enabled() && await step()) {}
+      while (now()<deadline && workerEnabled() && !stopping && await step()) {}
+      lastSuccessfulCycleAt = new Date(now()).toISOString();
     } catch (e) { if (e.message !== 'NOTE_SERVICE_LEASE_UNAVAILABLE') console.error('[PPC notes] service cycle failed'); }
-    finally { running = false; }
+    finally { running = false; } })();
+    await activeCycle;
   }
-  function start() { if (enabled() && !timer) { timer=setInterval(wake,10000); timer.unref(); void wake(); } }
-  function stop() { clearInterval(timer); timer=null; }
+  function start() {
+    stopping = false;
+    if (workerEnabled() && !timer) { timer=setInterval(wake,10000); timer.unref(); void wake(); }
+  }
+  async function stop() {
+    stopping = true;
+    clearInterval(timer); timer=null;
+    await activeCycle;
+    if (ready) await db.query(`UPDATE ppc_note_service_control SET owner=NULL,lease_until=NULL,updated_at=NOW()
+      WHERE id=1 AND owner=$1`, [owner]);
+  }
   async function health() {
     await ensure();
-    const [control] = await db.query('SELECT halted,last_error,updated_at FROM ppc_note_service_control WHERE id=1');
+    const [control] = await db.query('SELECT owner,lease_until,halted,last_error,updated_at FROM ppc_note_service_control WHERE id=1');
     const counts = await db.query('SELECT status,verified,count(*)::int AS count FROM ppc_team_note_targets GROUP BY status,verified');
+    const [backlog] = await db.query(`SELECT MIN(updated_at) FILTER (WHERE status IN ('PENDING','RETRY_PENDING','PROCESSING')) AS oldest_pending_at,
+      COUNT(*) FILTER (WHERE status IN ('PENDING','RETRY_PENDING','PROCESSING'))::int AS pending,
+      COUNT(*) FILTER (WHERE status='FAILED')::int AS failed FROM ppc_team_note_targets`);
     const [events] = await db.query('SELECT MAX(created_at) AS last_event_at FROM ppc_sales_dialer_webhook_inbox');
     let campaign_guard={enabled:false};
     if(env.PPC_CAMPAIGN_GUARD_ENABLED==='true'){
@@ -214,7 +231,12 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
       const [queue]=await db.query('SELECT count(*)::int AS pending FROM ppc_campaign_guard_jobs WHERE processed_revision<revision');
       campaign_guard={enabled:true,mode:env.PPC_CAMPAIGN_GUARD_MODE==='enforce'?'enforce':'audit',...guardControl,counts:membershipCounts,pending:queue.pending};
     }
-    return { enabled:enabled(),runtime:'render',...control,counts,last_event_at:events.last_event_at,campaign_guard };
+    return { enabled:enabled(),worker_enabled:workerEnabled(),running,stopping,
+      runtime:env.PPC_WORKER_HOST||'render',revision:env.RENDER_GIT_COMMIT||env.GIT_COMMIT||'local',
+      instance_id:env.RENDER_INSTANCE_ID||null,last_cycle_at:lastCycleAt,
+      last_successful_cycle_at:lastSuccessfulCycleAt,lease_active:control.owner===owner,
+      lease_until:control.lease_until,halted:control.halted,last_error:control.last_error,
+      updated_at:control.updated_at,backlog,counts,last_event_at:events.last_event_at,campaign_guard };
   }
   return { start, stop, wake, ensure, step, request, campaignRequest, progress, health };
 }

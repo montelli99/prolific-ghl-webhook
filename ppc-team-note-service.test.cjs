@@ -64,7 +64,28 @@ test('service cannot mutate source notes or any destination except its brief', a
 });
 test('disabled service never accesses database or providers', async () => {
   const service=createService({env:{},db:{query(){throw Error('Unexpected DB access');}}});
-  service.start(); await service.wake(); service.stop();
+  service.start(); await service.wake(); await service.stop();
+});
+test('worker can be disabled while durable ingestion remains enabled', async () => {
+  const service=createService({env:{PPC_NOTE_SERVICE_ENABLED:'true',PPC_NOTE_WORKER_ENABLED:'false'},db:{query(){throw Error('Unexpected DB access');}}});
+  service.start(); await service.wake(); await service.stop();
+});
+test('stop drains the active cycle before releasing only its lease', async () => {
+  let releaseFirstQuery, first=true, released=false;
+  const firstQuery=new Promise(resolve=>{releaseFirstQuery=resolve;});
+  const db={query:async(q)=>{
+    if(first){first=false;await firstQuery;return [];}
+    if(q.includes('SET owner=NULL')){released=true;return [];}
+    if(q.includes('RETURNING id'))return [];
+    return [];
+  }};
+  const service=createService({env:{PPC_NOTE_SERVICE_ENABLED:'true'},db});
+  service.start();
+  let stopped=false;const draining=service.stop().then(()=>{stopped=true;});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(stopped,false);assert.equal(released,false);
+  releaseFirstQuery();await draining;
+  assert.equal(stopped,true);assert.equal(released,true);
 });
 test('another instance cannot proceed while a lease is held', async () => {
   const service=createService({db:{query:async()=>[]},env:{PPC_NOTE_SERVICE_ENABLED:'true'}});
