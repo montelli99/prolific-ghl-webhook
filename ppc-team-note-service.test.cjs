@@ -3,6 +3,11 @@ const assert = require('node:assert/strict');
 const { createService } = require('./ppc-team-note-service.cjs');
 const { createRefresher, briefFromNotes, comparable } = require('./ppc-team-note-refresh.cjs');
 const { LOCATION_ID } = require('./ppc-sales-dialer-webhook-inbox.cjs');
+const serviceSource = require('node:fs').readFileSync(require.resolve('./ppc-team-note-service.cjs'),'utf8');
+
+test('explicit pending and retry jobs outrank routine fallback refreshes',()=>{
+  assert.match(serviceSource,/ORDER BY \(j\.status IN \('PENDING','RETRY_PENDING','PROCESSING'\)\) DESC/);
+});
 
 test('enabled guard still prohibits removal unless enforcement mode is explicit',async()=>{
   const s=createService({env:{PPC_CAMPAIGN_GUARD_ENABLED:'true'},db:{query:async()=>{throw Error('No DB expected');}}});

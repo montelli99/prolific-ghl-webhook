@@ -162,7 +162,8 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
         AND (j.status IN ('PENDING','RETRY_PENDING','PROCESSING') OR
           j.last_synced_at<NOW()-INTERVAL '6 hours' OR EXISTS(SELECT 1 FROM ppc_sales_dialer_webhook_inbox i
           WHERE i.contact_id=j.contact_id AND i.id>j.done_event_id))
-      ORDER BY (COALESCE((SELECT MAX(i.id) FROM ppc_sales_dialer_webhook_inbox i WHERE i.contact_id=j.contact_id),0)>j.done_event_id) DESC,
+      ORDER BY (j.status IN ('PENDING','RETRY_PENDING','PROCESSING')) DESC,
+        (COALESCE((SELECT MAX(i.id) FROM ppc_sales_dialer_webhook_inbox i WHERE i.contact_id=j.contact_id),0)>j.done_event_id) DESC,
         j.last_synced_at NULLS FIRST,j.attempts,j.contact_id LIMIT 1 FOR UPDATE OF j SKIP LOCKED
     ) UPDATE ppc_team_note_targets j SET status='PROCESSING',attempts=attempts+1,
       claimed_event_id=c.event_id,worker_owner=$1,updated_at=NOW() FROM candidate c
