@@ -165,19 +165,30 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
       seededAt=now();
     }
     const [job] = await db.query(`WITH candidate AS (
-      SELECT j.contact_id,j.dialer_contact_id,COALESCE((SELECT MAX(i.id) FROM ppc_sales_dialer_webhook_inbox i
-        WHERE i.contact_id=j.contact_id),0) AS event_id FROM ppc_team_note_targets j
-      WHERE j.status<>'FAILED' AND (j.status<>'PROCESSING' OR j.updated_at<NOW()-INTERVAL '3 minutes')
+      SELECT j.contact_id,j.dialer_contact_id,
+        COALESCE((SELECT MAX(i.id) FROM ppc_sales_dialer_webhook_inbox i WHERE i.contact_id=j.contact_id),0) AS event_id
+      FROM ppc_team_note_targets j
+      WHERE j.status<>'FAILED'
+        AND (j.status<>'PROCESSING' OR j.updated_at<NOW()-INTERVAL '3 minutes')
         AND (j.retry_at IS NULL OR j.retry_at<=NOW())
-        AND (j.status IN ('PENDING','RETRY_PENDING','PROCESSING') OR ($2::boolean AND (
-          j.last_synced_at<NOW()-INTERVAL '6 hours' OR EXISTS(SELECT 1 FROM ppc_sales_dialer_webhook_inbox i
-          WHERE i.contact_id=j.contact_id AND i.id>j.done_event_id)))
+        AND (
+          j.status IN ('PENDING','RETRY_PENDING','PROCESSING')
+          OR ($2::boolean AND (
+            j.last_synced_at<NOW()-INTERVAL '6 hours'
+            OR EXISTS(SELECT 1 FROM ppc_sales_dialer_webhook_inbox i
+              WHERE i.contact_id=j.contact_id AND i.id>j.done_event_id)
+          ))
+        )
       ORDER BY (j.status IN ('PENDING','RETRY_PENDING','PROCESSING')) DESC,
         (COALESCE((SELECT MAX(i.id) FROM ppc_sales_dialer_webhook_inbox i WHERE i.contact_id=j.contact_id),0)>j.done_event_id) DESC,
-        j.last_synced_at NULLS FIRST,j.attempts,j.contact_id LIMIT 1 FOR UPDATE OF j SKIP LOCKED
-    ) UPDATE ppc_team_note_targets j SET status='PROCESSING',attempts=attempts+1,
-      claimed_event_id=c.event_id,worker_owner=$1,updated_at=NOW() FROM candidate c
-      WHERE j.contact_id=c.contact_id AND j.dialer_contact_id=c.dialer_contact_id RETURNING j.*`, [owner,guardResult!==true]);
+        j.last_synced_at NULLS FIRST,j.attempts,j.contact_id
+      LIMIT 1 FOR UPDATE OF j SKIP LOCKED
+    )
+    UPDATE ppc_team_note_targets j SET status='PROCESSING',attempts=attempts+1,
+      claimed_event_id=c.event_id,worker_owner=$1,updated_at=NOW()
+    FROM candidate c
+    WHERE j.contact_id=c.contact_id AND j.dialer_contact_id=c.dialer_contact_id
+    RETURNING j.*`, [owner,guardResult!==true]);
     if (!job) return guardResult===true;
     let result;
     try { result = await refresher.refresh({ contactId: job.contact_id,
