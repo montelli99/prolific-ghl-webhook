@@ -19,6 +19,12 @@ test('durable inbox events get explicit terminal receipts and health coverage',(
   assert.match(serviceSource,/inbox:\{backlog:inbox_backlog,counts:inbox_counts\}/);
 });
 
+test('worker health exposes cycle failures instead of silently looking healthy',()=>{
+  assert.match(serviceSource,/lastCycleError = String\(e\?\.message/);
+  assert.match(serviceSource,/last_cycle_error:lastCycleError/);
+  assert.match(serviceSource,/service cycle failed:', lastCycleError/);
+});
+
 test('enabled guard still prohibits removal unless enforcement mode is explicit',async()=>{
   const s=createService({env:{PPC_CAMPAIGN_GUARD_ENABLED:'true'},db:{query:async()=>{throw Error('No DB expected');}}});
   await assert.rejects(s.campaignRequest('DELETE',3379399,123),/AUDIT_ONLY/);

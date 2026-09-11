@@ -16,7 +16,7 @@ const AUTHORS = {
 function createService({ db, env = process.env, fetcher = fetch, now = Date.now }) {
   const owner = crypto.randomUUID();
   let ready, running = false, stopping = false, timer, seededAt = 0;
-  let activeCycle = Promise.resolve(), lastCycleAt = null, lastSuccessfulCycleAt = null;
+  let activeCycle = Promise.resolve(), lastCycleAt = null, lastSuccessfulCycleAt = null, lastCycleError = null;
   const enabled = () => env.PPC_NOTE_SERVICE_ENABLED === 'true';
   const workerEnabled = () => enabled() && env.PPC_NOTE_WORKER_ENABLED !== 'false';
   async function ensure() {
@@ -212,7 +212,11 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
       const deadline = now()+45000;
       while (now()<deadline && workerEnabled() && !stopping && await step()) {}
       lastSuccessfulCycleAt = new Date(now()).toISOString();
-    } catch (e) { if (e.message !== 'NOTE_SERVICE_LEASE_UNAVAILABLE') console.error('[PPC notes] service cycle failed'); }
+      lastCycleError = null;
+    } catch (e) {
+      lastCycleError = String(e?.message || 'UNKNOWN_CYCLE_ERROR').slice(0, 240);
+      if (lastCycleError !== 'NOTE_SERVICE_LEASE_UNAVAILABLE') console.error('[PPC notes] service cycle failed:', lastCycleError);
+    }
     finally { running = false; } })();
     await activeCycle;
   }
@@ -249,7 +253,7 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
     return { enabled:enabled(),worker_enabled:workerEnabled(),running,stopping,
       runtime:env.PPC_WORKER_HOST||'render',revision:env.RENDER_GIT_COMMIT||env.GIT_COMMIT||'local',
       instance_id:env.RENDER_INSTANCE_ID||null,last_cycle_at:lastCycleAt,
-      last_successful_cycle_at:lastSuccessfulCycleAt,lease_active:control.owner===owner,
+      last_successful_cycle_at:lastSuccessfulCycleAt,last_cycle_error:lastCycleError,lease_active:control.owner===owner,
       lease_until:control.lease_until,halted:control.halted,last_error:control.last_error,
       updated_at:control.updated_at,backlog,counts,last_event_at:events.last_event_at,
       inbox:{backlog:inbox_backlog,counts:inbox_counts},campaign_guard };
