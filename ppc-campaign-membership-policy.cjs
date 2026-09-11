@@ -5,7 +5,7 @@ const CAMPAIGNS={FRESH:3379399,NOA1:3379400,NOA2:3379401,AWAITING:3379538};
 const supported=new Set([...Object.values(CAMPAIGNS),3379643,3379537,3379660]);
 const terminal=/no comps|changed number|under contract with another|decided to list|overpriced|changed mind|seller declined|property sold|under contract with us|offer made|repitch|sent apt times|no answer after gc|awaiting seller info|contract drafted|sent psa|buyers|earnest|title|closing/i;
 const stages={
-  [CAMPAIGNS.FRESH]:/^(?:New Lead\s*\/\s*Call ASAP|New Lead|Call ASAP)$/i,
+  [CAMPAIGNS.FRESH]:/^(?:New Lead\s*\/?\s*Call ASAP|New Lead|Call ASAP|Still Need To Call)$/i,
   [CAMPAIGNS.NOA1]:/^Called (?:in PM|once),? No Answer$/i,
   [CAMPAIGNS.NOA2]:/^Called Another Day(?: in PM)?,? No Answer$/i,
 };
