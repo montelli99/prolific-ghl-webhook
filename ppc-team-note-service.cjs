@@ -3,7 +3,7 @@ const crypto = require('node:crypto');
 const { feedback } = require('./ppc-api-budget.cjs');
 const { createRefresher } = require('./ppc-team-note-refresh.cjs');
 const { createGuardRunner } = require('./ppc-campaign-guard-runner.cjs');
-const { createUnderwritingDisposition, OWNER, STAGE } = require('./ppc-underwriting-disposition.cjs');
+const { createUnderwritingDisposition, OWNER, STAGE, PHOTO_STAGE } = require('./ppc-underwriting-disposition.cjs');
 const AUTHORS = {
   PGfXxlXCRXs3hXN3Gq7R: 'Montelli Scott', SvdGukwgAhqzbVBO6Xl4: 'Kayla R Mauser',
   nxm2vJmHXBeGBXT2tbxu: 'Seth PPC', '2pTsqC5vrzCvtR2v9oYG': 'Roberta PPC',
@@ -129,7 +129,7 @@ function createService({ db, env = process.env, fetcher = fetch, now = Date.now 
     if(method==='GET'&&provider==='justcall'&&/^\/sales_dialer\/calls\/\d+$/.test(path))return performRequest(provider,path);
     if(method==='PUT'&&provider==='ghl'&&body?.assignedTo===OWNER&&
       ((/^\/contacts\/[A-Za-z0-9]+$/.test(path)&&Object.keys(body).length===1)||
-       (/^\/opportunities\/[A-Za-z0-9]+$/.test(path)&&Object.keys(body).length===2&&body.pipelineStageId===STAGE)))return performRequest(provider,path,method,body);
+       (/^\/opportunities\/[A-Za-z0-9]+$/.test(path)&&Object.keys(body).length===2&&[STAGE,PHOTO_STAGE].includes(body.pipelineStageId))))return performRequest(provider,path,method,body);
     throw Error('UNDERWRITING_SCOPE_PROHIBITED');
   }});
   const refresher = createRefresher({ ghl: (p,m,b) => request('ghl',p,m,b),
