@@ -67,6 +67,21 @@ app.get('/assets/contact-cards/montelli-scott-divinity-aligned-v2.vcf', (req, re
   res.sendFile(vcfPath);
 });
 
+// Approved voice follow-up assets for JustCall MMS. Keep this explicit so no
+// arbitrary local files can be exposed through the public media path.
+for (const [filename, downloadName] of [
+  ['montelli-no-response-followup.mp3', 'montelli-no-response-followup.mp3'],
+  ['montelli-photo-followup.mp3', 'montelli-photo-followup.mp3'],
+]) {
+  app.get(`/assets/contact-cards/${filename}`, (req, res) => {
+    const mediaPath = path.join(__dirname, 'public', 'assets', 'contact-cards', filename);
+    res.setHeader('Content-Type', 'audio/mp3');
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.sendFile(mediaPath);
+  });
+}
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
