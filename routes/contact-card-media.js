@@ -5,7 +5,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
 
-const EXPECTED_SHA256 = '1c50c789d0effaae5036373399715a27464348c91cc47df0405b7057c2adfe82';
+const EXPECTED_SHA256 = '77bbcbdab80a604d3161d0a898fd92e1832d258c7c91a41349a86a5d18f60065';
 const ASSET_FILENAME = 'montelli-scott-divinity-aligned-v2.vcf';
 const DOWNLOAD_FILENAME = 'montelli-scott-divinity-aligned.vcf';
 const ASSET_PATH = path.join(__dirname, '..', 'public', 'assets', 'contact-cards', ASSET_FILENAME);
