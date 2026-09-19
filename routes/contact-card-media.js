@@ -21,13 +21,13 @@ const ALLOWED_ASSETS = new Map([
     path: path.join(__dirname, '..', 'public', 'assets', 'contact-cards', 'montelli-no-response-followup.mp3'),
     filename: 'montelli-no-response-followup.mp3',
     expectedHash: '48CF61C1B3209F1603C48B51F69A4D34FB3E69FCFA4D734BE2EC6FB34CB3EA69'.toLowerCase(),
-    contentType: 'audio/mpeg',
+    contentType: 'audio/mp3',
   }],
   ['/assets/contact-cards/montelli-photo-followup.mp3', {
     path: path.join(__dirname, '..', 'public', 'assets', 'contact-cards', 'montelli-photo-followup.mp3'),
     filename: 'montelli-photo-followup.mp3',
     expectedHash: 'EEF1F4885481D368C983291280350C7AB1EB6CF3AEA62383AEB68BAC6CFA12C3'.toLowerCase(),
-    contentType: 'audio/mpeg',
+    contentType: 'audio/mp3',
   }],
 ]);
 
