@@ -858,6 +858,9 @@ const MONTELLI_USER_ID = process.env.GHL_MONTELLI_USER_ID || 'PGfXxlXCRXs3hXN3Gq
 // Atlas pipeline — used only in the JustCall webhook handler below
 const ATLAS_PIPELINE_ID = 'o4hvfO7adOQlLdtqPNIn';
 const JC_DEDUPE_MAX = 5000;
+const { handleReplyAlert } = require('./ppc-sms-reply-alert');
+const { createLiveAlertDependencies } = require('./ppc-sms-reply-alert-live');
+let ppcReplyAlertDeps;
 
 // GHL HTTP helper (native https, no SDK dependency)
 function ghlJcRequest(method, path, body) {
@@ -935,10 +938,21 @@ function dedupeJc(key) {
 }
 
 app.post('/webhook/justcall', async (req, res) => {
-  res.status(200).json({ received: true });
   try {
     const payload = req.body;
     const type = payload.type || payload.event;
+    if (type === 'sms.received' && process.env.PPC_TELEGRAM_BOT_TOKEN) {
+      try {
+        ppcReplyAlertDeps ||= createLiveAlertDependencies();
+        const alert = await handleReplyAlert(payload, req.headers, ppcReplyAlertDeps);
+        if (alert.status === 'invalid_signature') return res.status(403).json({ error: 'Invalid JustCall signature' });
+        console.log(`[PPC reply alert] ${alert.status}; matched=${alert.matches || 0}`);
+      } catch (error) {
+        console.error(`[PPC reply alert] failed: ${error.message}`);
+        return res.status(503).json({ error: 'Reply alert temporarily unavailable' });
+      }
+    }
+    res.status(200).json({ received: true });
     const eventId = payload.data?.id || payload.data?.call_sid || payload.request_id || Math.random();
     if (dedupeJc(`${type}:${eventId}`)) {
       console.log(`[Atlas JustCall] Duplicate event skipped: ${type}:${eventId}`);
@@ -976,12 +990,7 @@ app.post('/webhook/justcall', async (req, res) => {
     if (type === 'sms.received' || type === 'text.received') {
       const smsData = payload.data || {};
       const contactId = smsData.contact_id || smsData.ghl_contact_id;
-      const senderNumber = smsData.from_number || smsData.contact_number;
-      if (senderNumber) {
-        autoAssignPpcLead(senderNumber).then(result => {
-          console.log(`[Atlas PPC] SMS auto-assignment: ${JSON.stringify(result)}`);
-        }).catch(e => console.error(`[Atlas PPC] SMS auto-assignment failed: ${e.message}`));
-      }
+      // Receiving a text does not establish a manual human claim or change assignment.
       if (contactId) {
         const noteBody = `=== SMS RECEIVED ===\n${new Date().toISOString()}\nFrom: ${smsData.from_number || 'unknown'}\nBody: ${(smsData.body || '').slice(0, 200)}`;
         try {
@@ -996,12 +1005,7 @@ app.post('/webhook/justcall', async (req, res) => {
     if (type === 'sms.sent' || type === 'text.sent') {
       const smsData = payload.data || {};
       const contactId = smsData.contact_id || smsData.ghl_contact_id;
-      const recipientNumber = smsData.to_number || smsData.contact_number;
-      if (recipientNumber) {
-        autoAssignPpcLead(recipientNumber).then(result => {
-          console.log(`[Atlas PPC] Outbound SMS auto-assignment: ${JSON.stringify(result)}`);
-        }).catch(e => console.error(`[Atlas PPC] Outbound SMS auto-assignment failed: ${e.message}`));
-      }
+      // Sending a text does not establish a manual human claim or change assignment.
       if (contactId) {
         const noteBody = `=== SMS SENT ===\n${new Date().toISOString()}\nTo: ${smsData.to_number || 'unknown'}\nBody: ${(smsData.body || '').slice(0, 200)}`;
         try {
